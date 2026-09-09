@@ -1,0 +1,22 @@
+{
+  "name": "sanad-express-platform",
+  "version": "1.0.0",
+  "description": "منصة سند إكسبريس اللوجستية لإدارة وتوزيع الشحنات والمناديب ومزامنة سلة",
+  "main": "server/server.js",
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "build:client": "npm run build --prefix client",
+    "build": "npm run install:all && npm run build:client",
+    "start": "node server/server.js",
+    "dev:server": "node server/server.js",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "keywords": [
+    "sanad-express",
+    "logistics",
+    "fleet",
+    "salla"
+  ],
+  "author": "SANAD EXPRESS",
+  "license": "ISC"
+}
