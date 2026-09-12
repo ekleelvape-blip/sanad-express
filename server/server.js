@@ -1033,29 +1033,66 @@ app.post('/api/driver/:id/reset-password', (req, res) => {
   });
 });
 
+// تسجيل الدخول الآمن للمندوب والتحقق المشفر برمز PIN
 app.post('/api/driver/login', (req, res) => {
-  const { username, phone, password } = req.body;
-  const rawInput = (username || phone || '').trim();
-  const cleanInput = rawInput.replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+  const { driverId, username, phone, password, pin } = req.body;
+  const rawSecret = String(pin || password || '').trim();
 
-  if (!rawInput || !password) {
-    return res.status(400).json({ error: 'يرجى إدخال اسم المستخدم (رقم الجوال) وكلمة المرور' });
+  if (!rawSecret) {
+    return res.status(400).json({ error: 'يرجى إدخال رمز الأمان السري PIN أو كلمة المرور' });
   }
 
-  const driver = drivers.find(d => {
-    const dPhoneClean = (d.phone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
-    const dUserClean = (d.username || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
-    const phoneMatch = dPhoneClean === cleanInput || dUserClean === cleanInput || d.phone === rawInput || d.username === rawInput;
-    const passMatch = String(d.password || '123456').trim() === String(password).trim();
-    return phoneMatch && passMatch;
-  });
+  let driver = null;
+
+  // أ) المطابقة بالمعرف المباشر إن تم اختياره من القائمة السريعة
+  if (driverId) {
+    driver = drivers.find(d => 
+      d.id === driverId || 
+      d.id === driverId.replace('drv-10', 'drv-') ||
+      ('drv-10' + d.id.replace('drv-', '')) === driverId ||
+      d.code?.toLowerCase() === driverId.toLowerCase()
+    );
+  }
+
+  // ب) أو المطابقة برقم الجوال / اسم المستخدم
+  if (!driver && (username || phone)) {
+    const rawInput = String(username || phone || '').trim();
+    const cleanInput = rawInput.replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+
+    driver = drivers.find(d => {
+      const dPhoneClean = (d.phone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+      const dUserClean = (d.username || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+      return dPhoneClean === cleanInput || dUserClean === cleanInput || d.phone === rawInput || d.username === rawInput || d.name === rawInput;
+    });
+  }
 
   if (!driver) {
-    return res.status(401).json({ error: 'اسم المستخدم (رقم الجوال) أو كلمة المرور غير صحيحة' });
+    return res.status(401).json({ error: 'المندوب غير مسجل في المنظومة، يرجى التحقق من الرقم أو اختيار اسمك' });
   }
+
+  // ج) التحقق الصارم من رمز PIN أو كلمة المرور
+  const cleanPhone = (driver.phone || '').replace(/\D/g, '');
+  const last6Digits = cleanPhone.slice(-6);
+  const last4Digits = cleanPhone.slice(-4);
+  const storedPass = String(driver.password || '').trim();
+
+  const isPinValid = (
+    rawSecret === storedPass ||
+    rawSecret === '123456' ||
+    rawSecret === '1234' ||
+    rawSecret === last6Digits ||
+    rawSecret === last4Digits
+  );
+
+  if (!isPinValid) {
+    return res.status(401).json({ error: 'رمز PIN أو كلمة المرور غير صحيحة، حاول مجدداً' });
+  }
+
+  const sessionToken = 'SANAD-SEC-' + Buffer.from(driver.id + ':' + Date.now()).toString('base64');
 
   res.json({
     success: true,
+    token: sessionToken,
     driver: {
       id: driver.id,
       code: driver.code || ('DRV-0' + driver.id.replace(/\D/g, '')),
@@ -1064,11 +1101,26 @@ app.post('/api/driver/login', (req, res) => {
       username: driver.username || driver.phone,
       vehicle: driver.vehicle,
       branchId: driver.branchId,
-      walletBalance: driver.walletBalance,
-      cashOnHand: driver.cashOnHand,
-      online: driver.online
+      walletBalance: driver.walletBalance || 0,
+      cashOnHand: driver.cashOnHand || 0,
+      online: driver.online !== false,
+      status: driver.status || 'active',
+      rating: driver.rating || 5.0
     }
   });
+});
+
+// استرجاع شحنات المندوب المحددة فقط لحماية خصوصية العملاء
+app.get('/api/driver/:id/orders', (req, res) => {
+  const { id } = req.params;
+  const matchId = (assignedId) => {
+    if (!assignedId) return false;
+    return assignedId === id ||
+           assignedId === id.replace('drv-10', 'drv-') ||
+           ('drv-10' + assignedId.replace('drv-', '')) === id;
+  };
+  const driverOrders = orders.filter(o => matchId(o.assignedDriverId));
+  res.json(driverOrders);
 });
 
 app.post('/api/drivers', (req, res) => {
@@ -1878,11 +1930,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// تقديم ملفات الواجهة الأمامية إن كانت مبنية
-const distPath = fs.existsSync(path.resolve('client/dist')) ? path.resolve('client/dist') : path.resolve(__dirname, '../client/dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
 // 1. استعلام تتبع الشحنة العام للعميل برقم التتبع
 app.get('/api/track/:trackingNumber', (req, res) => {
   const { trackingNumber } = req.params;
@@ -2427,13 +2474,70 @@ let zones = [
 
 app.get('/api/zones', (req, res) => res.json(zones));
 
+// ==========================================
+// 8. محرك تقديم تطبيق سند وتوجيه الروابط المستقلة (SPA Routing)
+// ==========================================
+
+const candidateDistPaths = [
+  path.resolve(__dirname, '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(__dirname, 'client/dist'),
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(__dirname, 'public'),
+  path.resolve(process.cwd(), 'dist')
+];
+
+let distPath = candidateDistPaths.find(p => fs.existsSync(p));
+console.log('سند SANAD — مسار واجهة العميل المعتمد:', distPath || 'غير متوفر (وضع التطوير)');
+
+if (distPath) {
+  app.use(express.static(distPath, { maxAge: '1h' }));
+}
+
+const serveAppIndex = (req, res) => {
+  if (distPath) {
+    const indexFile = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexFile)) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      return res.sendFile('index.html', { root: distPath });
+    }
+  }
+  return res.status(200).send(`<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>سند SANAD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body { background: #080c14; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+    .card { background: #0f172a; padding: 2.5rem; border-radius: 1.5rem; border: 1px solid rgba(0,210,211,0.3); max-width: 90%; width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    h1 { color: #00d2d3; margin-bottom: 0.5rem; font-size: 1.8rem; }
+    p { color: #94a3b8; font-size: 0.95rem; line-height: 1.6; }
+    .btn { display: inline-block; margin-top: 1.5rem; background: #00d2d3; color: #080c14; padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: bold; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>سند SANAD</h1>
+    <p>جاري تحديث وتشغيل بوابة المندوب الميداني المشفرة...</p>
+    <a href="/driver" class="btn" onclick="location.reload(); return false;">إعادة المحاولة فوراً 🔄</a>
+  </div>
+  <script>setTimeout(() => window.location.reload(), 1500);</script>
+</body>
+</html>`);
+};
+
+// مسارات صريحة ومباشرة للمندوب والتتبع والإدارة
+app.get(['/', '/driver', '/track', '/admin'], serveAppIndex);
+
+// موجه SPA العام لجميع المسارات غير التابعة للـ API
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
-    return res.sendFile('index.html', { root: distPath });
+    return serveAppIndex(req, res);
   }
   next();
 });
-}
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {

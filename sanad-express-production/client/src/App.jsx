@@ -29,10 +29,18 @@ export default function App() {
     if (typeof window === 'undefined') return 'admin';
     const path = window.location.pathname.toLowerCase();
     const search = window.location.search.toLowerCase();
-    if (path === '/driver' || path.startsWith('/driver/') || search.includes('mode=driver')) {
+    const hash = window.location.hash.toLowerCase();
+    if (
+      path === '/driver' || 
+      path.startsWith('/driver/') || 
+      path === '/mandoub' ||
+      search.includes('mode=driver') || 
+      search.includes('driver') ||
+      hash.includes('driver')
+    ) {
       return 'driver';
     }
-    if (path === '/track' || path.startsWith('/track/') || search.includes('track=') || search.includes('mode=track')) {
+    if (path === '/track' || path.startsWith('/track/') || search.includes('track=') || search.includes('mode=track') || hash.includes('track')) {
       return 'track';
     }
     return 'admin';
@@ -283,15 +291,15 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#080c14] text-slate-100 font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] selection:bg-cyan-500 selection:text-slate-950 flex flex-col" dir="rtl">
         {/* ترويسة هاتف المندوب المستقلة */}
-        <header className="sticky top-0 z-50 bg-[#0a0e18]/95 backdrop-blur-md border-b border-cyan-950/60 px-4 py-3 flex items-center justify-between shadow-xl">
+        <header className="sticky top-0 z-50 bg-[#0a0e18]/95 backdrop-blur-md border-b border-cyan-950/60 px-4 py-2.5 flex items-center justify-between shadow-xl">
           <div className="flex items-center gap-3">
-            <img src="/sanad-express-logo.jpg?v=3" alt="سَنَد" className="w-9 h-9 rounded-xl object-cover border border-cyan-500/40 shadow-[0_0_12px_rgba(0,210,211,0.3)] shrink-0" />
+            <img src="/sanad-express-logo.jpg?v=3" alt="سند SANAD" className="w-9 h-9 rounded-xl object-cover border border-cyan-500/40 shadow-[0_0_12px_rgba(0,210,211,0.3)] shrink-0" />
             <div>
               <div className="font-black text-sm text-white flex items-center gap-1.5">
-                <span>سَنَد</span>
-                <span className="text-[10px] bg-cyan-950 text-[#00d2d3] border border-cyan-800/60 px-2 py-0.5 rounded-full font-bold">بوابة المندوب الميداني</span>
+                <span>سند SANAD</span>
+                <span className="text-[10px] bg-cyan-950 text-[#00d2d3] border border-cyan-800/60 px-2 py-0.5 rounded-full font-bold">بوابة المندوب المشفرة 🛡️</span>
               </div>
-              <div className="text-[9px] text-slate-400 font-mono">سَنَد — DRIVER APP</div>
+              <div className="text-[9px] text-slate-400 font-mono">سند SANAD</div>
             </div>
           </div>
 
@@ -300,20 +308,20 @@ export default function App() {
               type="button"
               onClick={() => {
                 navigator.clipboard?.writeText(window.location.origin + '/driver');
-                alert('تم نسخ رابط المندوب المباشر: ' + window.location.origin + '/driver');
+                alert('تم نسخ رابط بوابة المندوب المشفر بنجاح! يمكنك إرساله للمناديب:\n' + window.location.origin + '/driver');
               }}
               className="text-[11px] bg-cyan-950/60 text-[#00d2d3] border border-cyan-800/50 hover:bg-cyan-900/60 px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-colors shadow-sm"
               title="نسخ رابط المندوب لإرساله عبر الواتساب"
             >
-              نسخ رابط المندوب 📋
+              نسخ الرابط 📋
             </button>
             <button
               type="button"
               onClick={() => navigateTo('admin', '/admin')}
-              className="text-[11px] text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl font-semibold cursor-pointer"
+              className="text-[11px] text-slate-500 hover:text-slate-300 bg-slate-900/60 border border-slate-800 px-2.5 py-1.5 rounded-xl font-semibold cursor-pointer"
               title="الدخول للوحة الإدارة"
             >
-              لوحة الإدارة ←
+              الإدارة 🔒
             </button>
           </div>
         </header>

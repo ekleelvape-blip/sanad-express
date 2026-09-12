@@ -1,3 +1,4 @@
+import DriverAuthGate from './DriverAuthGate';
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import {
@@ -33,14 +34,31 @@ export default function DriverApp({
   onRefresh,
   socket
 }) {
-  // حالة تسجيل الدخول للمندوب
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+  // حالة تسجيل الدخول والمصادقة الأمنية المشفرة للمندوب
+  const [authDriver, setAuthDriver] = useState(() => {
     try {
-      return !!localStorage.getItem('sanad_driver_auth');
+      const item = localStorage.getItem('sanad_driver_auth');
+      return item ? JSON.parse(item) : null;
     } catch {
-      return true; // افتراضي نشط للسهولة
+      return null;
     }
   });
+
+  // قفل الجلسة الفوري (يعيد المندوب لشاشة التحقق بالـ PIN مع حفظ بياناته)
+  const handleLockSession = () => {
+    sound.pop();
+    setAuthDriver(null);
+  };
+
+  // تسجيل الخروج التام ومسح الجلسة
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('sanad_driver_auth');
+      localStorage.removeItem('sanad_driver_id');
+    } catch (e) {}
+    sound.pop();
+    setAuthDriver(null);
+  };
 
   // التبويب السفلي الرئيسي: 'home' | 'routes' | 'scan' | 'inventory' | 'account'
   const [activeBottomTab, setActiveBottomTab] = useState('home');
@@ -125,8 +143,8 @@ export default function DriverApp({
     }
   })();
 
-  const activeDriverId = savedAuth?.id || currentDriverId || 'drv-1';
-  const currentDriver = drivers.find(d => d.id === activeDriverId) || drivers[0] || {
+  const activeDriverId = authDriver?.id || currentDriverId || 'drv-1';
+  const currentDriver = drivers.find(d => d.id === activeDriverId) || drivers.find(d => d.id === authDriver?.id) || authDriver || drivers[0] || {
     id: 'drv-1',
     code: '957',
     name: 'يونس',
@@ -180,26 +198,28 @@ export default function DriverApp({
 
   // 1. طلب إذن التنبيهات وتتبع الموقع الجغرافي الحي للمندوب
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
       }
-    }
+    } catch (e) {}
 
     if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const { latitude, longitude, speed, heading } = pos.coords;
-          const coords = [latitude, longitude];
-          setDriverLiveCoords(coords);
-          if (onUpdateDriverLocation) {
-            onUpdateDriverLocation(currentDriver.id, coords, speed ? Math.round(speed * 3.6) : 0, heading || 0);
-          }
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
+      try {
+        const watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const { latitude, longitude, speed, heading } = pos.coords;
+            const coords = [latitude, longitude];
+            setDriverLiveCoords(coords);
+            if (onUpdateDriverLocation && currentDriver?.id) {
+              onUpdateDriverLocation(currentDriver.id, coords, speed ? Math.round(speed * 3.6) : 0, heading || 0);
+            }
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+        );
+        return () => navigator.geolocation.clearWatch(watchId);
+      } catch (e) {}
     }
   }, [currentDriver.id]);
 
@@ -418,6 +438,19 @@ export default function DriverApp({
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
   }, [activeBottomTab, selectedRouteOrderId, myOrders, branches, driverLiveCoords, currentDriver]);
 
+  // إذا لم تتم مصادقة المندوب أو كانت الجلسة مقفلة: عرض بوابة الأمان المشفرة فوراً
+  if (!authDriver) {
+    return (
+      <DriverAuthGate
+        drivers={drivers}
+        onLoginSuccess={(loggedDriver) => {
+          setAuthDriver(loggedDriver);
+          if (onChangeDriver) onChangeDriver(loggedDriver.id);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto min-h-screen bg-[#f4f6f8] dark:bg-[#0a0e18] text-slate-800 dark:text-slate-100 flex flex-col font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] select-none relative pb-28" dir="rtl">
       
@@ -520,7 +553,17 @@ export default function DriverApp({
             </div>
 
             {/* جهة اليسار: زر التنبيهات وزر غير متاح */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* زر قفل الجلسة الفوري لحماية البيانات */}
+              <button
+                type="button"
+                onClick={handleLockSession}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 border border-cyan-800/60 flex items-center justify-center text-cyan-400 hover:text-cyan-300 shadow-2xs cursor-pointer transition-colors"
+                title="قفل فوري للجلسة لحماية البيانات"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+
               {/* زر حالة التوفر: غير متاح / متاح */}
               <button
                 type="button"
@@ -1328,6 +1371,17 @@ export default function DriverApp({
               <div className="w-9 h-9 rounded-full bg-teal-500 flex items-center justify-center text-white shadow-xs">
                 <Package className="w-4 h-4" />
               </div>
+            </button>
+
+            {/* بطاقة: قفل الجلسة مؤقتاً */}
+            <button
+              type="button"
+              onClick={handleLockSession}
+              className="w-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all shadow-xs text-cyan-400"
+            >
+              <div className="w-4"></div>
+              <span className="font-bold text-xs">قفل الجلسة مؤقتاً (PIN Lock) 🔒</span>
+              <Lock className="w-4 h-4 stroke-[2]" />
             </button>
 
             {/* 5. بطاقة: تسجيل الخروج (مطابقة لأسفل الصورة 2) */}
