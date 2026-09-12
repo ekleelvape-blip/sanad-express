@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ScanLine, QrCode, Camera, AlertTriangle, CheckCircle2, X, Sparkles, ShieldCheck, Box, User, MapPin, DollarSign, RefreshCw, KeyRound } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { 
+  ScanLine, QrCode, Camera, AlertTriangle, CheckCircle2, X, Sparkles, 
+  ShieldCheck, Box, User, MapPin, DollarSign, RefreshCw, Upload, Image as ImageIcon 
+} from 'lucide-react';
 import { sound } from '../utils/sound';
 
 export default function OrderScanModal({
@@ -16,57 +20,12 @@ export default function OrderScanModal({
   const [successVerified, setSuccessVerified] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const videoRef = useRef(null);
+  const [cameraStarting, setCameraStarting] = useState(false);
+
+  const scannerRef = useRef(null);
   const inputRef = useRef(null);
-  const streamRef = useRef(null);
-
-  // التركيز التلقائي على حقل قارئ الباركود عند فتح النافذة
-  useEffect(() => {
-    if (isOpen) {
-      setScannedInput('');
-      setErrorMessage('');
-      setMatchedOtherOrder(null);
-      setSuccessVerified(false);
-      setTimeout(() => {
-        if (inputRef.current) inputRef.current.focus();
-      }, 150);
-    } else {
-      stopCamera();
-    }
-  }, [isOpen, order]);
-
-  // تشغيل / إيقاف كاميرا الجوال
-  const startCamera = async () => {
-    setCameraError('');
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('متصفحك لا يدعم فتح الكاميرا المباشرة، يمكنك استخدام قارئ الليزر أو الإدخال اليدوي');
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setCameraActive(true);
-    } catch (err) {
-      console.warn('Camera access error:', err);
-      setCameraError('تعذر تشغيل الكاميرا (يرجى السماح بإذن الكاميرا أو استخدام قارئ الباركود)');
-      setCameraActive(false);
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  };
-
-  if (!isOpen || !order) return null;
+  const fileInputRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // استخراج الكود النظيف من أي رابط أو نص
   const extractCode = (raw) => {
@@ -110,7 +69,7 @@ export default function OrderScanModal({
     if (isExactMatch) {
       sound.playSuccess();
       setSuccessVerified(true);
-      stopCamera();
+      stopScanner();
 
       setTimeout(() => {
         if (onSuccess) onSuccess(order.id);
@@ -143,18 +102,159 @@ export default function OrderScanModal({
     setErrorMessage(`❌ الباركود الممسوح [${code}] غير مطابق لهذه الشحنة. يرجى مسح بوليصة الشحنة الصحيحة المطبوعة على الكرتون.`);
   };
 
+  const startScanner = async () => {
+    setCameraError('');
+    setCameraStarting(true);
+
+    try {
+      // إيقاف أي ماسح قديم إن وُجد
+      await stopScanner();
+
+      const qrContainer = document.getElementById('sanad-qr-reader');
+      if (!qrContainer) {
+        setCameraStarting(false);
+        return;
+      }
+
+      const html5QrCode = new Html5Qrcode('sanad-qr-reader');
+      scannerRef.current = html5QrCode;
+
+      // محاولة البدء بالكاميرا الخلفية (environment)
+      try {
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          {
+            fps: 15,
+            qrbox: { width: 220, height: 220 },
+            aspectRatio: 1.0
+          },
+          (decodedText) => {
+            if (isMountedRef.current) {
+              handleVerifyBarcode(decodedText);
+            }
+          },
+          () => {} // تجاهل أخطاء الإطارات الفارغة
+        );
+      } catch (backCamErr) {
+        // إذا فشلت الكاميرا الخلفية، جرب أي كاميرا متاحة بالجهاز
+        const cameras = await Html5Qrcode.getCameras().catch(() => []);
+        if (cameras.length > 0) {
+          const selectedCam = cameras[cameras.length - 1].id;
+          await html5QrCode.start(
+            selectedCam,
+            {
+              fps: 15,
+              qrbox: { width: 220, height: 220 },
+              aspectRatio: 1.0
+            },
+            (decodedText) => {
+              if (isMountedRef.current) {
+                handleVerifyBarcode(decodedText);
+              }
+            },
+            () => {}
+          );
+        } else {
+          throw backCamErr;
+        }
+      }
+
+      if (isMountedRef.current) {
+        setCameraActive(true);
+        setCameraStarting(false);
+      }
+    } catch (err) {
+      console.warn('Camera start error:', err);
+      if (isMountedRef.current) {
+        setCameraActive(false);
+        setCameraStarting(false);
+        const errMsg = String(err?.message || err || '');
+        if (errMsg.includes('Permission') || errMsg.includes('NotAllowedError')) {
+          setCameraError('تم رفض إذن الكاميرا. يرجى السماح بالوصول للكاميرا من إعدادات المتصفح، أو استخدم التقاط صورة.');
+        } else {
+          setCameraError('الكاميرا غير متاحة حالياً، يمكنك التقاط صورة مباشرة أو استخدام قارئ الباركود.');
+        }
+      }
+    }
+  };
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        scannerRef.current.clear();
+      } catch (e) {
+        // ignore clean-up warnings
+      }
+      scannerRef.current = null;
+    }
+    if (isMountedRef.current) {
+      setCameraActive(false);
+    }
+  };
+
+  // تهيئة النافذة وبدء الكاميرا تلقائياً عند الفتح
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (isOpen) {
+      setScannedInput('');
+      setErrorMessage('');
+      setMatchedOtherOrder(null);
+      setSuccessVerified(false);
+      
+      // بدء الكاميرا بعد تحميل العنصر بالـ DOM
+      const timer = setTimeout(() => {
+        startScanner();
+        if (inputRef.current) inputRef.current.focus();
+      }, 250);
+
+      return () => {
+        clearTimeout(timer);
+        stopScanner();
+      };
+    } else {
+      stopScanner();
+    }
+
+    return () => {
+      isMountedRef.current = false;
+      stopScanner();
+    };
+  }, [isOpen, order]);
+
+  // مسح صورة تم التقاطها عبر الكاميرا المدمجة بالهاتف
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErrorMessage('');
+    try {
+      const html5Qr = new Html5Qrcode('sanad-qr-temp-reader');
+      const result = await html5Qr.scanFile(file, true);
+      html5Qr.clear();
+      if (result) {
+        handleVerifyBarcode(result);
+      }
+    } catch (err) {
+      setErrorMessage('لم نتمكن من قراءة باركود أو QR واضح من الصورة، تأكد من وضوح الإضاءة وحاول مجدداً');
+      sound.playOrderAlert();
+    }
+  };
+
+  if (!isOpen || !order) return null;
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     handleVerifyBarcode(scannedInput);
   };
 
-  // محاكاة فورية لمسح بوليصة هذا الطلب بنجاح
   const handleSimulateScan = () => {
     setScannedInput(order.id);
     handleVerifyBarcode(order.id);
   };
 
-  // محاكاة لمسح طرد خاطئ للتجربة والتحقق
   const handleSimulateWrongScan = () => {
     const wrong = allOrders.find(o => o.id !== order.id) || { id: 'SND-9999', customerName: 'عميل آخر' };
     setScannedInput(wrong.id);
@@ -163,7 +263,10 @@ export default function OrderScanModal({
 
   return (
     <div className="fixed inset-0 z-[8000] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200" dir="rtl">
-      <div className="w-full max-w-md bg-[#0d1424] border-2 border-cyan-500/60 rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] text-slate-100 relative overflow-hidden flex flex-col max-h-[92vh]">
+      {/* حاوية غير مرئية لمسح الصور الملتقطة */}
+      <div id="sanad-qr-temp-reader" style={{ display: 'none' }}></div>
+
+      <div className="w-full max-w-md bg-[#0d1424] border-2 border-cyan-500/60 rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] text-slate-100 relative overflow-hidden flex flex-col max-h-[94vh]">
         
         {/* شريط الإشعاع العلوي */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-cyan-500 via-[#00d2d3] to-indigo-500"></div>
@@ -200,7 +303,7 @@ export default function OrderScanModal({
           </button>
         </div>
 
-        {/* بطاقة تفاصيل الشحنة المطلوب مسح بوليصتها */}
+        {/* بطاقة تفاصيل الشحنة المستهدفة */}
         <div className="bg-slate-900/90 border border-cyan-900/60 rounded-2xl p-3 mb-3 text-xs space-y-1.5 shadow-inner">
           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
             <div className="flex items-center gap-1.5 font-bold text-slate-300">
@@ -229,41 +332,83 @@ export default function OrderScanModal({
           </div>
         </div>
 
-        {/* نافذة الكاميرا / إطار المسح الضوئي الفعلي */}
-        <div className="relative w-full h-44 bg-black rounded-2xl overflow-hidden border-2 border-cyan-500/40 flex flex-col items-center justify-center mb-3 shadow-inner group">
-          {cameraActive ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">
-              <QrCode className="w-14 h-14 text-cyan-500/70" />
-              <span className="text-[11px] font-bold text-slate-300">جاهز للمسح عبر الكاميرا أو قارئ الليزر</span>
+        {/* نافذة المسح المباشر بالكاميرا */}
+        <div className="relative w-full h-48 bg-black rounded-2xl overflow-hidden border-2 border-cyan-500/40 flex flex-col items-center justify-center mb-3 shadow-inner">
+          {/* عنصر حاوية Html5Qrcode */}
+          <div id="sanad-qr-reader" className="w-full h-full object-cover"></div>
+
+          {/* في حال كانت الكاميرا قيد التشغيل أو فشلت */}
+          {!cameraActive && (
+            <div className="absolute inset-0 bg-[#070c16] flex flex-col items-center justify-center p-4 text-center space-y-2 z-10">
+              {cameraStarting ? (
+                <>
+                  <RefreshCw className="w-8 h-8 text-[#00d2d3] animate-spin" />
+                  <span className="text-xs font-bold text-slate-300">جاري تشغيل الكاميرا والماسح الضوئي...</span>
+                </>
+              ) : (
+                <>
+                  <QrCode className="w-12 h-12 text-slate-500" />
+                  <p className="text-[11px] text-slate-300 max-w-xs leading-relaxed">
+                    {cameraError || 'وجّه الكاميرا أو التقط صورة لبوليصة الشحنة المطبوعة على الكرتون.'}
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={startScanner}
+                      className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-[#00d2d3] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>تشغيل الكاميرا</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>التقاط صورة 📸</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {/* خط المسح الليزري الأحمر/الأخضر المتحرك */}
-          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e] animate-pulse"></div>
-
           {/* زوايا إطار التصويب للمسح */}
-          <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#00d2d3]"></div>
-          <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#00d2d3]"></div>
-          <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00d2d3]"></div>
-          <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#00d2d3]"></div>
+          {cameraActive && (
+            <>
+              <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_15px_#f43f5e] animate-pulse pointer-events-none"></div>
+              <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#00d2d3] pointer-events-none"></div>
+              <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#00d2d3] pointer-events-none"></div>
+              <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00d2d3] pointer-events-none"></div>
+              <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#00d2d3] pointer-events-none"></div>
 
-          {/* زر تبديل الكاميرا */}
-          <button
-            type="button"
-            onClick={cameraActive ? stopCamera : startCamera}
-            className="absolute bottom-2 left-2 bg-slate-900/90 hover:bg-slate-800 text-cyan-400 text-[10px] font-bold px-2.5 py-1 rounded-xl border border-cyan-800 flex items-center gap-1 cursor-pointer"
-          >
-            <Camera className="w-3 h-3" />
-            <span>{cameraActive ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا 📷'}</span>
-          </button>
+              {/* أزرار التحكم بالكاميرا العائمة */}
+              <div className="absolute bottom-2 inset-x-2 flex items-center justify-between pointer-events-auto">
+                <span className="text-[10px] bg-black/75 backdrop-blur-xs text-cyan-300 font-mono px-2 py-0.5 rounded-full border border-cyan-900/60">
+                  🔴 جارٍ المسح المباشر (15 FPS)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[10px] font-bold px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Camera className="w-3 h-3 text-cyan-400" />
+                  <span>التقاط صورة</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* مدخل ملف الكاميرا المخفي لالتقاط صورة مباشرة */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
         </div>
 
         {/* رسائل التنبيه والخطأ الصارمة عند مسح باركود خاطئ */}
