@@ -236,17 +236,25 @@ export default function LiveMap({ branches = [], drivers = [], orders = [], sele
         </div>
       `;
 
-      if (markersRef.current.drivers[d.id]) {
-        markersRef.current.drivers[d.id].setLatLng(d.coords);
-        markersRef.current.drivers[d.id].setIcon(driverIcon);
-        markersRef.current.drivers[d.id].setPopupContent(popupHtml);
-      } else {
-        const marker = L.marker(d.coords, { icon: driverIcon }).addTo(map);
-        marker.on('click', () => {
-          if (onSelectDriver) onSelectDriver(d);
-        });
-        marker.bindPopup(popupHtml);
-        markersRef.current.drivers[d.id] = marker;
+      const safeDriverCoords = (d.coords && Array.isArray(d.coords) && d.coords.length === 2 && !isNaN(d.coords[0]))
+        ? d.coords
+        : [26.4380, 50.1110];
+
+      try {
+        if (markersRef.current.drivers[d.id]) {
+          markersRef.current.drivers[d.id].setLatLng(safeDriverCoords);
+          markersRef.current.drivers[d.id].setIcon(driverIcon);
+          markersRef.current.drivers[d.id].setPopupContent(popupHtml);
+        } else {
+          const marker = L.marker(safeDriverCoords, { icon: driverIcon }).addTo(map);
+          marker.on('click', () => {
+            if (onSelectDriver) onSelectDriver(d);
+          });
+          marker.bindPopup(popupHtml);
+          markersRef.current.drivers[d.id] = marker;
+        }
+      } catch (err) {
+        console.warn('Driver marker error:', err);
       }
     });
 

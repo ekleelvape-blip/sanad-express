@@ -6,7 +6,7 @@ import App from './App.jsx';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null, showDetails: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -15,14 +15,26 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary captured error:', error, errorInfo);
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   handleReload = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.href = window.location.pathname;
+  };
+
+  handleClearCacheAndReset = () => {
+    try {
+      localStorage.removeItem('sanad_user');
+      localStorage.removeItem('sanad_driver_auth');
+      localStorage.removeItem('sanad_driver_id');
+      sessionStorage.clear();
+    } catch (e) {}
+    this.setState({ hasError: false, error: null, errorInfo: null });
     window.location.href = '/';
   };
 
@@ -34,9 +46,9 @@ class ErrorBoundary extends React.Component {
             <div className="w-16 h-16 bg-cyan-500/20 text-[#00d2d3] rounded-2xl flex items-center justify-center mx-auto text-xl font-black border border-cyan-500/30 shadow-[0_0_20px_rgba(0,210,211,0.3)]">
               سند
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-white">سند SANAD — تم تأمين الجلسة بنجاح</h2>
+            <h2 className="text-lg sm:text-xl font-black text-white">سند SANAD — تم تأمين وحماية الجلسة بنجاح</h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              حدث انتقال في الصفحة وتم حفظ بياناتك وحمايتها تلقائياً. يمكنك الاستمرار مباشرة أو تحديث الصفحة.
+              حدث انتقال في الصفحة وتم حفظ بياناتك وحمايتها تلقائياً. يمكنك الاستمرار مباشرة أو تحديث الصفحة أو تفريغ الذاكرة المؤقتة.
             </p>
 
             <div className="pt-2 space-y-2">
@@ -53,9 +65,34 @@ class ErrorBoundary extends React.Component {
                 onClick={this.handleReload}
                 className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs py-2.5 rounded-xl border border-slate-700 cursor-pointer active:scale-95 transition-all"
               >
-                العودة للرئيسية والتحديث 🔄
+                تحديث الصفحة الحالية 🔄
+              </button>
+
+              <button
+                type="button"
+                onClick={this.handleClearCacheAndReset}
+                className="w-full bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-bold text-xs py-2 rounded-xl border border-rose-900/50 cursor-pointer transition-all"
+              >
+                إعادة ضبط الجلسة وتفريغ الذاكرة 🧹
               </button>
             </div>
+
+            {/* تفاصيل الخطأ الفنية إن رغب المستخدم أو الدعم */}
+            <div className="pt-2 border-t border-slate-800/80">
+              <button
+                type="button"
+                onClick={() => this.setState(prev => ({ showDetails: !prev.showDetails }))}
+                className="text-[10px] text-slate-500 hover:text-slate-400 underline cursor-pointer"
+              >
+                {this.state.showDetails ? 'إخفاء التفاصيل التقنية ▲' : 'عرض التفاصيل التقنية 🔍'}
+              </button>
+              {this.state.showDetails && this.state.error && (
+                <div className="mt-2 p-2.5 bg-black/60 rounded-xl border border-slate-800 text-[10px] text-rose-400 font-mono text-left overflow-x-auto max-h-32" dir="ltr">
+                  {this.state.error.toString()}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       );

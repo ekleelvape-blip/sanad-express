@@ -81,6 +81,7 @@ export default function DriverApp({
   const [showAboutModal, setShowAboutModal] = useState(false);           // من نحن
   const [showScanModal, setShowScanModal] = useState(false);             // مسح الباركود (الزر العائم الأوسط)
   const [showNotificationsModal, setShowNotificationsModal] = useState(false); // الإشعارات 🔔
+  const [showMapModal, setShowMapModal] = useState(false);                     // خريطة الملاحة GPS 🗺️
   
   // تنبيه إسناد شحنة جديدة عائم أعلى الشاشة
   const [newAssignedAlertOrder, setNewAssignedAlertOrder] = useState(null);
