@@ -52,7 +52,7 @@ export default function TrackingPortal({ defaultTrackingNumber, onClose }) {
           </div>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight">تتبع شحنتك لحظة بلحظة</h2>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">أدخل رقم الشحنة (مثال: SND-282288) أو رقم جوال المستلم لمعرفة حالة وموقع شحنتك بدقة</p>
+        <p className="text-xs text-slate-400 max-w-md mx-auto">أدخل رقم الشحنة (مثال: SND-1001) أو رقم جوال المستلم لمعرفة حالة وموقع شحنتك بدقة</p>
         <form onSubmit={handleSearch} className="max-w-md mx-auto mt-4 relative">
           <div className="relative flex items-center">
             <input

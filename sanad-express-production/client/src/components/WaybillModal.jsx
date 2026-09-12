@@ -268,7 +268,7 @@ export default function WaybillModal({ order, branch, driver, onClose }) {
                   <svg className="w-full h-16" viewBox="0 0 350 70">{renderBarcodeBars()}</svg>
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono font-black mt-1 px-1 text-black">
-                  <span>{order.id.startsWith('SND-') ? order.id : 'SND-' + (order.id.replace(/\D/g, '') || '282288')}</span>
+                  <span>{order.id.startsWith('SND-') ? order.id : 'SND-' + (order.id.replace(/\D/g, '') || '1001')}</span>
                   <span className="text-[11px] font-bold">{timestampStr}</span>
                 </div>
               </div>

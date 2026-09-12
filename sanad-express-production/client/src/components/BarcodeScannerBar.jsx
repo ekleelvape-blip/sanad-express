@@ -47,7 +47,7 @@ export default function BarcodeScannerBar({ onProcessScan, drivers }) {
             type="text"
             value={barcodeInput}
             onChange={(e) => setBarcodeInput(e.target.value)}
-            placeholder="امسح باركود الشحنة (مثال: SND-282288)..."
+            placeholder="امسح باركود الشحنة (مثال: SND-1001)..."
             className="w-full bg-slate-950 border border-slate-700 text-slate-100 rounded-xl px-4 py-2.5 text-xs focus:border-emerald-500 outline-none font-mono"
             autoFocus
           />

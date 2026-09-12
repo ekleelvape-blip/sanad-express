@@ -287,7 +287,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
               ) : (
                 filteredOrders.map(order => {
                   const assignedDriver = drivers.find(d => d.id === order.assignedDriverId);
-                  const trackingId = order.id.startsWith('SND-') ? order.id : 'SND-' + (order.id.replace(/\D/g, '') || '282288');
+                  const trackingId = order.id.startsWith('SND-') ? order.id : 'SND-' + (order.id.replace(/\D/g, '') || '1001');
                   const neighborhood = order.customerAddress ? order.customerAddress.split('-')[0].trim() : '—';
 
                   return (

@@ -400,11 +400,51 @@ let drivers = [
   }
 ];
 
+
+// =========================================================================
+// محرك الأرقام المتسلسلة الموحد لمنصة سند إكسبريس
+// (Sequential Sequence Engine for Orders, Invoices, Receipts & Waybills)
+// =========================================================================
+
+function getNextOrderSequence() {
+  let maxSeq = 1000;
+  for (const o of orders) {
+    const num = parseInt((o.orderNumber || o.id || '').replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num < 200000 && num > maxSeq) {
+      maxSeq = num;
+    }
+  }
+  return maxSeq + 1;
+}
+
+let invoiceSequenceCounter = 1001;
+function getNextInvoiceNumber() {
+  let maxInv = 1000;
+  for (const inv of fridayInvoices) {
+    const num = parseInt((inv.invoiceNumber || inv.id || '').replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num > maxInv) {
+      maxInv = num;
+    }
+  }
+  return 'INV-' + (maxInv + 1);
+}
+
+let receiptSequenceCounter = 1001;
+function getNextReceiptNumber() {
+  return 'REC-' + (receiptSequenceCounter++);
+}
+
+let transactionSequenceCounter = 1001;
+function getNextTransactionNumber() {
+  return 'TXN-' + (transactionSequenceCounter++);
+}
+
 let orders = [
   // طلب مطابق لصورة سلة / تيار بالكامل
   {
-    id: 'SND-284741285',
-    orderNumber: '284741285',
+    id: 'SND-1001',
+    orderNumber: '1001',
+    sallaOrderNumber: '284741285',
     branchId: 'branch-iklil-dammam',
     customerName: 'yara alshehri',
     customerPhone: '+966550973690',
@@ -461,7 +501,8 @@ let orders = [
 
   // أ) طلبات غير مسندة (جاهزة للتوصيل)
   {
-    id: 'SND-282073',
+    id: 'SND-1002',
+    orderNumber: '1002',
     branchId: 'branch-iklil-jubail',
     customerName: 'فهد الدوسري',
     customerPhone: '0561122334',
@@ -478,7 +519,8 @@ let orders = [
     notes: 'جاهز للاستلام والتوصيل'
   },
   {
-    id: 'SND-282074',
+    id: 'SND-1003',
+    orderNumber: '1003',
     branchId: 'branch-iklil-dammam',
     customerName: 'ريان القحطاني',
     customerPhone: '0553311224',
@@ -495,7 +537,8 @@ let orders = [
     notes: 'جاهز للتوصيل'
   },
   {
-    id: 'SND-282075',
+    id: 'SND-1004',
+    orderNumber: '1004',
     branchId: 'branch-vape-sharq',
     customerName: 'عبدالله المطيري',
     customerPhone: '0504488991',
@@ -512,7 +555,8 @@ let orders = [
     notes: 'الدفع شبكة مدى'
   },
   {
-    id: 'SND-282076',
+    id: 'SND-1005',
+    orderNumber: '1005',
     branchId: 'branch-iklil-main',
     customerName: 'نواف الشمري',
     customerPhone: '0547788112',
@@ -531,7 +575,8 @@ let orders = [
 
   // ب) طلبات مسندة للمناديب (assigned)
   {
-    id: 'SND-282288',
+    id: 'SND-1006',
+    orderNumber: '1006',
     branchId: 'branch-iklil-dammam',
     customerName: 'سلطان العمري',
     customerPhone: '0522222222',
@@ -548,7 +593,8 @@ let orders = [
     notes: 'مسند للمندوب سلطان العتيبي'
   },
   {
-    id: 'SND-283201',
+    id: 'SND-1007',
+    orderNumber: '1007',
     branchId: 'branch-vape-sharq',
     customerName: 'تركي الحربي',
     customerPhone: '0500000000',
@@ -565,7 +611,8 @@ let orders = [
     notes: 'مسند للمندوب فيصل الدوسري'
   },
   {
-    id: 'SND-285152',
+    id: 'SND-1008',
+    orderNumber: '1008',
     branchId: 'branch-iklil-main',
     customerName: 'مشعل الغامدي',
     customerPhone: '0555555555',
@@ -582,7 +629,8 @@ let orders = [
     notes: 'مسند للمندوب محمد الشمري'
   },
   {
-    id: 'SND-280388',
+    id: 'SND-1009',
+    orderNumber: '1009',
     branchId: 'branch-iklil-jubail',
     customerName: 'بدر الخالدي',
     customerPhone: '0566667788',
@@ -601,7 +649,8 @@ let orders = [
 
   // ج) طلبات جاري التوصيل بالميدان (in_transit)
   {
-    id: 'SND-285593',
+    id: 'SND-1010',
+    orderNumber: '1010',
     branchId: 'branch-iklil-dammam',
     customerName: 'سعد المنصور',
     customerPhone: '0522233111',
@@ -618,7 +667,8 @@ let orders = [
     notes: 'المندوب في الطريق إلى العميل'
   },
   {
-    id: 'SND-289265',
+    id: 'SND-1011',
+    orderNumber: '1011',
     branchId: 'branch-vape-sharq',
     customerName: 'إبراهيم الصالح',
     customerPhone: '0502252222',
@@ -635,7 +685,8 @@ let orders = [
     notes: 'جاري التوصيل'
   },
   {
-    id: 'SND-289851',
+    id: 'SND-1012',
+    orderNumber: '1012',
     branchId: 'branch-iklil-main',
     customerName: 'عادل العيسى',
     customerPhone: '0543322119',
@@ -654,7 +705,8 @@ let orders = [
 
   // د) طلبات تم التوصيل بنجاح (delivered)
   {
-    id: 'SND-288044',
+    id: 'SND-1013',
+    orderNumber: '1013',
     branchId: 'branch-iklil-dammam',
     customerName: 'أحمد الزهراني',
     customerPhone: '0555555555',
@@ -672,7 +724,8 @@ let orders = [
     notes: 'تم التسليم واستلام الكاش'
   },
   {
-    id: 'SND-286189',
+    id: 'SND-1014',
+    orderNumber: '1014',
     branchId: 'branch-vape-sharq',
     customerName: 'خالد السبيعي',
     customerPhone: '0540000000',
@@ -690,7 +743,8 @@ let orders = [
     notes: 'تم التسليم'
   },
   {
-    id: 'SND-284110',
+    id: 'SND-1015',
+    orderNumber: '1015',
     branchId: 'branch-iklil-dammam',
     customerName: 'فيصل السالم',
     customerPhone: '0533344556',
@@ -708,7 +762,8 @@ let orders = [
     notes: 'تم التسليم'
   },
   {
-    id: 'SND-284111',
+    id: 'SND-1016',
+    orderNumber: '1016',
     branchId: 'branch-iklil-jubail',
     customerName: 'ماجد الدوسري',
     customerPhone: '0567788990',
@@ -726,7 +781,8 @@ let orders = [
     notes: 'تم التسليم بالشبكة'
   },
   {
-    id: 'SND-284112',
+    id: 'SND-1017',
+    orderNumber: '1017',
     branchId: 'branch-iklil-main',
     customerName: 'عمر العتيبي',
     customerPhone: '0501199228',
@@ -746,7 +802,8 @@ let orders = [
 
   // هـ) طلبات مسترجعة (returned)
   {
-    id: 'SND-287701',
+    id: 'SND-1018',
+    orderNumber: '1018',
     branchId: 'branch-iklil-dammam',
     customerName: 'سامي الشهري',
     customerPhone: '0558811223',
@@ -765,7 +822,8 @@ let orders = [
 
   // و) طلبات ملغية (cancelled)
   {
-    id: 'SND-286188',
+    id: 'SND-1019',
+    orderNumber: '1019',
     branchId: 'branch-vape-sharq',
     customerName: 'ناصر التميمي',
     customerPhone: '0509988117',
@@ -1030,10 +1088,8 @@ app.post('/api/orders', (req, res) => {
   const branch = branches.find(b => b.id === branchId) || branches[0];
 
   // توليد رقم تتبع فريد بنمط سند إكسبريس (SND-XXXXXX)
-  let newId;
-  do {
-    newId = 'SND-' + Math.floor(280000 + Math.random() * 20000);
-  } while (orders.some(o => o.id === newId));
+  const nextSeq = getNextOrderSequence();
+  const newId = 'SND-' + nextSeq;
 
   let orderStatus = 'unassigned';
   let targetDriverId = null;
@@ -1056,6 +1112,8 @@ app.post('/api/orders', (req, res) => {
 
   const newOrder = {
     id: newId,
+    orderNumber: String(nextSeq),
+    trackingNumber: newId,
     branchId: branchId || (branch ? branch.id : 'branch-iklil-dammam'),
     customerName: customerName || 'عميل جديد',
     customerPhone: customerPhone || '0501239988',
@@ -1264,7 +1322,7 @@ function generate7DayInvoices(offsetWeeks = 0) {
   const cycle = get7DayCycleDates(offsetWeeks);
 
   drivers.forEach(driver => {
-    const invoiceId = `INV-7D-${cycle.year}-W${cycle.weekNumber}-${driver.id}`;
+    const cycleKey = `INV-7D-${cycle.year}-W${cycle.weekNumber}-${driver.id}`;
     const delivered = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered');
     const orderCount = delivered.length || driver.completedToday || (offsetWeeks === 0 ? 8 : 12);
     const totalCommissions = orderCount * 20.00;
@@ -1272,9 +1330,28 @@ function generate7DayInvoices(offsetWeeks = 0) {
     const netSettlement = totalCommissions - totalCod;
     const branch = branches.find(b => b.id === driver.branchId) || branches[0];
 
+    // الحفاظ على الرقم المتسلسل الثابت للفاتورة
+    const existingIdx = fridayInvoices.findIndex(inv => inv.cycleKey === cycleKey || inv.id === cycleKey);
+    let invSeq;
+    let invNum;
+    if (existingIdx >= 0 && fridayInvoices[existingIdx].invoiceNumber) {
+      invNum = fridayInvoices[existingIdx].invoiceNumber;
+      invSeq = fridayInvoices[existingIdx].seqNumber || parseInt(invNum.replace(/\D/g, ''), 10);
+    } else {
+      let maxInv = 1000;
+      for (const inv of fridayInvoices) {
+        const num = parseInt((inv.invoiceNumber || '').replace(/\D/g, ''), 10);
+        if (!isNaN(num) && num > maxInv) maxInv = num;
+      }
+      invSeq = maxInv + 1;
+      invNum = `INV-${invSeq}`;
+    }
+
     const invoiceObj = {
-      id: invoiceId,
-      invoiceNumber: `SND-7D-${cycle.year}-W${String(cycle.weekNumber).padStart(2, '0')}-${driver.id.replace(/\D/g, '')}`,
+      id: invNum,
+      cycleKey: cycleKey,
+      seqNumber: invSeq,
+      invoiceNumber: invNum,
       cycleTitle: `فاتورة تسوية دورية (كل 7 أيام) - أسبوع ${cycle.weekNumber}`,
       cycleType: 'every_7_days',
       cycleDays: 7,
@@ -1303,20 +1380,22 @@ function generate7DayInvoices(offsetWeeks = 0) {
       notes: `تم الإصدار التلقائي لدورة الـ 7 أيام (${cycle.startDate} إلى ${cycle.endDate}) - منصة سند إكسبريس`
     };
 
-    const idx = fridayInvoices.findIndex(inv => inv.id === invoiceId);
-    if (idx >= 0) {
-      fridayInvoices[idx] = { ...fridayInvoices[idx], ...invoiceObj };
+    if (existingIdx >= 0) {
+      fridayInvoices[existingIdx] = { ...fridayInvoices[existingIdx], ...invoiceObj };
     } else {
       fridayInvoices.push(invoiceObj);
     }
   });
 
+  // ترتيب الفواتير تصاعدياً حسب رقم الفاتورة المتسلسل
+  fridayInvoices.sort((a, b) => (a.seqNumber || 0) - (b.seqNumber || 0));
+
   return fridayInvoices;
 }
 
 // توليد فواتير دورة الـ 7 أيام الحالية والسابقة فور بدء السيرفر
-generate7DayInvoices(0);
 generate7DayInvoices(1);
+generate7DayInvoices(0);
 
 // مشغل المحرك التلقائي كل 7 أيام (Background 7-Day Autonomous Scheduler)
 // يتحقق باستمرار كل 15 دقيقة ويولد الفواتير دورياً كل 7 أيام بدون أي تدخل بشري
@@ -1404,8 +1483,8 @@ app.post('/api/drivers/:id/settle-zero', (req, res) => {
   driver.walletBalance = 0;
 
   const transaction = {
-    id: 'RCW-' + Math.floor(1000 + Math.random() * 9000),
-    receiptNumber: 'REC-ZERO-' + Math.floor(10000 + Math.random() * 90000),
+    id: getNextTransactionNumber(),
+    receiptNumber: getNextReceiptNumber(),
     driverId: driver.id,
     driverName: driver.name,
     branchId: branchId || driver.branchId,
@@ -1467,8 +1546,8 @@ app.post('/api/settlements/cod', (req, res) => {
   }
 
   const transaction = {
-    id: 'RCW-' + Math.floor(1000 + Math.random() * 9000),
-    receiptNumber: 'REC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
+    id: getNextTransactionNumber(),
+    receiptNumber: getNextReceiptNumber(),
     driverId: driver.id,
     driverName: driver.name,
     branchId: branchId || driver.branchId,
@@ -1744,7 +1823,9 @@ app.get('/api/track/:trackingNumber', (req, res) => {
   const cleanTrack = trackingNumber.trim().toUpperCase();
   
   const order = orders.find(o => 
-    o.id.toUpperCase() === cleanTrack || 
+    o.id.toUpperCase() === cleanTrack ||
+    (o.orderNumber && String(o.orderNumber) === cleanTrack) ||
+    (o.sallaOrderNumber && String(o.sallaOrderNumber) === cleanTrack) || 
     o.id.replace(/\D/g, '') === cleanTrack.replace(/\D/g, '') ||
     ('SND-' + o.id.replace(/\D/g, '')) === cleanTrack ||
     o.customerPhone === cleanTrack
