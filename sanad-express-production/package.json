@@ -1,22 +1,29 @@
 {
-  "name": "sanad-express-platform",
-  "version": "1.0.0",
-  "description": "منصة سند إكسبريس اللوجستية لإدارة وتوزيع الشحنات والمناديب ومزامنة سلة",
-  "main": "server/server.js",
+  "name": "client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "install:all": "npm install --prefix server && npm install --prefix client",
-    "build:client": "npm run build --prefix client",
-    "build": "npm run install:all && npm run build:client",
-    "start": "node server/server.js",
-    "dev:server": "node server/server.js",
-    "dev:client": "npm run dev --prefix client"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
   },
-  "keywords": [
-    "sanad-express",
-    "logistics",
-    "fleet",
-    "salla"
-  ],
-  "author": "SANAD EXPRESS",
-  "license": "ISC"
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "canvas-confetti": "^1.9.4",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.39.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "vite": "^8.2.2"
+  }
 }
