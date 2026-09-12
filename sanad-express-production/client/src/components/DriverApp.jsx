@@ -300,28 +300,38 @@ export default function DriverApp({
     if (!routeMapContainerRef.current) return;
     if (routeMapInstanceRef.current) return;
 
-    const defaultCenter = driverLiveCoords || currentDriver.coords || [26.4380, 50.1110];
+    try {
+      if (routeMapContainerRef.current._leaflet_id) {
+        routeMapContainerRef.current._leaflet_id = null;
+      }
 
-    const map = L.map(routeMapContainerRef.current, {
-      center: defaultCenter,
-      zoom: 14,
-      zoomControl: false,
-      attributionControl: false
-    });
+      const defaultCenter = driverLiveCoords || currentDriver.coords || [26.4380, 50.1110];
 
-    const activeTileLayer = L.tileLayer(MAP_LAYERS[routeMapLayer].url, {
-      maxZoom: MAP_LAYERS[routeMapLayer].maxZoom,
-      subdomains: ['a', 'b', 'c', 'd']
-    }).addTo(map);
+      const map = L.map(routeMapContainerRef.current, {
+        center: defaultCenter,
+        zoom: 14,
+        zoomControl: false,
+        attributionControl: false
+      });
 
-    routeTileLayerRef.current = activeTileLayer;
-    routeMapInstanceRef.current = map;
+      const activeTileLayer = L.tileLayer(MAP_LAYERS[routeMapLayer].url, {
+        maxZoom: MAP_LAYERS[routeMapLayer].maxZoom,
+        subdomains: ['a', 'b', 'c', 'd']
+      }).addTo(map);
+
+      routeTileLayerRef.current = activeTileLayer;
+      routeMapInstanceRef.current = map;
+    } catch (e) {
+      console.warn('DriverApp Leaflet map init warning:', e);
+    }
 
     return () => {
-      if (routeMapInstanceRef.current) {
-        routeMapInstanceRef.current.remove();
-        routeMapInstanceRef.current = null;
-      }
+      try {
+        if (routeMapInstanceRef.current) {
+          routeMapInstanceRef.current.remove();
+          routeMapInstanceRef.current = null;
+        }
+      } catch (e) {}
     };
   }, [activeBottomTab]);
 

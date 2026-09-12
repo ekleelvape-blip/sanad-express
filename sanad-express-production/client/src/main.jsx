@@ -1,4 +1,4 @@
-import React, { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';
@@ -17,26 +17,41 @@ class ErrorBoundary extends React.Component {
     console.error('ErrorBoundary captured error:', error, errorInfo);
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  handleReload = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.href = '/';
+  };
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col items-center justify-center p-6 text-center font-['Tajawal',sans-serif]" dir="rtl">
-          <div className="max-w-md w-full bg-[#0f1523] border border-cyan-900/50 rounded-3xl p-8 shadow-2xl space-y-4">
-            <div className="w-16 h-16 bg-cyan-500/20 text-[#00d2d3] rounded-2xl flex items-center justify-center mx-auto text-2xl font-black border border-cyan-500/30 shadow-[0_0_20px_rgba(0,210,211,0.3)]">
+        <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 text-center font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif]" dir="rtl">
+          <div className="max-w-md w-full bg-[#0f1523]/95 border border-cyan-900/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 backdrop-blur-md">
+            <div className="w-16 h-16 bg-cyan-500/20 text-[#00d2d3] rounded-2xl flex items-center justify-center mx-auto text-xl font-black border border-cyan-500/30 shadow-[0_0_20px_rgba(0,210,211,0.3)]">
               سند
             </div>
-            <h2 className="text-xl font-black text-white">تم استعادة وتأمين الشاشة</h2>
+            <h2 className="text-lg sm:text-xl font-black text-white">سند SANAD — تم تأمين الجلسة بنجاح</h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              حدث انتقال غير متوقع، وتم حفظ وحماية كافة بياناتك تلقائياً. اضغط على الزر للعودة إلى الصفحة الرئيسية.
+              حدث انتقال في الصفحة وتم حفظ بياناتك وحمايتها تلقائياً. يمكنك الاستمرار مباشرة أو تحديث الصفحة.
             </p>
-            <div className="pt-2">
+
+            <div className="pt-2 space-y-2">
               <button
                 type="button"
-                onClick={() => {
-                  this.setState({ hasError: false, error: null });
-                  window.location.href = '/';
-                }}
+                onClick={this.handleReset}
                 className="w-full bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 font-black text-xs py-3 rounded-xl shadow-[0_0_20px_rgba(0,210,211,0.35)] cursor-pointer active:scale-95 transition-all"
+              >
+                الاستمرار فوراً وإعادة الفتح ⚡
+              </button>
+
+              <button
+                type="button"
+                onClick={this.handleReload}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs py-2.5 rounded-xl border border-slate-700 cursor-pointer active:scale-95 transition-all"
               >
                 العودة للرئيسية والتحديث 🔄
               </button>
@@ -50,9 +65,7 @@ class ErrorBoundary extends React.Component {
 }
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
 );

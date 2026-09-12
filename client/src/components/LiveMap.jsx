@@ -49,29 +49,41 @@ export default function LiveMap({ branches = [], drivers = [], orders = [], sele
 
   // تهيئة الخريطة مرة واحدة
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
 
-    // المركز الافتراضي: الدمام والمنطقة الشرقية (مركز العمليات اللوجستية الرئيسي)
-    const initialCenter = [26.4380, 50.1110];
+    try {
+      if (mapContainerRef.current._leaflet_id) {
+        mapContainerRef.current._leaflet_id = null;
+      }
 
-    const map = L.map(mapContainerRef.current, {
-      center: initialCenter,
-      zoom: 12,
-      zoomControl: true,
-      attributionControl: false
-    });
+      const initialCenter = [26.4380, 50.1110];
 
-    const activeTileLayer = L.tileLayer(MAP_LAYERS[mapLayer].url, {
-      maxZoom: MAP_LAYERS[mapLayer].maxZoom,
-      subdomains: ['a', 'b', 'c', 'd']
-    }).addTo(map);
+      const map = L.map(mapContainerRef.current, {
+        center: initialCenter,
+        zoom: 12,
+        zoomControl: true,
+        attributionControl: false
+      });
 
-    tileLayerRef.current = activeTileLayer;
-    mapInstanceRef.current = map;
+      const activeTileLayer = L.tileLayer(MAP_LAYERS[mapLayer].url, {
+        maxZoom: MAP_LAYERS[mapLayer].maxZoom,
+        subdomains: ['a', 'b', 'c', 'd']
+      }).addTo(map);
+
+      tileLayerRef.current = activeTileLayer;
+      mapInstanceRef.current = map;
+    } catch (e) {
+      console.warn('LiveMap map init warning:', e);
+    }
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      try {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      } catch (e) {}
     };
   }, []);
 
