@@ -774,7 +774,7 @@ export default function DataExportCenter({ activeTab, onSelectTab, drivers = [],
                     />
                   </div>
                   <div className="space-y-0.5">
-                    <div className="font-black text-slate-950 text-base">سَنَد إكسبريس للخدمات اللوجستية</div>
+                    <div className="font-black text-slate-950 text-base">سند SANAD</div>
                     <div className="text-xs text-slate-600 font-bold">إدارة العمليات والترحيل اللوجستي</div>
                     <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-800 font-black px-2.5 py-0.5 rounded-full text-[10px] mt-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>

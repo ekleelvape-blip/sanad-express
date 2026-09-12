@@ -237,9 +237,7 @@ export default function WaybillModal({ order, branch, onClose }) {
                 <div className="flex items-center gap-3">
                   <img src="/sanad-express-logo.jpg?v=3" alt="سند SANAD" className="w-14 h-14 rounded-xl object-cover border border-black shadow-sm" />
                   <div>
-                    <h1 className="font-black text-2xl text-black leading-tight tracking-tight">سند SANAD اللوجستية</h1>
-                    <div className="text-xs font-mono font-bold text-slate-800 tracking-wider">SANAD LOGISTICS PLATFORM</div>
-                    <div className="text-[11px] text-slate-600 font-bold mt-0.5">بوليصة شحن وتوصيل معتمدة — نقل سريع ومباشر</div>
+                    <h1 className="font-black text-3xl text-black leading-tight tracking-tight">سند SANAD</h1>
                   </div>
                 </div>
 
@@ -410,7 +408,7 @@ export default function WaybillModal({ order, branch, onClose }) {
 
               {/* تذييل الصفحة */}
               <div className="text-center text-[10px] text-slate-600 font-bold mt-3 pt-2 border-t border-black flex items-center justify-between">
-                <span>سند SANAD — منصة الخدمات اللوجستية الذكية وإدارة الأساطيل</span>
+                <span>سند SANAD</span>
                 <span className="font-mono">www.sanad.sa</span>
               </div>
             </div>
@@ -423,10 +421,9 @@ export default function WaybillModal({ order, branch, onClose }) {
                 {/* ترويسة البوليصة: الشعار والكود D963 وشعار سند SANAD */}
                 <div className="flex items-center justify-between pb-3 border-b-2 border-black">
                   <div className="flex items-center gap-2">
-                    <img src="/sanad-express-logo.jpg?v=3" alt="سند SANAD" className="w-10 h-10 rounded-lg object-cover border border-black" />
+                    <img src="/sanad-express-logo.jpg?v=3" alt="سند SANAD" className="w-11 h-11 rounded-lg object-cover border border-black" />
                     <div className="text-right">
-                      <div className="font-black text-base text-black tracking-tight leading-none">سند SANAD</div>
-                      <div className="font-mono font-bold text-[9px] text-black tracking-wider mt-0.5">سَنَد</div>
+                      <div className="font-black text-xl text-black tracking-tight leading-none">سند SANAD</div>
                     </div>
                   </div>
 

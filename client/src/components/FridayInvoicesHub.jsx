@@ -419,9 +419,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], onClose
                 <div className="flex items-center gap-3">
                   <img src="/sanad-express-logo.jpg?v=3" alt="سَنَد" className="w-14 h-14 rounded-2xl object-cover border border-slate-300 shadow-sm" />
                   <div>
-                    <h1 className="font-black text-xl text-slate-900">سند SANAD اللوجستية</h1>
-                    <div className="text-xs text-slate-500 font-mono font-bold tracking-wider">سَنَد LOGISTICS</div>
-                    <div className="text-[11px] text-cyan-800 font-bold mt-0.5">نظام المحاسبة والتسوية الدورية (كل 7 أيام تلقائياً)</div>
+                    <h1 className="font-black text-2xl text-slate-900">سند SANAD</h1>
                   </div>
                 </div>
 

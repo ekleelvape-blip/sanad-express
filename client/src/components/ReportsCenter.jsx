@@ -188,8 +188,7 @@ export default function ReportsCenter({ activeTab: externalTab, onSelectTab, dri
             <div class="logo-box">
               <img src="/sanad-express-logo.jpg?v=3" class="logo-img" alt="سند SANAD" />
               <div>
-                <h1 style="font-size: 18px; font-weight: 900;">سند SANAD اللوجستية</h1>
-                <div style="font-size: 10px; font-weight: bold; color: #475569;">SANAD LOGISTICS PLATFORM</div>
+                <h1 style="font-size: 22px; font-weight: 900;">سند SANAD</h1>
                 <div style="font-size: 11px; font-weight: bold; color: #0284c7;">${reportTitle}</div>
               </div>
             </div>
