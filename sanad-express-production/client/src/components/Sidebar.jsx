@@ -128,11 +128,11 @@ export default function Sidebar({
           </div>
           {isOpen && (
             <div className="text-right truncate">
-              <div className="font-black text-sm text-white tracking-tight leading-none flex items-center gap-1.5">
-                <span>سَنَد إكسبريس</span>
+              <div className="font-black text-base text-white tracking-tight leading-none flex items-center gap-1.5">
+                <span>سند</span>
               </div>
-              <div className="font-mono font-bold text-[9px] text-[#00d2d3] tracking-widest mt-1">
-                سَنَد
+              <div className="font-mono font-bold text-[10px] text-[#00d2d3] tracking-widest mt-1">
+                SANAD
               </div>
             </div>
           )}

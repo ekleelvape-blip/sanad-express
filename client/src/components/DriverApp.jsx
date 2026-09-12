@@ -1767,7 +1767,7 @@ export default function DriverApp({
               <div className="flex items-center gap-3">
                 <img src="/sanad-express-logo.jpg?v=3" alt="سند" className="w-12 h-12 rounded-xl object-cover border" />
                 <div>
-                  <div className="font-black text-slate-900 dark:text-white">سَنَد إكسبريس</div>
+                  <div className="font-black text-slate-900 dark:text-white">سند SANAD</div>
                   <div className="font-mono text-[10px] text-cyan-600">سَنَد LOGISTICS</div>
                 </div>
               </div>

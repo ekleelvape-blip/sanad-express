@@ -236,13 +236,13 @@ export default function WaybillModal({ order, branch, driver, onClose }) {
         <div className="p-4 sm:p-6 bg-slate-950 flex flex-col items-center justify-center overflow-x-auto">
           <div id="thermal-print-area" className="w-[360px] min-h-[540px] bg-white text-black p-5 border-2 border-black rounded-none shadow-2xl flex flex-col justify-between text-right box-border select-none" dir="rtl" style={{ width: '380px', minHeight: '560px' }}>
             <div>
-              {/* ترويسة البوليصة: الشعار والكود D963 وشعار سَنَد إكسبريس */}
+              {/* ترويسة البوليصة: الشعار والكود D963 وشعار سند SANAD */}
               <div className="flex items-center justify-between pb-3 border-b-2 border-black">
                 {/* الشعار على اليمين */}
                 <div className="flex items-center gap-2">
                   <img src="/sanad-express-logo.jpg?v=3" alt="سَنَد" className="w-10 h-10 rounded-lg object-cover border border-black" />
                   <div className="text-right">
-                    <div className="font-black text-base text-black tracking-tight leading-none">سَنَد إكسبريس</div>
+                    <div className="font-black text-base text-black tracking-tight leading-none">سند SANAD</div>
                     <div className="font-mono font-bold text-[9px] text-black tracking-wider mt-0.5">سَنَد</div>
                   </div>
                 </div>
@@ -318,7 +318,7 @@ export default function WaybillModal({ order, branch, driver, onClose }) {
             {/* التذييل: سَنَد - مندوب توصيل */}
             <div className="border-t-2 border-black pt-2 mt-2 text-center text-xs font-bold text-black flex items-center justify-center gap-1.5">
               <span>📦</span>
-              <span>سَنَد إكسبريس — مندوب توصيل</span>
+              <span>سند SANAD — مندوب توصيل</span>
             </div>
           </div>
         </div>

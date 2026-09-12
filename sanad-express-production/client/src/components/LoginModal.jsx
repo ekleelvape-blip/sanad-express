@@ -46,13 +46,13 @@ export default function LoginModal({ branches = [], onLoginSuccess }) {
         <div className="text-center mb-6">
           <img 
             src="/sanad-express-logo.jpg?v=3" 
-            alt="سَنَد" 
+            alt="سند" 
             className="w-20 h-20 rounded-3xl object-cover mx-auto mb-3 shadow-[0_0_25px_rgba(0,210,211,0.35)] border-2 border-cyan-500/40" 
           />
           <h2 className="text-3xl font-black text-slate-100 tracking-tight flex items-center justify-center gap-2">
-            <span>سَنَد</span>
+            <span>سند</span>
           </h2>
-          <div className="text-[10px] font-mono text-[#00d2d3] font-bold tracking-widest uppercase mt-0.5">SANAD PLATFORM</div>
+          <div className="text-[11px] font-mono text-[#00d2d3] font-bold tracking-widest uppercase mt-0.5">SANAD</div>
           <p className="text-xs text-slate-400 mt-2">تسجيل الدخول للمنظومة اللوجستية (خصوصية تامة لكل فرع)</p>
         </div>
 
@@ -99,7 +99,7 @@ export default function LoginModal({ branches = [], onLoginSuccess }) {
             disabled={loading}
             className="w-full py-3 bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-cyan-900/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            <span>{loading ? 'جاري التحقق والدخول...' : 'دخول إلى منصة سَنَد'}</span>
+            <span>{loading ? 'جاري التحقق والدخول...' : 'دخول إلى منصة سند'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
@@ -169,7 +169,7 @@ export default function LoginModal({ branches = [], onLoginSuccess }) {
         </div>
 
         <div className="mt-4 text-center text-[10px] text-slate-500">
-          منظومة سَنَد اللوجستية • خصوصية وعزل كامل لبيانات كل فرع 🔒
+          منظومة سند اللوجستية • خصوصية وعزل كامل لبيانات كل فرع 🔒
         </div>
       </div>
     </div>
