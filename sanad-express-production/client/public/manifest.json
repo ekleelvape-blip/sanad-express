@@ -1,7 +1,7 @@
 {
-  "name": "سند المندوب | SANAD EXPRESS DRIVER",
+  "name": "سند المندوب | سَنَد DRIVER",
   "short_name": "سند المندوب",
-  "description": "تطبيق المندوب الميداني لإدارة وتوصيل الشحنات لأسطول سند إكسبريس",
+  "description": "تطبيق المندوب الميداني لإدارة وتوصيل الشحنات لأسطول سَنَد",
   "start_url": "/driver",
   "scope": "/",
   "display": "standalone",
