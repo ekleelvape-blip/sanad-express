@@ -185,6 +185,32 @@ class SoundFX {
       osc.stop(now + 0.08);
     } catch (e) {}
   }
+
+  // صوت التنبيه أو رفض مسح الباركود (طنين تحذيري)
+  playOrderAlert() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      const now = this.ctx.currentTime;
+      [220, 180].forEach((f, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(f, now + i * 0.12);
+        gain.gain.setValueAtTime(0.25, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + i * 0.12);
+        osc.stop(now + i * 0.12 + 0.18);
+      });
+    } catch (e) {}
+  }
+
+  playError() {
+    this.playOrderAlert();
+  }
 }
 
 export const sound = new SoundFX();

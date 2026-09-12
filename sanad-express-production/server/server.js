@@ -1340,6 +1340,8 @@ app.post('/api/orders/:id/status', (req, res) => {
   if (returnReason) order.returnReason = returnReason;
   if (status === 'in_transit') {
     order.inTransitAt = new Date().toISOString();
+    order.scannedAtPickup = new Date().toISOString();
+    order.scanVerified = true;
   }
   if (returnStatus === 'return_picked_up') {
     order.returnPickedUpAt = new Date().toISOString();
@@ -1357,6 +1359,8 @@ app.post('/api/orders/:id/status', (req, res) => {
 
   if (status === 'delivered') {
     order.deliveredAt = new Date().toISOString();
+    order.scannedAtDelivery = new Date().toISOString();
+    order.scanDeliveryVerified = true;
     if (paymentMethod) order.paymentMethod = paymentMethod;
 
     if (driver) {

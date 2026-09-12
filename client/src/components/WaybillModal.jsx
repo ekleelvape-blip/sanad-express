@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { generateBarcodeSVG, generateQrSVG } from '../utils/barcode';
 import { X, Printer, Check, FileText, Tag } from 'lucide-react';
 
 export default function WaybillModal({ order, branch, onClose }) {
@@ -252,8 +253,14 @@ export default function WaybillModal({ order, branch, onClose }) {
 
               {/* الباركود الرمزي العريض ورقم الشحنة */}
               <div className="py-4 border-b-2 border-black flex flex-col items-center justify-center bg-slate-50/70 rounded-xl my-3 p-3">
-                <div className="w-full max-w-[500px] flex justify-center overflow-hidden">
-                  <svg className="w-full h-16" viewBox="0 0 350 70">{renderBarcodeBars(70, 1.8)}</svg>
+                <div className="w-full max-w-[540px] flex items-center justify-between gap-4 bg-white p-2 border border-black rounded-xl">
+                  <div className="flex-1 flex flex-col items-center">
+                    <div className="w-full flex justify-center overflow-hidden" dangerouslySetInnerHTML={{ __html: generateBarcodeSVG(trackingId, 65, 2) }} />
+                  </div>
+                  <div className="shrink-0 p-1 border border-black rounded-lg flex flex-col items-center justify-center bg-white">
+                    <div dangerouslySetInnerHTML={{ __html: generateQrSVG(trackingId, 75) }} />
+                    <span className="text-[9px] font-mono font-bold mt-0.5">مسح QR</span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between w-full max-w-[500px] text-sm font-mono font-black mt-2 px-2 text-black">
                   <span>رقم التتبع: {trackingId}</span>
@@ -443,8 +450,12 @@ export default function WaybillModal({ order, branch, onClose }) {
 
                 {/* الباركود الرمزي العريض */}
                 <div className="pt-3 pb-2 text-center">
-                  <div className="w-full flex justify-center overflow-hidden">
-                    <svg className="w-full h-16" viewBox="0 0 350 70">{renderBarcodeBars(70, 1.8)}</svg>
+                  <div className="w-full flex items-center justify-between gap-2 px-1">
+                    <div className="flex-1 overflow-hidden" dangerouslySetInnerHTML={{ __html: generateBarcodeSVG(trackingId, 55, 1.7) }} />
+                    <div className="shrink-0 border border-black p-0.5 rounded flex flex-col items-center bg-white">
+                      <div dangerouslySetInnerHTML={{ __html: generateQrSVG(trackingId, 60) }} />
+                      <span className="text-[8px] font-mono font-bold leading-none mt-0.5">QR</span>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-xs font-mono font-black mt-1 px-1 text-black">
                     <span>{trackingId}</span>
