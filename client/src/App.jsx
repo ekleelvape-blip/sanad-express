@@ -41,12 +41,36 @@ export default function App() {
   const [routeMode, setRouteMode] = useState(getRouteMode);
 
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (event) => {
       setRouteMode(getRouteMode());
+      try {
+        if (event.state && event.state.tab) {
+          setActiveTab(event.state.tab);
+        } else {
+          const params = new URLSearchParams(window.location.search);
+          const tabParam = params.get('tab');
+          if (tabParam) {
+            setActiveTab(tabParam);
+          } else {
+            setActiveTab('dashboard');
+          }
+        }
+      } catch (e) {}
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    try {
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', newTab);
+        window.history.pushState({ tab: newTab }, '', url.toString());
+      }
+    } catch (e) {}
+  };
 
   const navigateTo = (mode, pathStr) => {
     if (typeof window !== 'undefined') {
@@ -66,7 +90,11 @@ export default function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('track=')) return 'tracking';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('track')) return 'tracking';
+      if (params.get('tab')) return params.get('tab');
+    }
     return 'dashboard';
   });
   const [trackingInitialNum, setTrackingInitialNum] = useState(() => {
@@ -343,7 +371,7 @@ export default function App() {
       {/* القائمة الجانبية المعتمدة لسَنَد */}
       <Sidebar
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleTabChange}
         selectedBranch={selectedBranch}
         branches={branches}
         onSelectBranch={setSelectedBranch}
@@ -464,13 +492,13 @@ export default function App() {
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
-              onSelectTab={setActiveTab}
+              onSelectTab={handleTabChange}
               onSelectDriver={(d) => { setCurrentDriverId(d.id); setActiveTab('driver_app'); }}
             />
           )}
 
           {['orders', 'delivery_group', 'delivery_ready', 'delivery_assigned', 'delivery_intransit', 'delivery_delivered', 'cancelled'].includes(activeTab) && (
-            <OrdersTableView activeTab={activeTab} onSelectTab={setActiveTab}
+            <OrdersTableView activeTab={activeTab} onSelectTab={handleTabChange}
               orders={orders}
               drivers={drivers}
               branches={branches}
@@ -509,7 +537,7 @@ export default function App() {
           {['managers', 'permissions', 'driver_inventory', 'ratings', 'locations'].includes(activeTab) && (
             <UsersManagementHub
               activeTab={activeTab}
-              onSelectTab={setActiveTab}
+              onSelectTab={handleTabChange}
               branches={branches}
               drivers={drivers}
             />
@@ -527,7 +555,7 @@ export default function App() {
           {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods'].includes(activeTab) && (
             <ReportsCenter
               activeTab={activeTab}
-              onSelectTab={setActiveTab}
+              onSelectTab={handleTabChange}
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
@@ -537,7 +565,7 @@ export default function App() {
           {['export_group', 'export_driver_orders', 'export_warehouse_orders', 'export_inventory', 'export_reports'].includes(activeTab) && (
             <DataExportCenter
               activeTab={activeTab}
-              onSelectTab={setActiveTab}
+              onSelectTab={handleTabChange}
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
