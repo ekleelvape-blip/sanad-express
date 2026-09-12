@@ -3,7 +3,7 @@ import { X, Printer, Check, FileText, Tag } from 'lucide-react';
 
 export default function WaybillModal({ order, branch, onClose }) {
   const [copies, setCopies] = useState(1);
-  const [paperSize, setPaperSize] = useState('a4'); // 'a4' | 'thermal'
+  const [paperSize, setPaperSize] = useState('thermal'); // الافتراضي: ملصق حراري 4x6 بوصة // 'a4' | 'thermal'
 
   if (!order) return null;
 
@@ -100,11 +100,11 @@ export default function WaybillModal({ order, branch, onClose }) {
          .waybill-page { width: 100%; page-break-after: always; display: flex; justify-content: center; }
          .waybill-page:last-child { page-break-after: auto; }
          #waybill-a4-print-area { width: 194mm !important; margin: 0 auto !important; padding: 6mm !important; box-sizing: border-box !important; }`
-      : `@page { size: 100mm 150mm; margin: 0; } 
-         html, body { width: 100mm; background: #fff; color: #000; margin: 0; padding: 0; }
-         .waybill-page { width: 100mm; height: 150mm; page-break-after: always; display: flex; justify-content: center; align-items: center; }
+      : `@page { size: 4in 6in; margin: 0; } 
+         html, body { width: 4in; height: 6in; background: #fff; color: #000; margin: 0; padding: 0; overflow: hidden; }
+         .waybill-page { width: 4in; height: 6in; max-height: 6in; page-break-after: always; page-break-inside: avoid; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; box-sizing: border-box; }
          .waybill-page:last-child { page-break-after: auto; }
-         #thermal-print-area { width: 96mm !important; height: 144mm !important; margin: 0 auto !important; padding: 3mm !important; border: 2px solid #000 !important; box-sizing: border-box !important; }`;
+         #thermal-print-area { width: 98mm !important; max-width: 98mm !important; height: 148mm !important; max-height: 148mm !important; margin: 0 auto !important; padding: 3.5mm !important; border: 2px solid #000 !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; overflow: hidden !important; background: #fff !important; color: #000 !important; }`;
 
     const doc = iframe.contentWindow.document;
     doc.open();
@@ -164,6 +164,19 @@ export default function WaybillModal({ order, branch, onClose }) {
             <div className="flex items-center bg-slate-900 border border-slate-700 p-1 rounded-xl text-xs font-bold">
               <button
                 type="button"
+                onClick={() => setPaperSize('thermal')}
+                className={`flex items-center gap-1.5 px-3.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  paperSize === 'thermal'
+                    ? 'bg-purple-600 text-white shadow-md font-black'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>ملصق 4×6 بوصة (حراري) 🏷️</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setPaperSize('a4')}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
                   paperSize === 'a4'
@@ -173,19 +186,6 @@ export default function WaybillModal({ order, branch, onClose }) {
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>مقاس A4 📄</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaperSize('thermal')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  paperSize === 'thermal'
-                    ? 'bg-purple-600 text-white shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Tag className="w-3.5 h-3.5" />
-                <span>حراري 4×6 🏷️</span>
               </button>
             </div>
 
@@ -215,7 +215,7 @@ export default function WaybillModal({ order, branch, onClose }) {
               className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-[#00d2d3] hover:from-cyan-400 hover:to-cyan-300 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-cyan-900/30 transition-all cursor-pointer active:scale-95"
             >
               <Printer className="w-4 h-4" />
-              <span>طباعة البوليصة {copies > 1 ? `(${copies})` : ''}</span>
+              <span>{paperSize === "thermal" ? "طباعة ملصق 4×6 بوصة" : "طباعة بوليصة A4"} {copies > 1 ? `(${copies})` : ""}</span>
             </button>
           </div>
         </div>
