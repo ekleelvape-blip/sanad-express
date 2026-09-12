@@ -537,10 +537,17 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
               <div className="bg-white dark:bg-[#101726] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-3">
                 <div>
                   <div className="text-slate-400 text-[11px] font-bold">مصدر الطلب :</div>
-                  <div className="font-bold text-slate-800 dark:text-white mt-0.5 flex items-center gap-1.5">
-                    <ShoppingBag className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{order.orderSource || 'سلة (Salla)'}</span>
-                  </div>
+                  {order.orderSource?.includes('يدوي') || (!order.sallaOrderNumber && order.orderSource !== 'سلة (Salla)') ? (
+                    <div className="font-bold text-purple-400 mt-1 flex items-center gap-1.5 bg-purple-950/40 border border-purple-800/60 px-2.5 py-1 rounded-xl w-fit">
+                      <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+                      <span>يدوي (Manual)</span>
+                    </div>
+                  ) : (
+                    <div className="font-bold text-cyan-400 mt-1 flex items-center gap-1.5 bg-cyan-950/40 border border-cyan-800/60 px-2.5 py-1 rounded-xl w-fit">
+                      <ShoppingBag className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>سلة (Salla)</span>
+                    </div>
+                  )}
                 </div>
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="text-slate-400 text-[11px] font-bold">ملاحظات الطلب :</div>

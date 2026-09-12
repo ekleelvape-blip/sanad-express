@@ -19,6 +19,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
   };
 
   const [statusFilter, setStatusFilter] = useState(getInitialFilter());
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState(null);
   const [selectedWaybillOrder, setSelectedWaybillOrder] = useState(null);
@@ -53,12 +54,15 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
     paymentMethod: 'cash',
     branchId: currentUser?.role === 'branch' ? currentUser.branchId : (selectedBranch !== 'all' ? selectedBranch : (branches?.[0]?.id || 'branch-iklil-dammam')),
     assignedDriverId: '',
-    notes: ''
+    notes: '',
+    orderSource: 'يدوي'
   });
 
   // تصفية الطلبات: كل تصنيف يخص نفسه بدقة 100%
   const filteredOrders = orders.filter(o => {
     const matchBranch = selectedBranch === 'all' || o.branchId === selectedBranch;
+    const isManualOrder = o.orderSource?.includes('يدوي') || (!o.sallaOrderNumber && o.orderSource !== 'سلة (Salla)');
+    const matchSource = sourceFilter === 'all' || (sourceFilter === 'manual' && isManualOrder) || (sourceFilter === 'salla' && !isManualOrder);
 
     let matchStatus = true;
     if (statusFilter === 'unassigned') matchStatus = o.status === 'unassigned';
@@ -75,7 +79,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
       matchSearch = tid.includes(q) || (o.customerName && o.customerName.toLowerCase().includes(q)) || (o.customerPhone && o.customerPhone.includes(q));
     }
 
-    return matchBranch && matchStatus && matchSearch;
+    return matchBranch && matchStatus && matchSearch && matchSource;
   });
 
   // إحصائيات التبويبات
@@ -120,6 +124,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
         assignedDriverId: newOrderData.assignedDriverId || null,
         driverCommission: 20,
         notes: (newOrderData.notes || '').trim(),
+        orderSource: newOrderData.orderSource === 'سلة' ? 'سلة (Salla)' : 'يدوي (Manual)',
         items: [{ name: 'شحنة منتجات سَنَد', qty: 1, price: Number(newOrderData.totalAmount) }]
       };
 
@@ -312,14 +317,27 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
                       title="انقر لعرض تفاصيل الطلب والإجراءات السريعة"
                     >
                       <td className="py-3.5 px-4">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setSelectedOrderForDetails(order); }}
-                          className="font-mono font-bold text-slate-100 hover:text-cyan-400 hover:underline cursor-pointer text-xs text-right block"
-                          title="انقر لفتح تفاصيل الطلب"
-                        >
-                          {trackingId}
-                        </button>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSelectedOrderForDetails(order); }}
+                            className="font-mono font-bold text-slate-100 hover:text-cyan-400 hover:underline cursor-pointer text-xs text-right block"
+                            title="انقر لفتح تفاصيل الطلب"
+                          >
+                            {trackingId}
+                          </button>
+                          {order.orderSource?.includes('يدوي') || (!order.sallaOrderNumber && order.orderSource !== 'سلة (Salla)') ? (
+                            <span className="inline-flex items-center gap-1 text-[9px] bg-purple-950/90 text-purple-300 border border-purple-700/80 px-1.5 py-0.5 rounded font-bold">
+                              <Edit3 className="w-2.5 h-2.5 text-purple-400" />
+                              يدوي
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[9px] bg-cyan-950/90 text-cyan-300 border border-cyan-700/80 px-1.5 py-0.5 rounded font-bold">
+                              <ShoppingBag className="w-2.5 h-2.5 text-cyan-400" />
+                              سلة
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -507,6 +525,41 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
                     ))}
                   </select>
                 )}
+              </div>
+
+                            {/* اختيار مصدر الطلب: يدوي أو سلة */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#00d2d3]" />
+                  <span>مصدر الطلب *:</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setNewOrderData({ ...newOrderData, orderSource: 'يدوي' })}
+                    className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs transition-all cursor-pointer ${
+                      newOrderData.orderSource === 'يدوي'
+                        ? 'bg-purple-950/70 border-purple-500 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.35)] ring-1 ring-purple-500'
+                        : 'bg-[#070b13] border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+                    <span>طلب يدوي (Manual)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewOrderData({ ...newOrderData, orderSource: 'سلة' })}
+                    className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs transition-all cursor-pointer ${
+                      newOrderData.orderSource === 'سلة'
+                        ? 'bg-cyan-950/70 border-cyan-500 text-cyan-200 shadow-[0_0_15px_rgba(0,210,211,0.35)] ring-1 ring-cyan-500'
+                        : 'bg-[#070b13] border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>متجر سلة (Salla)</span>
+                  </button>
+                </div>
               </div>
 
               {/* 2. اسم العميل ورقم الجوال */}
