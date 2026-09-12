@@ -475,6 +475,7 @@ export default function App() {
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
+              currentUser={currentUser}
               onAssignOrder={handleAssignOrder}
               onCreateOrder={handleCreateOrder}
               onRefresh={fetchData}

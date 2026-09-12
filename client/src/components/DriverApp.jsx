@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import {
-  Home, Route, ScanLine, Package, User, Calendar, Wallet, Settings,
+  Home, Store, Route, ScanLine, Package, User, Calendar, Wallet, Settings,
   CheckSquare, TrendingUp, Lock, Star, Info, LogOut, Bell, Sliders,
   MapPin, Map, Phone, MessageSquare, ExternalLink, Clock, ShieldCheck,
   CheckCircle2, X, ChevronLeft, ChevronRight, Search, RefreshCw, Box,

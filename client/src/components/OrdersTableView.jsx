@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Lock, Search, Plus, Eye, UserPlus, Printer, MoreVertical, CheckCircle2, RotateCcw, 
   XCircle, Bell, ArrowLeft, Filter, X, MapPin, DollarSign, User, Phone, 
-  Store, CreditCard, Banknote, ShieldCheck, Check, Sparkles 
+  Store, CreditCard, Banknote, ShieldCheck, Check, Sparkles, Edit3, ShoppingBag 
 } from 'lucide-react';
 import OrderDetailsModal from './OrderDetailsModal';
 import WaybillModal from './WaybillModal';
 
-export default function OrdersTableView({ activeTab, onSelectTab, orders, drivers = [], branches = [], selectedBranch, onAssignOrder, onCreateOrder, onRefresh, currentUser }) {
+export default function OrdersTableView({ activeTab, onSelectTab, orders = [], drivers = [], branches = [], selectedBranch = "all", onAssignOrder, onCreateOrder, onRefresh, currentUser = null }) {
   // ضبط الفلتر الافتراضي بناءً على التبويب المفتوح من القائمة الجانبية
   const getInitialFilter = () => {
     if (activeTab === 'delivery_ready') return 'unassigned';
@@ -31,7 +31,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
   const nextSequentialOrderNumber = useMemo(() => {
     let maxSeq = 1000;
     for (const o of orders) {
-      const num = parseInt((o.orderNumber || o.id || '').replace(/\D/g, ''), 10);
+      const num = parseInt(String(o?.orderNumber || o?.id || '').replace(/\D/g, ''), 10);
       if (!isNaN(num) && num < 200000 && num > maxSeq) {
         maxSeq = num;
       }
@@ -75,8 +75,9 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
     let matchSearch = true;
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
-      const tid = (o.id.startsWith('SND-') ? o.id : 'SND-' + (o.id.replace(/\D/g, '') || '282288')).toLowerCase();
-      matchSearch = tid.includes(q) || (o.customerName && o.customerName.toLowerCase().includes(q)) || (o.customerPhone && o.customerPhone.includes(q));
+      const safeId = String(o?.id || '');
+      const tid = (safeId.startsWith('SND-') ? safeId : ('SND-' + (safeId.replace(/\D/g, '') || '1001'))).toLowerCase();
+      matchSearch = tid.includes(q) || (o?.customerName && String(o.customerName).toLowerCase().includes(q)) || (o?.customerPhone && String(o.customerPhone).includes(q));
     }
 
     return matchBranch && matchStatus && matchSearch && matchSource;
@@ -306,7 +307,8 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
               ) : (
                 filteredOrders.map(order => {
                   const assignedDriver = drivers.find(d => d.id === order.assignedDriverId);
-                  const trackingId = order.id.startsWith('SND-') ? order.id : 'SND-' + (order.id.replace(/\D/g, '') || '1001');
+                  const safeOrderId = String(order?.id || '');
+                  const trackingId = safeOrderId.startsWith('SND-') ? safeOrderId : ('SND-' + (safeOrderId.replace(/\D/g, '') || '1001'));
                   const neighborhood = order.customerAddress ? order.customerAddress.split('-')[0].trim() : '—';
 
                   return (
