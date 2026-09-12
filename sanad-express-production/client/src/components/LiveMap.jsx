@@ -9,8 +9,8 @@ export default function LiveMap({ branches = [], drivers = [], orders = [], sele
   const tileLayerRef = useRef(null);
   const markersRef = useRef({ drivers: {}, branches: {}, orders: {}, routes: [] });
 
-  // طبقة الخريطة الحالية: 'streets' | 'satellite' | 'dark'
-  const [mapLayer, setMapLayer] = useState('streets');
+  // طبقة الخريطة الحالية: القمر الصناعي الهجين مع الشوارع افتراضياً
+  const [mapLayer, setMapLayer] = useState('satellite');
 
   // إظهار لوحة رادار أزمنة الوصول
   const [showRadarPanel, setShowRadarPanel] = useState(true);

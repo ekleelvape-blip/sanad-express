@@ -85,31 +85,39 @@ export function getWazeNavUrl(lat, lng) {
 }
 
 /**
- * طبقات الخرائط المتوفرة مع تفاصيل الشوارع والأحياء في السعودية
+ * طبقات الخرائط المتوفرة بدقة فائقة وبدون أي قيود أو مفاتيح API (مجانية 100%)
  */
 export const MAP_LAYERS = {
-  // شوارع وأحياء السعودية الرسمية (Google Maps مع دعم 100% لأسماء الأحياء والشوارع بالعربي)
+  // 1. أقمار صناعية هجينة مدمجة بخطوط وأسماء الشوارع والأحياء بالعربي (Hybrid Satellite)
+  satellite: {
+    id: 'satellite',
+    name: 'أقمار صناعية مع الشوارع 🛰️',
+    url: 'https://mt1.google.com/vt/lyrs=y&hl=ar&gl=SA&x={x}&y={y}&z={z}',
+    attribution: 'سند إكسبريس • أقمار صناعية مع خطوط الشوارع',
+    maxZoom: 20
+  },
+  // 2. خريطة شوارع وأحياء المملكة التفصيلية (Google Streets Arabic)
   streets: {
     id: 'streets',
     name: 'شوارع وأحياء المملكة 🗺️',
     url: 'https://mt1.google.com/vt/lyrs=m&hl=ar&gl=SA&x={x}&y={y}&z={z}',
-    attribution: 'خرائط سند إكسبريس • شوارع وأحياء المملكة',
+    attribution: 'سند إكسبريس • شوارع وأحياء المملكة',
     maxZoom: 20
   },
-  // قمر صناعي هجين مدمج بأسماء الشوارع
-  satellite: {
-    id: 'satellite',
-    name: 'قمر صناعي مع الشوارع 🛰️',
-    url: 'https://mt1.google.com/vt/lyrs=y&hl=ar&gl=SA&x={x}&y={y}&z={z}',
-    attribution: 'خرائط سند إكسبريس • قمر صناعي هجين',
-    maxZoom: 20
+  // 3. خريطة الشوارع المفتوحة OpenStreetMap
+  osm: {
+    id: 'osm',
+    name: 'الخريطة المفتوحة OSM 🌍',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: 'سند إكسبريس • OpenStreetMap',
+    maxZoom: 19
   },
-  // النمط الليلي الفاخر المريح للعين
-  dark: {
-    id: 'dark',
-    name: 'الوضع الليلي الفاخر 🌙',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: 'خرائط سند إكسبريس • النمط الليلي',
+  // 4. تصوير فضائي نقي عالي النقاء بدون أسماء شوارع Esri
+  esri: {
+    id: 'esri',
+    name: 'تصوير فضائي نقي 📷',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'سند إكسبريس • Esri World Imagery',
     maxZoom: 19
   }
 };

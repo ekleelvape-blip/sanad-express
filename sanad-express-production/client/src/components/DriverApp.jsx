@@ -82,8 +82,8 @@ export default function DriverApp({
   // الشحنة المحددة في خريطة الملاحة الحية
   const [selectedRouteOrderId, setSelectedRouteOrderId] = useState(null);
 
-  // نمط طبقة الخريطة الميدانية: 'streets' | 'satellite' | 'dark'
-  const [routeMapLayer, setRouteMapLayer] = useState('streets');
+  // نمط طبقة الخريطة الميدانية: قمر صناعي مع خطوط الشوارع افتراضياً
+  const [routeMapLayer, setRouteMapLayer] = useState('satellite');
 
   // إحداثيات GPS الحية للمندوب
   const [driverLiveCoords, setDriverLiveCoords] = useState(null);
