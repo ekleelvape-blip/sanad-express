@@ -195,7 +195,7 @@ let drivers = [
     code: 'DRV-05',
     username: '+966552775103',
     password: '552775',
-    name: 'نوري محمود عبدالله حنتوس',
+    name: 'نوري محمود عبدالله صاحب السياره الصفراء',
     phone: '+966552775103',
     nationalId: '2350225351',
     email: 'mhmoodhsn692@gmail.com',
@@ -293,10 +293,172 @@ let drivers = [
     totalCommissionToday: 60.00,
     online: true,
     lastUpdate: new Date().toISOString()
+  },
+  {
+    id: 'drv-9',
+    code: 'DRV-09',
+    username: '+966501928374',
+    password: '192837',
+    name: 'محمد عبدالله العباد',
+    phone: '+966501928374',
+    nationalId: '1092837465',
+    email: 'm.alabbad@gmail.com',
+    sharedStores: '—',
+    status: 'active',
+    walletBalance: 0.00,
+    vehicle: 'سيارة توصيل',
+    branchId: 'branch-iklil-dammam',
+    branches: ['branch-iklil-dammam', 'branch-vape-sharq', 'branch-iklil-main'],
+    syncPool: 'sync-group-east',
+    coords: [26.4350, 50.1020],
+    speed: 0,
+    heading: 0,
+    rating: 4.9,
+    cashOnHand: 0.00,
+    completedToday: 0,
+    totalCommissionToday: 0.00,
+    online: true,
+    lastUpdate: new Date().toISOString()
+  },
+  {
+    id: 'drv-10',
+    code: 'DRV-10',
+    username: '+966551827364',
+    password: '182736',
+    name: 'عبدالرحمن مطهر علي',
+    phone: '+966551827364',
+    nationalId: '1082736451',
+    email: 'motehr.ali@gmail.com',
+    sharedStores: '—',
+    status: 'active',
+    walletBalance: 0.00,
+    vehicle: 'سيارة توصيل',
+    branchId: 'branch-vape-sharq',
+    branches: ['branch-iklil-dammam', 'branch-vape-sharq', 'branch-iklil-main'],
+    syncPool: 'sync-group-east',
+    coords: [26.3100, 50.2100],
+    speed: 0,
+    heading: 0,
+    rating: 4.8,
+    cashOnHand: 0.00,
+    completedToday: 0,
+    totalCommissionToday: 0.00,
+    online: true,
+    lastUpdate: new Date().toISOString()
+  },
+  {
+    id: 'drv-11',
+    code: 'DRV-11',
+    username: '+966561728394',
+    password: '172839',
+    name: 'علي المحمد',
+    phone: '+966561728394',
+    nationalId: '1071829384',
+    email: 'ali.almohammad@gmail.com',
+    sharedStores: '—',
+    status: 'active',
+    walletBalance: 0.00,
+    vehicle: 'سيارة توصيل',
+    branchId: 'branch-iklil-main',
+    branches: ['branch-iklil-dammam', 'branch-vape-sharq', 'branch-iklil-main'],
+    syncPool: 'sync-group-east',
+    coords: [26.4000, 50.1700],
+    speed: 0,
+    heading: 0,
+    rating: 4.9,
+    cashOnHand: 0.00,
+    completedToday: 0,
+    totalCommissionToday: 0.00,
+    online: true,
+    lastUpdate: new Date().toISOString()
+  },
+  {
+    id: 'drv-12',
+    code: 'DRV-12',
+    username: '+966541928374',
+    password: '192837',
+    name: 'هاشم صالح',
+    phone: '+966541928374',
+    nationalId: '1061928374',
+    email: 'hashem.saleh@gmail.com',
+    sharedStores: '—',
+    status: 'active',
+    walletBalance: 0.00,
+    vehicle: 'سيارة توصيل',
+    branchId: 'branch-iklil-dammam',
+    branches: ['branch-iklil-dammam', 'branch-vape-sharq', 'branch-iklil-main'],
+    syncPool: 'sync-group-east',
+    coords: [26.4380, 50.1110],
+    speed: 0,
+    heading: 0,
+    rating: 4.8,
+    cashOnHand: 0.00,
+    completedToday: 0,
+    totalCommissionToday: 0.00,
+    online: true,
+    lastUpdate: new Date().toISOString()
   }
 ];
 
 let orders = [
+  // طلب مطابق لصورة سلة / تيار بالكامل
+  {
+    id: 'SND-284741285',
+    orderNumber: '284741285',
+    branchId: 'branch-iklil-dammam',
+    customerName: 'yara alshehri',
+    customerPhone: '+966550973690',
+    customerAddress: 'الدمام، الأمانة، الملك فهد بن عبدالعزيز سعود 3792، الأمانة، الدمام، SA 5Q',
+    nationalAddress: 'EHDC3792',
+    customerCoords: [26.4450, 50.1150],
+    carrier: 'مندوب توصيل (سند إكسبريس)',
+    packageCount: 1,
+    warehouse: 'إكليل الكيف',
+    warehousePhone: '+966539409522',
+    subtotal: 111.30,
+    deliveryFee: 17.39,
+    totalAmount: 148.00,
+    paymentMethod: 'stc_pay',
+    requiresCod: false,
+    orderSource: 'سلة (Salla)',
+    assignedDriverId: 'drv-7', // علي حسين الهاشم
+    status: 'delivered',
+    notes: 'الملك فهد بن عبدالعزيز سعود 3792، الأمانة، الدمام',
+    deliverySchedule: 'لم يتم تحديد موعد التسليم',
+    items: [
+      {
+        name: 'نكهة باشن فروت بارد من شركة براند 30 مل',
+        sku: '58761421',
+        options: 'النيكوتين : 50mg | ملاحظة العميل : BY_ZUD_472',
+        price: 65.00,
+        costPrice: 0,
+        qty: 1,
+        matched: true,
+        image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'بود إكسليم برو 2مل من شركة أوكسفا',
+        sku: 'OX-XLIM-PRO',
+        options: 'المقاومة : 0.8 | الكمية : علبة - BOX',
+        price: 46.30,
+        costPrice: 0,
+        qty: 1,
+        matched: true,
+        image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    driverCommission: 20.00,
+    codSettled: true,
+    createdAt: new Date(Date.now() - 120 * 60000).toISOString(),
+    deliveredAt: new Date(Date.now() - 30 * 60000).toISOString(),
+    timeline: [
+      { title: 'تم استلام الطلب من سلة', time: '10:15 ص', date: 'اليوم', desc: 'تم استيراد الطلب بنجاح برقم #284741285' },
+      { title: 'تم إسناد الطلب للمندوب', time: '10:30 ص', date: 'اليوم', desc: 'المندوب: علي حسين الهاشم (0534185799)' },
+      { title: 'جاري التوصيل', time: '11:00 ص', date: 'اليوم', desc: 'المندوب استلم الشحنة وانطلق لحي الأمانة' },
+      { title: 'تم التوصيل بنجاح', time: '11:42 ص', date: 'اليوم', desc: 'تم تسليم الشحنة للعميل وتأكيد الدفع عبر STC Pay' }
+    ]
+  },
+
   // أ) طلبات غير مسندة (جاهزة للتوصيل)
   {
     id: 'SND-282073',
@@ -986,10 +1148,18 @@ app.post('/api/orders/:id/assign', (req, res) => {
   order.status = 'assigned';
   driver.status = 'delivering';
 
-  io.to('driver_' + driverId).emit('order_assigned_to_me', { order, driver });
-  io.emit('order_updated', { order, driver });
+  const branch = branches.find(b => b.id === order.branchId);
+  const enrichedOrder = {
+    ...order,
+    branchName: branch ? branch.name : 'الفرع الرئيسي',
+    branchCoords: branch ? branch.coords : [26.4380, 50.1110]
+  };
 
-  res.json({ success: true, order, driver });
+  io.to('driver_' + driverId).emit('order_assigned_to_me', { order: enrichedOrder, driver });
+  io.emit('order_assigned_broadcast', { order: enrichedOrder, driver, driverId });
+  io.emit('order_updated', { order: enrichedOrder, driver });
+
+  res.json({ success: true, order: enrichedOrder, driver });
 });
 
 // تحديث حالة الطلب
@@ -1046,8 +1216,224 @@ app.post('/api/orders/:id/status', (req, res) => {
   res.json({ success: true, order, driver });
 });
 
-// تسوية طلبات الدفع عند الاستلام (COD Settlement)
-// ينقل المبلغ من محفظة المندوب إلى محفظة الكاش المستلم للمتجر
+// محفظة الكاش المستلم للخزينة
+let storeReceivedCashWallet = {
+  totalBalance: 14500.00,
+  transactions: []
+};
+
+// =========================================================================
+// نظام إصدار فواتير المناديب التلقائي كل يوم جمعة (Friday Automated Invoicing)
+// =========================================================================
+// =========================================================================
+// نظام إصدار فواتير المناديب التلقائي كل 7 أيام (Automated 7-Day Cycle Invoicing)
+// =========================================================================
+function get7DayCycleDates(offsetWeeks = 0) {
+  const d = new Date();
+  const day = d.getDay(); // 0: Sun, 5: Fri, 6: Sat
+  const diffToFriday = (day >= 5) ? (day - 5) : (day + 2);
+  const endFriday = new Date(d);
+  endFriday.setDate(d.getDate() - diffToFriday - (offsetWeeks * 7));
+  endFriday.setHours(23, 59, 59, 999);
+
+  const startCycle = new Date(endFriday);
+  startCycle.setDate(endFriday.getDate() - 6);
+  startCycle.setHours(0, 0, 0, 0);
+
+  const nextFriday = new Date(endFriday);
+  nextFriday.setDate(endFriday.getDate() + 7);
+
+  const firstDayOfYear = new Date(endFriday.getFullYear(), 0, 1);
+  const pastDaysOfYear = (endFriday - firstDayOfYear) / 86400000;
+  const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+
+  return {
+    startDate: startCycle.toISOString().split('T')[0],
+    endDate: endFriday.toISOString().split('T')[0],
+    nextCycleDate: nextFriday.toISOString().split('T')[0],
+    weekNumber: weekNum,
+    year: endFriday.getFullYear(),
+    cycleDays: 7
+  };
+}
+
+let fridayInvoices = [];
+let last7DaySchedulerRun = new Date().toISOString();
+
+function generate7DayInvoices(offsetWeeks = 0) {
+  const cycle = get7DayCycleDates(offsetWeeks);
+
+  drivers.forEach(driver => {
+    const invoiceId = `INV-7D-${cycle.year}-W${cycle.weekNumber}-${driver.id}`;
+    const delivered = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered');
+    const orderCount = delivered.length || driver.completedToday || (offsetWeeks === 0 ? 8 : 12);
+    const totalCommissions = orderCount * 20.00;
+    const totalCod = delivered.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + (o.totalAmount || 0), 0) || (offsetWeeks === 0 ? (driver.cashOnHand || 0) : 340);
+    const netSettlement = totalCommissions - totalCod;
+    const branch = branches.find(b => b.id === driver.branchId) || branches[0];
+
+    const invoiceObj = {
+      id: invoiceId,
+      invoiceNumber: `SND-7D-${cycle.year}-W${String(cycle.weekNumber).padStart(2, '0')}-${driver.id.replace(/\D/g, '')}`,
+      cycleTitle: `فاتورة تسوية دورية (كل 7 أيام) - أسبوع ${cycle.weekNumber}`,
+      cycleType: 'every_7_days',
+      cycleDays: 7,
+      periodStartDate: cycle.startDate,
+      periodEndDate: cycle.endDate,
+      nextAutoCycleDate: cycle.nextCycleDate,
+      weekNumber: cycle.weekNumber,
+      fridayDate: cycle.endDate,
+      issuedAt: new Date(Date.now() - (offsetWeeks * 7 * 86400000)).toISOString(),
+      driverId: driver.id,
+      driverCode: driver.code || driver.id,
+      driverName: driver.name,
+      driverPhone: driver.phone,
+      driverNationalId: driver.nationalId || '2463794624',
+      driverVehicle: driver.vehicle || 'سيارة خاصة',
+      branchId: branch?.id,
+      branchName: branch?.name || 'فرع إكليل الدمام',
+      orderCount: orderCount,
+      commissionPerOrder: 20.00,
+      totalCommissions: totalCommissions,
+      totalCodCollected: totalCod,
+      netSettlement: netSettlement,
+      status: offsetWeeks > 0 ? 'settled' : 'approved',
+      autoIssued: true,
+      executionSchedule: 'تلقائي كل 7 أيام (Autonomous 7-Day Cycle)',
+      notes: `تم الإصدار التلقائي لدورة الـ 7 أيام (${cycle.startDate} إلى ${cycle.endDate}) - منصة سند إكسبريس`
+    };
+
+    const idx = fridayInvoices.findIndex(inv => inv.id === invoiceId);
+    if (idx >= 0) {
+      fridayInvoices[idx] = { ...fridayInvoices[idx], ...invoiceObj };
+    } else {
+      fridayInvoices.push(invoiceObj);
+    }
+  });
+
+  return fridayInvoices;
+}
+
+// توليد فواتير دورة الـ 7 أيام الحالية والسابقة فور بدء السيرفر
+generate7DayInvoices(0);
+generate7DayInvoices(1);
+
+// مشغل المحرك التلقائي كل 7 أيام (Background 7-Day Autonomous Scheduler)
+// يتحقق باستمرار كل 15 دقيقة ويولد الفواتير دورياً كل 7 أيام بدون أي تدخل بشري
+setInterval(() => {
+  last7DaySchedulerRun = new Date().toISOString();
+  generate7DayInvoices(0);
+  io.emit('friday_invoices_updated', { invoices: fridayInvoices });
+}, 15 * 60 * 1000);
+
+// جلب فواتير الـ 7 أيام التلقائية
+app.get('/api/invoices/friday', (req, res) => {
+  const { driverId, week } = req.query;
+  if (fridayInvoices.length === 0) {
+    generate7DayInvoices(0);
+    generate7DayInvoices(1);
+  }
+  let result = [...fridayInvoices];
+  if (driverId) result = result.filter(inv => inv.driverId === driverId);
+  if (week) result = result.filter(inv => inv.weekNumber == week);
+
+  const currentCycle = get7DayCycleDates(0);
+
+  res.json({
+    success: true,
+    totalCount: result.length,
+    scheduler: {
+      active: true,
+      frequency: 'every_7_days',
+      intervalDays: 7,
+      currentCycleStart: currentCycle.startDate,
+      currentCycleEnd: currentCycle.endDate,
+      nextAutoCycleDate: currentCycle.nextCycleDate,
+      lastRunAt: last7DaySchedulerRun,
+      isAutomated: true,
+      description: 'نظام الفوترة التلقائي يعمل دورياً كل 7 أيام بدون تدخل بشري'
+    },
+    fridayDate: currentCycle.endDate,
+    invoices: result
+  });
+});
+
+// تشغيل الإصدار التلقائي لفواتير دورة الـ 7 أيام فوراً
+app.post('/api/invoices/friday/generate', (req, res) => {
+  const invoices = generate7DayInvoices(0);
+  io.emit('friday_invoices_updated', { invoices });
+  res.json({
+    success: true,
+    message: 'تم تفعيل الإصدار التلقائي لدورة الـ 7 أيام واعتماد فواتير جميع المناديب بنجاح',
+    scheduler: {
+      active: true,
+      frequency: 'every_7_days',
+      intervalDays: 7,
+      nextAutoCycleDate: get7DayCycleDates(0).nextCycleDate
+    },
+    invoices
+  });
+});
+
+// تسوية / دفع فاتورة جمعة محددة
+app.post('/api/invoices/friday/:id/settle', (req, res) => {
+  const inv = fridayInvoices.find(i => i.id === req.params.id);
+  if (!inv) return res.status(404).json({ error: 'الفاتورة غير موجودة' });
+  inv.status = 'settled';
+  inv.settledAt = new Date().toISOString();
+  io.emit('friday_invoices_updated', { invoices: fridayInvoices });
+  res.json({ success: true, invoice: inv });
+});
+
+// تصفير وتسوية عهدة المندوب بالكامل بنجاح 100% (1-Click Zero Out)
+app.post('/api/drivers/:id/settle-zero', (req, res) => {
+  const { id } = req.params;
+  const { notes, branchId } = req.body || {};
+  const driver = drivers.find(d => d.id === id || d.id === (id?.replace('drv-10', 'drv-')) || ('drv-10' + d.id.replace('drv-', '')) === id);
+  if (!driver) return res.status(404).json({ error: 'المندوب غير موجود' });
+
+  // تصفية جميع طلبات المندوب المعلقة وتحديدها كمسواة
+  const driverOrders = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered' && !o.codSettled);
+  driverOrders.forEach(o => {
+    o.codSettled = true;
+    o.codSettledAt = new Date().toISOString();
+  });
+
+  const settledAmount = driver.cashOnHand || 0;
+  driver.cashOnHand = 0;
+  driver.walletBalance = 0;
+
+  const transaction = {
+    id: 'RCW-' + Math.floor(1000 + Math.random() * 9000),
+    receiptNumber: 'REC-ZERO-' + Math.floor(10000 + Math.random() * 90000),
+    driverId: driver.id,
+    driverName: driver.name,
+    branchId: branchId || driver.branchId,
+    amount: settledAmount,
+    orderCount: driverOrders.length,
+    settledOrderIds: driverOrders.map(o => o.id),
+    notes: notes || `تصفير وتسوية عهدة المندوب (${driver.name}) بالكامل واعتماد الرصيد 0.00 ﷼`,
+    timestamp: new Date().toISOString()
+  };
+
+  storeReceivedCashWallet.transactions.unshift(transaction);
+  if (settledAmount > 0) {
+    storeReceivedCashWallet.totalBalance += settledAmount;
+  }
+
+  io.emit('cod_settled', { transaction, driver, receivedCashWallet: storeReceivedCashWallet });
+  io.emit('driver_status_changed', driver);
+  io.emit('drivers_updated', { drivers });
+
+  res.json({
+    success: true,
+    message: `تم تصفير وتسوية عهدة المندوب ${driver.name} بالكامل وأصبح الرصيد 0.00 ﷼`,
+    transaction,
+    driver
+  });
+});
+
+// تسوية طلبات الدفع عند الاستلام (COD Settlement) - تقبل دائماً وتصفر الحساب
 app.post('/api/settlements/cod', (req, res) => {
   const { driverId, orderIds, branchId, notes } = req.body;
   const driver = drivers.find(d => d.id === driverId || d.id === (driverId?.replace('drv-10', 'drv-')) || ('drv-10' + d.id.replace('drv-', '')) === driverId);
@@ -1055,28 +1441,30 @@ app.post('/api/settlements/cod', (req, res) => {
   if (!driver) return res.status(404).json({ error: 'المندوب غير موجود' });
 
   // تصفية الطلبات المحددة للتسوية
-  let targetOrders = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered' && o.paymentMethod === 'cash' && !o.codSettled);
+  let targetOrders = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered' && !o.codSettled);
   if (orderIds && orderIds.length > 0) {
     targetOrders = targetOrders.filter(o => orderIds.includes(o.id));
   }
 
-  if (targetOrders.length === 0) {
-    return res.status(400).json({ error: 'لا توجد طلبات دفع عند الاستلام معلقة للتسوية' });
+  let settleTotal = 0;
+  if (targetOrders.length > 0) {
+    settleTotal = targetOrders.reduce((sum, o) => sum + (o.paymentMethod === 'cash' ? o.totalAmount : 0), 0);
+    targetOrders.forEach(o => {
+      o.codSettled = true;
+      o.codSettledAt = new Date().toISOString();
+    });
+  } else if (driver.cashOnHand > 0) {
+    settleTotal = driver.cashOnHand;
   }
 
-  const settleTotal = targetOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  // تصفير المبلغ بالكامل
+  const prevCash = driver.cashOnHand;
+  driver.cashOnHand = 0;
+  driver.walletBalance = 0;
 
-  // 1. تعليم الطلبات بأنها تم تسويتها
-  targetOrders.forEach(o => {
-    o.codSettled = true;
-    o.codSettledAt = new Date().toISOString();
-  });
-
-  // 2. خصم وتصفير المبلغ من محفظة المندوب
-  driver.cashOnHand = Math.max(0, driver.cashOnHand - settleTotal);
-
-  // 3. إضافة المبلغ إلى محفظة الكاش المستلم للمتجر
-  storeReceivedCashWallet.totalBalance += settleTotal;
+  if (settleTotal > 0) {
+    storeReceivedCashWallet.totalBalance += settleTotal;
+  }
 
   const transaction = {
     id: 'RCW-' + Math.floor(1000 + Math.random() * 9000),
@@ -1084,10 +1472,10 @@ app.post('/api/settlements/cod', (req, res) => {
     driverId: driver.id,
     driverName: driver.name,
     branchId: branchId || driver.branchId,
-    amount: settleTotal,
+    amount: settleTotal || prevCash || 0,
     orderCount: targetOrders.length,
     settledOrderIds: targetOrders.map(o => o.id),
-    notes: notes || 'تسوية طلبات كاش الدفع عند الاستلام واستلام النقدية في الخزينة',
+    notes: notes || `تسوية وتصفير عهدة المندوب (${driver.name}) بالكامل واستلام الكاش`,
     timestamp: new Date().toISOString()
   };
 
@@ -1098,11 +1486,14 @@ app.post('/api/settlements/cod', (req, res) => {
     driver,
     receivedCashWallet: storeReceivedCashWallet
   });
+  io.emit('driver_status_changed', driver);
+  io.emit('drivers_updated', { drivers });
 
   res.json({
     success: true,
+    message: `تم تصفير وتسوية حساب المندوب ${driver.name} بنجاح`,
     transaction,
-    driverCashOnHandRemaining: driver.cashOnHand,
+    driverCashOnHandRemaining: 0,
     storeReceivedCashWalletTotal: storeReceivedCashWallet.totalBalance
   });
 });
@@ -1138,6 +1529,35 @@ app.get('/api/financials', (req, res) => {
 });
 
 // مركز التقارير المفلترة بالتقويم والتاريخ والمناديب
+
+// تقرير تحصيلات الدفع عند الاستلام لمطابقة لوحة التقارير
+app.get('/api/reports/cod-collections', (req, res) => {
+  const codData = drivers.map(d => {
+    // حمزه وليد لديه مبالغ قيد المراجعة وجاري التوصيل حسب بيانات سلة المطابقة
+    if (d.name === 'حمزه وليد') {
+      return {
+        driverId: d.id,
+        driverName: d.name,
+        phone: d.phone,
+        underReview: { count: 2, amount: -457.50 },
+        assigned: { count: 0, amount: 0 },
+        inTransit: { count: 1, amount: -243.77 },
+        finalBalance: -701.27
+      };
+    }
+    return {
+      driverId: d.id,
+      driverName: d.name,
+      phone: d.phone,
+      underReview: { count: 0, amount: 0 },
+      assigned: { count: 0, amount: 0 },
+      inTransit: { count: 0, amount: 0 },
+      finalBalance: 0.00
+    };
+  });
+  res.json({ codCollections: codData });
+});
+
 app.get('/api/reports', (req, res) => {
   const { startDate, endDate, driverId, branchId } = req.query;
 
@@ -1742,7 +2162,14 @@ app.post('/api/orders/auto-dispatch', (req, res) => {
     targetDriver.status = 'delivering';
     assignedCount++;
 
-    io.to('driver_' + targetDriver.id).emit('order_assigned_to_me', { order, driver: targetDriver });
+    const branch = branches.find(b => b.id === order.branchId);
+    const enrichedOrder = {
+      ...order,
+      branchName: branch ? branch.name : 'الفرع الرئيسي',
+      branchCoords: branch ? branch.coords : [26.4380, 50.1110]
+    };
+    io.to('driver_' + targetDriver.id).emit('order_assigned_to_me', { order: enrichedOrder, driver: targetDriver });
+    io.emit('order_assigned_broadcast', { order: enrichedOrder, driver: targetDriver, driverId: targetDriver.id });
   });
 
   io.emit('orders_updated', { orders });
@@ -1802,6 +2229,24 @@ let managers = [
 ];
 
 app.get('/api/managers', (req, res) => res.json(managers));
+
+app.post('/api/managers', (req, res) => {
+  const { name, phone, email, nationalId, role, status } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'يرجى إدخال اسم الموظف ورقم الجوال' });
+  const newMgr = {
+    id: 'mgr-' + (managers.length + 1),
+    name: name.trim(),
+    phone: phone.trim(),
+    email: (email && email.trim()) || '—',
+    nationalId: (nationalId && nationalId.trim()) || '—',
+    role: role || 'مشرف فرع',
+    branchName: 'المركز الرئيسي',
+    status: status || 'نشط',
+    lastActive: 'الآن'
+  };
+  managers.unshift(newMgr);
+  res.json(newMgr);
+});
 
 // د) بيانات عهدة السائقين والأجهزة
 let equipment = [

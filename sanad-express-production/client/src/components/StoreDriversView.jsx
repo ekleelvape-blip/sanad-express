@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DriverProfileView from './DriverProfileView';
+import AddDriverForm from './AddDriverForm';
 import { Search, SlidersHorizontal, MoreVertical, Plus, Share2, Trash2, Phone, Check, ChevronRight, Home, Users, UserCheck, Key, Lock, Eye, EyeOff, Copy, Send } from 'lucide-react';
 
 export default function StoreDriversView({ drivers, orders = [], branches = [], onRefresh, onSwitchToTracking, onOpenDriverApp }) {
@@ -8,6 +9,7 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
   const [selectedDriverIds, setSelectedDriverIds] = useState([]);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isAddingDriver, setIsAddingDriver] = useState(false);
 
   const [showModalPassword, setShowModalPassword] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState({});
@@ -35,20 +37,7 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
   const filteredDrivers = drivers.filter(d => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.trim().toLowerCase();
-    if (selectedDriverForProfile) {
     return (
-      <DriverProfileView
-        driver={selectedDriverForProfile}
-        orders={orders}
-        branches={branches}
-        onBack={() => setSelectedDriverForProfile(null)}
-        onRefresh={onRefresh}
-        onOpenDriverApp={onOpenDriverApp}
-      />
-    );
-  }
-
-  return (
       (d.name && d.name.toLowerCase().includes(q)) ||
       (d.phone && d.phone.includes(q)) ||
       (d.nationalId && d.nationalId.includes(q)) ||
@@ -133,6 +122,32 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
     }
   };
 
+    if (isAddingDriver) {
+    return (
+      <AddDriverForm
+        branches={branches}
+        onSave={() => {
+          setIsAddingDriver(false);
+          if (onRefresh) onRefresh();
+        }}
+        onCancel={() => setIsAddingDriver(false)}
+      />
+    );
+  }
+
+  if (selectedDriverForProfile) {
+    return (
+      <DriverProfileView
+        driver={selectedDriverForProfile}
+        orders={orders}
+        branches={branches}
+        onBack={() => setSelectedDriverForProfile(null)}
+        onRefresh={onRefresh}
+        onOpenDriverApp={onOpenDriverApp}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4 font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] text-slate-800" dir="rtl">
       {/* شريط المسار والترويسة العلوية المطابقة تماماً للصورة */}
@@ -159,11 +174,11 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
 
           <button
             type="button"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => setIsAddingDriver(true)}
             className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-[0_0_20px_rgba(0,210,211,0.35)] transition-all cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>سائق جديد</span>
+            <span>أضف سائق</span>
           </button>
         </div>
       </div>

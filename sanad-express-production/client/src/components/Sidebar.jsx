@@ -78,7 +78,11 @@ export default function Sidebar({
       icon: <FileText className="w-4 h-4" />,
       menuKey: 'reports',
       children: [
-        { key: 'delivery_reports', label: 'تقارير التوصيل بالتقويم' }
+        { key: 'cod_collections', label: 'تحصيلات الدفع عند الإستلام' },
+        { key: 'driver_performance', label: 'تقرير أداء السائقين' },
+        { key: 'driver_dues', label: 'تقرير مستحقات السائقين' },
+        { key: 'ratings', label: 'تقرير التقييمات' },
+        { key: 'neighborhoods', label: 'تقرير الأحياء' }
       ]
     },
     {

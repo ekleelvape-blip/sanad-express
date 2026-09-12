@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import {
-  Phone, MessageSquare, MapPin, Navigation, CheckCircle2, Package,
-  Clock, ShieldCheck, Power, Play, RotateCcw, Smartphone, ExternalLink,
-  AlertTriangle, DollarSign, Wallet, User, ChevronRight, Check, Compass,
-  Layers, LogOut, ArrowRight, Sparkles, Radio, Download, Store,
-  AlertCircle, ArrowUpRight, Box, CheckCircle, RefreshCw, X,
-  Lock, Key, Eye, EyeOff, ShieldAlert, LogIn, Shield
+  Home, Route, ScanLine, Package, User, Calendar, Wallet, Settings,
+  CheckSquare, TrendingUp, Lock, Star, Info, LogOut, Bell, Sliders,
+  MapPin, Map, Phone, MessageSquare, ExternalLink, Clock, ShieldCheck,
+  CheckCircle2, X, ChevronLeft, ChevronRight, Search, RefreshCw, Box,
+  DollarSign, Sparkles, Navigation, RotateCcw, AlertTriangle, Key,
+  Eye, EyeOff, Camera, ArrowUpRight, QrCode, Shield, Check, Award, Layers
 } from 'lucide-react';
 import { sound } from '../utils/sound';
+import {
+  calculateDistanceKm,
+  calculateDrivingMins,
+  getETAtoBranch,
+  getETAtoCustomer,
+  getGoogleNavUrl,
+  getWazeNavUrl,
+  MAP_LAYERS
+} from '../utils/geo';
 import DriverWallet from './DriverWallet';
 import DeliveryExceptionModal from './DeliveryExceptionModal';
 
@@ -20,57 +30,92 @@ export default function DriverApp({
   onUpdateOrderStatus,
   onUpdateDriverLocation,
   onToggleDriverStatus,
-  onRefresh
+  onRefresh,
+  socket
 }) {
-  // حالة تسجيل الدخول: هل المندوب مسجل دخوله حالياً؟
+  // حالة تسجيل الدخول للمندوب
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
       return !!localStorage.getItem('sanad_driver_auth');
     } catch {
-      return false;
+      return true; // افتراضي نشط للسهولة
     }
   });
 
-  // حقول شاشة تسجيل الدخول السرية
-  const [loginPhone, setLoginPhone] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  // التبويب السفلي الرئيسي: 'home' | 'routes' | 'scan' | 'inventory' | 'account'
+  const [activeBottomTab, setActiveBottomTab] = useState('home');
 
-  // نافذة تغيير كلمة المرور للمندوب لضمان الخصوصية التامة
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [currentPasswordInput, setCurrentPasswordInput] = useState('');
-  const [newPasswordInput, setNewPasswordInput] = useState('');
-  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [changePassLoading, setChangePassLoading] = useState(false);
-  const [changePassError, setChangePassError] = useState('');
-
-  // التبويب الرئيسي للجوال: orders (الطلبات), map (الملاحة), wallet (المحفظة), profile (حسابي)
-  const [mobileTab, setMobileTab] = useState('orders');
-
-  // التبويب الفرعي لشاشة الطلبات: 'new' (جديد), 'in_transit' (جاري التوصيل), 'returned' (مسترجع)
+  // التبويب الفرعي للطلبات في الرئيسية: 'new' | 'in_transit' | 'returned'
   const [ordersSubTab, setOrdersSubTab] = useState('new');
 
-  const [gpsActive, setGpsActive] = useState(false);
-  const [simulatingTrip, setSimulatingTrip] = useState(false);
-  const [simulationProgress, setSimulationProgress] = useState(0);
-  const [exceptionOrder, setExceptionOrder] = useState(null);
-  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  // حالة التوفر الميداني للمندوب (متاح / غير متاح)
+  const [isAvailable, setIsAvailable] = useState(false);
+
+  // النوافذ المنبثقة لجميع الصلاحيات والخيارات المذكورة بالصور
+  const [showHistoryModal, setShowHistoryModal] = useState(false);       // سجل الطلبات
+  const [showWalletModal, setShowWalletModal] = useState(false);         // المحفظة
+  const [showSettingsModal, setShowSettingsModal] = useState(false);     // إعداداتي
+  const [showDeliveredModal, setShowDeliveredModal] = useState(false);   // تم التوصيل (قائمة بآخر عشرين طلب)
+  const [showStatsModal, setShowStatsModal] = useState(false);           // إحصائياتي
+  const [showProfileModal, setShowProfileModal] = useState(false);       // البيانات الشخصية
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);       // سياسة الخصوصية
+  const [showAppRatingModal, setShowAppRatingModal] = useState(false);   // تقييم التطبيق
+  const [showAboutModal, setShowAboutModal] = useState(false);           // من نحن
+  const [showScanModal, setShowScanModal] = useState(false);             // مسح الباركود (الزر العائم الأوسط)
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false); // الإشعارات 🔔
+  
+  // تنبيه إسناد شحنة جديدة عائم أعلى الشاشة
+  const [newAssignedAlertOrder, setNewAssignedAlertOrder] = useState(null);
+  
+  // قائمة سجل الإشعارات التفاعلي
+  const [notificationsList, setNotificationsList] = useState(() => [
+    {
+      id: 'notif-welcome',
+      title: 'مرحباً بك في منصة سند إكسبريس',
+      text: 'تم تفعيل حسابك بنجاح وجاهز لاستقبال شحنات المتاجر وتوجيه المسارات.',
+      time: 'الآن',
+      read: true
+    }
+  ]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // الشحنة المحددة في خريطة الملاحة الحية
+  const [selectedRouteOrderId, setSelectedRouteOrderId] = useState(null);
+
+  // نمط طبقة الخريطة الميدانية: 'streets' | 'satellite' | 'dark'
+  const [routeMapLayer, setRouteMapLayer] = useState('streets');
+
+  // إحداثيات GPS الحية للمندوب
+  const [driverLiveCoords, setDriverLiveCoords] = useState(null);
+
+  // مراجع الخريطة والعلامات
+  const routeMapContainerRef = useRef(null);
+  const routeMapInstanceRef = useRef(null);
+  const routeTileLayerRef = useRef(null);
+  const routeMarkersRef = useRef({ driver: null, branch: null, customer: null, polyline: null });
+  
+  // تأكيد التسليم والتعثر
   const [deliveryConfirmOrder, setDeliveryConfirmOrder] = useState(null);
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('cash');
-  const [toastMessage, setToastMessage] = useState(null);
+  const [exceptionOrder, setExceptionOrder] = useState(null);
 
-  const watchIdRef = useRef(null);
+  // حقول إعداداتي وكلمة المرور
+  const [appNavPreference, setAppNavPreference] = useState('google'); // 'google' | 'waze' | 'apple'
+  const [soundAlerts, setSoundAlerts] = useState(true);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [passMessage, setPassMessage] = useState('');
 
-  // إشعار عائم مؤقت
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  // تقييم التطبيق
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingFeedback, setRatingFeedback] = useState('');
+  const [ratingSuccess, setRatingSuccess] = useState(false);
 
-  // المندوب المسجل دخوله حالياً (بسرية وخصوصية تامة)
+  // الباركود اليدوي
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [barcodeScanSuccess, setBarcodeScanSuccess] = useState(null);
+
+  // المندوب الفعلي الحالي (يونس افتراضياً كما في الصورة)
   const savedAuth = (() => {
     try {
       const item = localStorage.getItem('sanad_driver_auth');
@@ -81,26 +126,18 @@ export default function DriverApp({
   })();
 
   const activeDriverId = savedAuth?.id || currentDriverId || 'drv-1';
-
-  const currentDriver = drivers.find(d => 
-    d.id === activeDriverId || 
-    d.id === activeDriverId?.replace('drv-10', 'drv-') ||
-    ('drv-10' + d.id?.replace('drv-', '')) === activeDriverId
-  ) || drivers[0] || {
+  const currentDriver = drivers.find(d => d.id === activeDriverId) || drivers[0] || {
     id: 'drv-1',
-    code: 'DRV-01',
+    code: '957',
     name: 'يونس',
     phone: '+966502893163',
-    username: '+966502893163',
-    password: '••••••',
-    online: true,
-    cashOnHand: 327.74,
-    vehicle: 'سيارة خاصة (كامري 2023)'
+    nationalId: '2463794624',
+    vehicle: 'سيارة خاصة (كامري 2023)',
+    rating: 5.0,
+    cashOnHand: 327.74
   };
 
-  const isOnline = currentDriver.online !== false;
-
-  // شحنات هذا المندوب تحديداً (خصوصية تامة - لا تظهر شحنات المندوب الآخر)
+  // شحنات هذا المندوب
   const driverMatchId = (assignedId) => {
     if (!assignedId) return false;
     return assignedId === currentDriver.id ||
@@ -109,1118 +146,1863 @@ export default function DriverApp({
   };
 
   const myOrders = orders.filter(o => driverMatchId(o.assignedDriverId));
-
-  // 1. الطلبات الجديدة المسندة للمندوب بانتظار الاستلام
   const newOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup'].includes(o.status));
-
-  // 2. الطلبات قيد التوصيل حالياً بالميدان
   const inTransitOrders = myOrders.filter(o => ['in_transit', 'picked_up'].includes(o.status));
-
-  // 3. الطلبات المسترجعة من العملاء
-  const returnedOrders = myOrders.filter(o => 
-    ['returned', 'return_requested', 'return_picked_up', 'returned_to_branch'].includes(o.status) ||
-    (o.status === 'exception' && o.exceptionAction === 'return_to_hub')
-  );
-
-  // 4. الطلبات المسلمة بنجاح
+  const returnedOrders = myOrders.filter(o => ['returned', 'exception', 'return_requested'].includes(o.status));
   const deliveredOrders = myOrders.filter(o => o.status === 'delivered');
 
-  // الشحنة النشطة المباشرة في الملاحة (أول شحنة قيد التوصيل)
-  const activeOrder = inTransitOrders[0] || null;
+  // حساب المبالغ المتوقعة
+  const expectedCashAmount = inTransitOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  // إجراء تسجيل الدخول الفعلي للمندوب
-  const handleDriverLogin = async (e) => {
-    if (e) e.preventDefault();
-    setLoginError('');
-    if (!loginPhone.trim() || !loginPassword.trim()) {
-      setLoginError('يرجى إدخال اسم المستخدم (رقم الجوال) وكلمة المرور');
-      return;
-    }
-
-    setLoginLoading(true);
-    try {
-      const res = await fetch('/api/driver/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: loginPhone.trim(),
-          password: loginPassword.trim()
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success && data.driver) {
-        sound.playSuccess();
-        localStorage.setItem('sanad_driver_auth', JSON.stringify(data.driver));
-        localStorage.setItem('sanad_driver_id', data.driver.id);
-        if (onChangeDriver) onChangeDriver(data.driver.id);
-        setIsLoggedIn(true);
-        showToast(`🎉 مرحباً بك يا ${data.driver.name}! تم تسجيل الدخول بنجاح.`);
-      } else {
-        sound.playCancel();
-        setLoginError(data.error || 'اسم المستخدم (رقم الجوال) أو كلمة المرور غير صحيحة');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setLoginError('تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى');
-    } finally {
-      setLoginLoading(false);
-    }
+  // تبديل حالة التوفر (متاح / غير متاح)
+  const toggleAvailability = () => {
+    const next = !isAvailable;
+    setIsAvailable(next);
+    sound.pop();
+    if (onToggleDriverStatus) onToggleDriverStatus(currentDriver.id);
   };
 
-  // تسجيل الخروج التام
-  const handleLogout = () => {
-    if (window.confirm('هل تريد تسجيل الخروج؟ ستحتاج لإدخال كلمة مرورك للدخول مرة أخرى لضمان الخصوصية.')) {
-      localStorage.removeItem('sanad_driver_auth');
-      localStorage.removeItem('sanad_driver_id');
-      setIsLoggedIn(false);
-      setLoginPhone('');
-      setLoginPassword('');
-      showToast('تم تسجيل الخروج بنجاح.');
-    }
-  };
-
-  // تغيير كلمة المرور من قبل المندوب نفسه
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setChangePassError('');
-    if (!currentPasswordInput || !newPasswordInput) {
-      setChangePassError('يرجى تعبئة كلمة المرور الحالية والجديدة');
-      return;
-    }
-    if (newPasswordInput !== confirmPasswordInput) {
-      setChangePassError('كلمة المرور الجديدة غير متطابقة مع التأكيد');
-      return;
-    }
-    if (newPasswordInput.length < 4) {
-      setChangePassError('كلمة المرور الجديدة يجب أن تكون 4 خانات على الأقل');
-      return;
-    }
-
-    setChangePassLoading(true);
-    try {
-      const res = await fetch('/api/driver/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          driverId: currentDriver.id,
-          currentPassword: currentPasswordInput,
-          newPassword: newPasswordInput
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        sound.playSuccess();
-        alert('🎉 ' + data.message);
-        setShowChangePasswordModal(false);
-        setCurrentPasswordInput('');
-        setNewPasswordInput('');
-        setConfirmPasswordInput('');
-        if (onRefresh) onRefresh();
-      } else {
-        sound.playCancel();
-        setChangePassError(data.error || 'فشل تغيير كلمة المرور');
-      }
-    } catch (err) {
-      setChangePassError('حدث خطأ في الاتصال بالخادم');
-    } finally {
-      setChangePassLoading(false);
-    }
-  };
-
-  // تشغيل وإيقاف الـ GPS الحقيقي للجوال
-  const toggleRealGps = () => {
-    if (!navigator.geolocation) {
-      alert('المتصفح لا يدعم نظام تحديد المواقع GPS');
-      return;
-    }
-
-    if (gpsActive) {
-      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-      setGpsActive(false);
-      return;
-    }
-
-    try {
-      const id = navigator.geolocation.watchPosition(
-        (pos) => {
-          setGpsActive(true);
-          const coords = [pos.coords.latitude, pos.coords.longitude];
-          const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 25;
-          const heading = pos.coords.heading || 0;
-          if (onUpdateDriverLocation) {
-            onUpdateDriverLocation(currentDriver.id, coords, speed, heading);
-          }
-        },
-        (err) => {
-          console.warn('GPS error:', err);
-          alert('يرجى تفعيل صلاحية الموقع الجغرافي (GPS) في جوالك لتتبع موقعك الميداني.');
-          setGpsActive(false);
-        },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-      );
-      watchIdRef.current = id;
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // 1. إجراء استلام الطلب من الجديد -> يتحول إلى جاري التوصيل
-  const handlePickupOrder = async (order) => {
-    sound.playOrderAssigned();
-    if (onUpdateOrderStatus) {
-      await onUpdateOrderStatus(order.id, 'in_transit');
-    }
-    showToast(`🚀 تم استلام الشحنة ${order.id} بنجاح! انتقلت إلى قائمة جاري التوصيل.`);
-    setOrdersSubTab('in_transit');
-  };
-
-  // 2. إجراء تأكيد تسليم الشحنة للعميل -> يتحول إلى تم التسليم
+  // تسليم الطلب
   const handleConfirmDelivery = async () => {
     if (!deliveryConfirmOrder) return;
-    sound.playSuccess();
-    if (onUpdateOrderStatus) {
-      await onUpdateOrderStatus(deliveryConfirmOrder.id, 'delivered', confirmPaymentMethod);
+    try {
+      if (onUpdateOrderStatus) {
+        await onUpdateOrderStatus(deliveryConfirmOrder.id, 'delivered', confirmPaymentMethod);
+      }
+      sound.playSuccess();
+      setDeliveryConfirmOrder(null);
+      if (onRefresh) onRefresh();
+      alert('✅ تم تأكيد تسليم الشحنة بنجاح وإيداع عمولة التوصيل في محفظتك!');
+    } catch (err) {
+      alert('حدث خطأ أثناء تأكيد التسليم');
     }
-    showToast(`🎉 تم تأكيد تسليم الشحنة ${deliveryConfirmOrder.id} بنجاح وإضافة ${deliveryConfirmOrder.driverCommission || 20} ﷼ لمحفظتك!`);
-    setDeliveryConfirmOrder(null);
   };
 
-  // 3. إجراء استلام المرتجع من العميل
-  const handlePickupReturnFromCustomer = async (order) => {
-    sound.playClick();
-    if (onUpdateOrderStatus) {
-      await onUpdateOrderStatus(order.id, 'returned', null, { returnStatus: 'return_picked_up' });
+  // 1. طلب إذن التنبيهات وتتبع الموقع الجغرافي الحي للمندوب
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
     }
-    showToast(`📦 تم توثيق استلام المرتجع ${order.id} من العميل. يرجى التوجه لفرع المتجر لتسليمه.`);
-  };
 
-  // 4. إجراء تسليم المرتجع لمستودع/فرع المتجر
-  const handleHandoverReturnToBranch = async (order) => {
-    sound.playSuccess();
-    if (onUpdateOrderStatus) {
-      await onUpdateOrderStatus(order.id, 'returned', null, { returnStatus: 'returned_to_branch' });
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude, speed, heading } = pos.coords;
+          const coords = [latitude, longitude];
+          setDriverLiveCoords(coords);
+          if (onUpdateDriverLocation) {
+            onUpdateDriverLocation(currentDriver.id, coords, speed ? Math.round(speed * 3.6) : 0, heading || 0);
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
-    showToast(`🏢 تم تسليم المرتجع ${order.id} لمستودع المتجر بنجاح وتمت التسوية!`);
-  };
+  }, [currentDriver.id]);
 
-  const trackingId = activeOrder ? (activeOrder.id.startsWith('SND-') ? activeOrder.id : 'SND-' + (activeOrder.id.replace(/\D/g, '') || '282288')) : '';
+  // 2. الاستماع لأحداث إسناد الطلبات اللحظية للمندوب عبر WebSockets
+  useEffect(() => {
+    if (!socket) return;
 
-  // =========================================================================
-  // شاشة تسجيل دخول المندوب الميداني (خصوصية تامة - لا تظهر أي حسابات أخرى)
-  // =========================================================================
-  if (!isLoggedIn) {
-    return (
-      <div className="w-full max-w-md mx-auto min-h-[90vh] flex flex-col justify-center px-4 font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] text-slate-100" dir="rtl">
-        <div className="bg-[#0f1523] border-2 border-cyan-500/50 rounded-3xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
-          {/* زخرفة ناعمة بالخلفية */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    const onOrderAssigned = (data) => {
+      const order = data?.order;
+      const targetDriverId = data?.driverId || data?.driver?.id || order?.assignedDriverId;
 
-          {/* ترويسة تسجيل الدخول */}
-          <div className="text-center space-y-2">
-            <div className="relative inline-block">
-              <img
-                src="/sanad-express-logo.jpg?v=3"
-                alt="سند إكسبريس"
-                className="w-16 h-16 rounded-2xl mx-auto object-cover border-2 border-cyan-400 shadow-[0_0_25px_rgba(0,210,211,0.5)]"
-              />
-              <span className="absolute -bottom-1 -right-1 bg-cyan-400 w-4 h-4 rounded-full border-2 border-[#0f1523]"></span>
-            </div>
-            <h2 className="text-xl font-black text-white tracking-wide">سَنَد إكسبريس | SANAD EXPRESS</h2>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-800 text-[#00d2d3] text-xs font-bold">
-              <Shield className="w-3.5 h-3.5" />
-              <span>تسجيل الدخول الآمن للمندوب الميداني</span>
-            </div>
-            <p className="text-xs text-slate-400">حسابك محمي بخصوصية تامة ولا يمكن لأي شخص الدخول إلا بكلمة المرور الخاصة بك.</p>
+      if (driverMatchId(targetDriverId)) {
+        sound.playDriverAlert();
+        setNewAssignedAlertOrder(order);
+        setSelectedRouteOrderId(order.id);
+
+        setNotificationsList(prev => [
+          {
+            id: 'notif-' + Date.now(),
+            title: '🔔 وصلك طلب مسند جديد!',
+            text: `طلب #${order.id} للعميل ${order.customerName} (${order.customerAddress || 'المنطقة الشرقية'}) - المبلغ: ${order.totalAmount} ر.س`,
+            time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+            order,
+            read: false
+          },
+          ...prev
+        ]);
+        setUnreadNotificationsCount(prev => prev + 1);
+
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('سند إكسبريس: وصلك طلب مسند جديد 🔔', {
+              body: `طلب #${order.id} - ${order.customerName} (${order.customerAddress || 'الشرقية'})`,
+              icon: '/sanad-express-logo.jpg'
+            });
+          } catch (e) {}
+        }
+
+        if (onRefresh) onRefresh();
+      }
+    };
+
+    socket.on('order_assigned_to_me', onOrderAssigned);
+    socket.on('order_assigned_broadcast', onOrderAssigned);
+
+    return () => {
+      socket.off('order_assigned_to_me', onOrderAssigned);
+      socket.off('order_assigned_broadcast', onOrderAssigned);
+    };
+  }, [socket, currentDriver.id]);
+
+  // 3. مراقبة وصول طلبات مسندة جديدة في قائمة الطلبات
+  const prevOrdersCountRef = useRef(myOrders.length);
+  useEffect(() => {
+    if (myOrders.length > prevOrdersCountRef.current) {
+      const latest = myOrders[0];
+      if (latest && ['assigned', 'ready_for_pickup'].includes(latest.status)) {
+        if (!newAssignedAlertOrder) {
+          sound.playDriverAlert();
+          setNewAssignedAlertOrder(latest);
+          setSelectedRouteOrderId(latest.id);
+        }
+      }
+    }
+    prevOrdersCountRef.current = myOrders.length;
+  }, [myOrders]);
+
+  // 4. تهيئة خريطة الملاحة الحية لتبويب المسارات
+  useEffect(() => {
+    if (activeBottomTab !== 'routes') {
+      if (routeMapInstanceRef.current) {
+        routeMapInstanceRef.current.remove();
+        routeMapInstanceRef.current = null;
+      }
+      return;
+    }
+
+    if (!routeMapContainerRef.current) return;
+    if (routeMapInstanceRef.current) return;
+
+    const defaultCenter = driverLiveCoords || currentDriver.coords || [26.4380, 50.1110];
+
+    const map = L.map(routeMapContainerRef.current, {
+      center: defaultCenter,
+      zoom: 14,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    const activeTileLayer = L.tileLayer(MAP_LAYERS[routeMapLayer].url, {
+      maxZoom: MAP_LAYERS[routeMapLayer].maxZoom,
+      subdomains: ['a', 'b', 'c', 'd']
+    }).addTo(map);
+
+    routeTileLayerRef.current = activeTileLayer;
+    routeMapInstanceRef.current = map;
+
+    return () => {
+      if (routeMapInstanceRef.current) {
+        routeMapInstanceRef.current.remove();
+        routeMapInstanceRef.current = null;
+      }
+    };
+  }, [activeBottomTab]);
+
+  // 5. تبديل طبقة الخريطة الميدانية (شوارع وأحياء السعودية / قمر صناعي / ليلي)
+  useEffect(() => {
+    const map = routeMapInstanceRef.current;
+    if (!map) return;
+    if (routeTileLayerRef.current) {
+      map.removeLayer(routeTileLayerRef.current);
+    }
+    const newTileLayer = L.tileLayer(MAP_LAYERS[routeMapLayer].url, {
+      maxZoom: MAP_LAYERS[routeMapLayer].maxZoom,
+      subdomains: ['a', 'b', 'c', 'd']
+    }).addTo(map);
+    routeTileLayerRef.current = newTileLayer;
+  }, [routeMapLayer]);
+
+  // 6. تحديث علامات الملاحة والمسارات اللحظية على الخريطة
+  useEffect(() => {
+    const map = routeMapInstanceRef.current;
+    if (!map || activeBottomTab !== 'routes') return;
+
+    // تنظيف العلامات السابقة
+    if (routeMarkersRef.current.driver) routeMarkersRef.current.driver.remove();
+    if (routeMarkersRef.current.branch) routeMarkersRef.current.branch.remove();
+    if (routeMarkersRef.current.customer) routeMarkersRef.current.customer.remove();
+    if (routeMarkersRef.current.polyline) routeMarkersRef.current.polyline.remove();
+
+    const driverCoords = driverLiveCoords || currentDriver.coords || [26.4380, 50.1110];
+
+    // علامة المندوب الحية
+    const driverIcon = L.divIcon({
+      className: 'driver-live-pin',
+      html: `
+        <div class="relative flex flex-col items-center">
+          <div class="absolute -inset-2 rounded-full bg-cyan-500/30 animate-ping"></div>
+          <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 border-2 border-white flex items-center justify-center text-white shadow-xl shadow-cyan-900/60 z-20">
+            <span class="text-xl">🚗</span>
           </div>
+          <div class="absolute -bottom-6 bg-slate-950/95 border border-cyan-500/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg flex items-center gap-1 z-30">
+            <span>${currentDriver.name || 'موقعك'}</span>
+            <span class="text-cyan-400 font-mono">${currentDriver.speed || 0} كم/س</span>
+          </div>
+        </div>
+      `,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22]
+    });
+    routeMarkersRef.current.driver = L.marker(driverCoords, { icon: driverIcon }).addTo(map);
 
-          {/* تنبيه الخطأ إن وجد */}
-          {loginError && (
-            <div className="p-3 bg-red-950/70 border border-red-800/80 rounded-2xl text-red-200 text-xs font-bold flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
-              <span>{loginError}</span>
+    const activeRouteOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup', 'in_transit', 'picked_up'].includes(o.status));
+    const currentOrder = activeRouteOrders.find(o => o.id === selectedRouteOrderId) || activeRouteOrders[0];
+
+    if (!currentOrder) {
+      map.setView(driverCoords, 14);
+      return;
+    }
+
+    const orderBranch = branches.find(b => b.id === currentOrder.branchId) || { name: 'المستودع الرئيسي', coords: [26.4380, 50.1110] };
+    const customerCoords = currentOrder.customerCoords || [26.4450, 50.1150];
+    const isHeadingToBranch = ['assigned', 'ready_for_pickup'].includes(currentOrder.status);
+
+    // علامة الفرع / المستودع
+    const branchIcon = L.divIcon({
+      className: 'branch-pin',
+      html: `
+        <div class="relative flex flex-col items-center">
+          <div class="w-10 h-10 rounded-2xl bg-purple-600 border-2 border-purple-200 flex items-center justify-center text-white shadow-lg shadow-purple-900/50">
+            <span class="text-lg">🏪</span>
+          </div>
+          <div class="absolute -bottom-6 bg-purple-950/95 border border-purple-500/60 text-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg">
+            ${orderBranch.name}
+          </div>
+        </div>
+      `,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+    routeMarkersRef.current.branch = L.marker(orderBranch.coords, { icon: branchIcon }).addTo(map);
+
+    // علامة العميل
+    const customerIcon = L.divIcon({
+      className: 'customer-pin',
+      html: `
+        <div class="relative flex flex-col items-center">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 border-2 border-emerald-200 flex items-center justify-center text-white shadow-lg shadow-emerald-900/50">
+            <span class="text-base">📍</span>
+          </div>
+          <div class="absolute -bottom-6 bg-slate-950/95 border border-emerald-500/60 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg">
+            ${currentOrder.customerName}
+          </div>
+        </div>
+      `,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+    routeMarkersRef.current.customer = L.marker(customerCoords, { icon: customerIcon }).addTo(map);
+
+    // رسم مسار الملاحة النشط
+    const routePoints = isHeadingToBranch
+      ? [driverCoords, orderBranch.coords]
+      : [driverCoords, customerCoords];
+
+    routeMarkersRef.current.polyline = L.polyline(routePoints, {
+      color: isHeadingToBranch ? '#a855f7' : '#10b981',
+      weight: 5,
+      opacity: 0.85,
+      dashArray: '10, 10',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // ضبط الرؤية
+    const bounds = L.latLngBounds([driverCoords, orderBranch.coords, customerCoords]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+  }, [activeBottomTab, selectedRouteOrderId, myOrders, branches, driverLiveCoords, currentDriver]);
+
+  return (
+    <div className="w-full max-w-md mx-auto min-h-screen bg-[#f4f6f8] dark:bg-[#0a0e18] text-slate-800 dark:text-slate-100 flex flex-col font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] select-none relative pb-28" dir="rtl">
+      
+      {/* 🔔 الإشعار العائم الفوري لوصول طلب جديد مسند */}
+      {newAssignedAlertOrder && (
+        <div className="fixed top-3 inset-x-3 sm:max-w-md sm:mx-auto z-[7000] animate-in slide-in-from-top duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-md border-2 border-amber-500 rounded-3xl p-4 shadow-[0_10px_35px_rgba(245,158,11,0.4)] text-slate-100">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-400 animate-bounce">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>وصلك طلب مسند جديد الآن!</span>
+                  </div>
+                  <div className="font-black text-sm text-white mt-0.5 font-mono">
+                    #{newAssignedAlertOrder.id}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewAssignedAlertOrder(null)}
+                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
-          )}
 
-          {/* نموذج تسجيل الدخول السري */}
-          <form onSubmit={handleDriverLogin} className="space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-300 font-bold mb-1.5 flex items-center justify-between">
-                <span>اسم المستخدم (رقم الجوال) *:</span>
-                <span className="text-[10px] text-cyan-400">رقم جوالك المسجل بالنظام</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={loginPhone}
-                  onChange={(e) => setLoginPhone(e.target.value)}
-                  placeholder="مثال: 0502893163"
-                  className="w-full bg-[#090d16] border border-cyan-900/60 rounded-xl p-3 pr-10 pl-3 text-white font-mono font-bold outline-none focus:border-[#00d2d3] shadow-inner"
-                />
-                <Phone className="w-4 h-4 text-[#00d2d3] absolute right-3 top-3.5" />
+            <div className="mt-3 bg-slate-950/70 rounded-xl p-2.5 border border-slate-800 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-400">العميل المستلم:</span>
+                <span className="font-bold text-slate-200">{newAssignedAlertOrder.customerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">الحي / العنوان:</span>
+                <span className="font-bold text-cyan-400">{newAssignedAlertOrder.customerAddress || 'المنطقة الشرقية'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">المبلغ المطلوب:</span>
+                <span className="font-bold text-emerald-400">{newAssignedAlertOrder.totalAmount} ر.س ({newAssignedAlertOrder.paymentMethod === 'cash' ? 'كاش عند الاستلام' : 'شبكة مدى'})</span>
               </div>
             </div>
 
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRouteOrderId(newAssignedAlertOrder.id);
+                  setActiveBottomTab('routes');
+                  setNewAssignedAlertOrder(null);
+                }}
+                className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>بدء الملاحة فوراً 🧭</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onUpdateOrderStatus) {
+                    onUpdateOrderStatus(newAssignedAlertOrder.id, 'picked_up');
+                  }
+                  sound.playSuccess();
+                  setNewAssignedAlertOrder(null);
+                }}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>استلام الشحنة 📦</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* ========================================================================= */}
+      {/* التبويب 1: الرئيسية (HOME) - مطابق للصورة 4 تماماً */}
+      {/* ========================================================================= */}
+      {activeBottomTab === 'home' && (
+        <div className="p-4 space-y-4">
+          
+          {/* الترويسة العلوية للرئيسية */}
+          <div className="flex items-center justify-between pt-1">
+            {/* جهة اليمين: الترحيب والمعرف والمخزون */}
             <div>
-              <label className="block text-slate-300 font-bold mb-1.5 flex items-center justify-between">
-                <span>كلمة المرور السرية *:</span>
-                <span className="text-[10px] text-slate-400 font-normal">كلمة المرور الخاصة بك</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showLoginPassword ? 'text' : 'password'}
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="أدخل كلمة المرور السرية"
-                  className="w-full bg-[#090d16] border border-cyan-900/60 rounded-xl p-3 pr-10 pl-10 text-white font-mono font-bold outline-none focus:border-[#00d2d3] shadow-inner"
-                />
-                <Lock className="w-4 h-4 text-[#00d2d3] absolute right-3 top-3.5" />
+              <h1 className="text-lg font-black text-slate-900 dark:text-white">
+                حيَّاك الله، {currentDriver.name || 'يونس'}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-0.5 rounded-lg text-xs font-bold shadow-2xs">
+                  المُعَرّف {currentDriver.code || '957'}
+                </span>
+                <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-0.5 rounded-lg text-xs font-bold shadow-2xs">
+                  مخزون: {inTransitOrders.length} قطعة
+                </span>
+              </div>
+            </div>
+
+            {/* جهة اليسار: زر التنبيهات وزر غير متاح */}
+            <div className="flex items-center gap-2">
+              {/* زر حالة التوفر: غير متاح / متاح */}
+              <button
+                type="button"
+                onClick={toggleAvailability}
+                className={
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-xs ' +
+                  (isAvailable
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800'
+                    : 'bg-[#fef2f2] text-[#dc2626] border-[#fecaca] dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
+                  )
+                }
+              >
+                <span className={'w-2 h-2 rounded-full ' + (isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500')}></span>
+                <span>{isAvailable ? 'متاح للطلب' : 'غير متاح'}</span>
+              </button>
+
+              {/* أيقونة الجرس 🔔 */}
+              <button
+                type="button"
+                onClick={() => { setShowNotificationsModal(true); setUnreadNotificationsCount(0); }}
+                className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#00d2d3] shadow-2xs cursor-pointer relative"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold animate-bounce shadow">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* بطاقات المؤشرات الثلاثة الأفقية العلوية */}
+          <div className="grid grid-cols-3 gap-2.5">
+            
+            {/* بطاقة 1: طلب نشط */}
+            <div className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1">
+              <div className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-[#00d2d3]">
+                <Package className="w-5 h-5" />
+              </div>
+              <div className="text-base font-black font-mono text-slate-800 dark:text-slate-100">
+                {inTransitOrders.length}
+              </div>
+              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                طلب نشط
+              </div>
+            </div>
+
+            {/* بطاقة 2: متوقع تحصيل */}
+            <div className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-500">
+                <span className="font-bold text-base">﷼</span>
+              </div>
+              <div className="text-base font-black font-mono text-slate-800 dark:text-slate-100">
+                {expectedCashAmount > 0 ? expectedCashAmount.toFixed(0) : '0'}
+              </div>
+              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                متوقع تحصيل
+              </div>
+            </div>
+
+            {/* بطاقة 3: التقييم */}
+            <div className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1">
+              <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-500">
+                <Star className="w-5 h-5 fill-amber-400" />
+              </div>
+              <div className="text-base font-black font-mono text-slate-800 dark:text-slate-100">
+                {currentDriver.rating ? currentDriver.rating.toFixed(1) : '-'}
+              </div>
+              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                تقييم لـ {deliveredOrders.length} طلب
+              </div>
+            </div>
+
+          </div>
+
+          {/* قسم طلباتي والأزرار الفلترة الثلاثية */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-slate-900 dark:text-white">طلباتي</h2>
+            </div>
+
+            {/* أزرار الفلترة: جديد + جاري التوصيل + مسترجع + زر الإعدادات/الفلتر */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                {/* جديد */}
                 <button
                   type="button"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  className="absolute left-3 top-3.5 text-slate-400 hover:text-slate-200"
+                  onClick={() => setOrdersSubTab('new')}
+                  className={
+                    'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ' +
+                    (ordersSubTab === 'new'
+                      ? 'bg-[#1c2438] text-white font-black'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    )
+                  }
                 >
-                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  جديد
+                </button>
+
+                {/* جاري التوصيل */}
+                <button
+                  type="button"
+                  onClick={() => setOrdersSubTab('in_transit')}
+                  className={
+                    'px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ' +
+                    (ordersSubTab === 'in_transit'
+                      ? 'bg-[#1c2438] text-white font-black'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    )
+                  }
+                >
+                  جاري التوصيل
+                </button>
+
+                {/* مسترجع */}
+                <button
+                  type="button"
+                  onClick={() => setOrdersSubTab('returned')}
+                  className={
+                    'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ' +
+                    (ordersSubTab === 'returned'
+                      ? 'bg-[#1c2438] text-white font-black'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    )
+                  }
+                >
+                  مسترجع
+                </button>
+              </div>
+
+              {/* زر الفلتر الأيسر */}
+              <button
+                type="button"
+                onClick={() => alert('فلترة الشحنات حسب الفرع أو نوع الدفع')}
+                className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-2xs cursor-pointer"
+              >
+                <Sliders className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* محتوى الشحنات بحسب التبويب */}
+            <div className="pt-4">
+              {ordersSubTab === 'new' && newOrders.length === 0 && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-24 h-24 bg-amber-50/50 dark:bg-amber-950/20 border-2 border-amber-200 dark:border-amber-900 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">📦</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    لا يوجد طلبات مسندة بعد
+                  </h3>
+                </div>
+              )}
+
+              {ordersSubTab === 'in_transit' && inTransitOrders.length === 0 && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-24 h-24 bg-cyan-50/50 dark:bg-cyan-950/20 border-2 border-cyan-200 dark:border-cyan-900 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">🚚</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    لا توجد طلبات جاري توصيلها حالياً
+                  </h3>
+                </div>
+              )}
+
+              {ordersSubTab === 'returned' && returnedOrders.length === 0 && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">↩️</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    لا توجد طلبات مسترجعة
+                  </h3>
+                </div>
+              )}
+
+              {/* عرض قائمة الطلبات الفعلية إن وجدت */}
+              {((ordersSubTab === 'new' ? newOrders : ordersSubTab === 'in_transit' ? inTransitOrders : returnedOrders)).map(order => (
+                <div key={order.id} className="bg-white dark:bg-[#111726] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg text-slate-800 dark:text-slate-200">
+                      #{order.id}
+                    </span>
+                    <span className="font-mono font-black text-sm text-[#00d2d3]">
+                      {order.totalAmount} ﷼
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-xs">
+                    <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{order.customerName}</span>
+                    </div>
+                    <div className="text-slate-500 text-[11px] flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="truncate">{order.customerAddress || 'الدمام، حي الشاطئ'}</span>
+                    </div>
+                  </div>
+
+                  {ordersSubTab === 'new' ? (
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (onUpdateOrderStatus) {
+                            await onUpdateOrderStatus(order.id, 'in_transit');
+                            sound.playSuccess();
+                            setOrdersSubTab('in_transit');
+                          }
+                        }}
+                        className="flex-1 py-2.5 bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs cursor-pointer transition-all shadow-xs flex items-center justify-center gap-1.5"
+                      >
+                        <span>استلام وبدء التوصيل 🚚</span>
+                      </button>
+                      <a
+                        href={`tel:${order.customerPhone || ''}`}
+                        className="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1 hover:text-[#00d2d3]"
+                        title="اتصال بالعميل"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>اتصال</span>
+                      </a>
+                    </div>
+                  ) : ordersSubTab === 'in_transit' ? (
+                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`tel:${order.customerPhone || ''}`}
+                          className="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:text-[#00d2d3]"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>اتصال بالعميل</span>
+                        </a>
+                        <a
+                          href={order.customerCoords ? `https://maps.google.com/?q=${order.customerCoords[0]},${order.customerCoords[1]}` : `https://maps.google.com/?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:text-[#00d2d3]"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-cyan-500" />
+                          <span>خرائط جوجل</span>
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryConfirmOrder(order)}
+                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl text-xs cursor-pointer transition-all shadow-xs flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>تأكيد التسليم والمبلغ ✅</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExceptionOrder(order)}
+                          className="px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-bold cursor-pointer"
+                        >
+                          تعثر التسليم
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-rose-500 font-bold">
+                      <span>حالة الشحنة: مرتجعة للمتجر</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (onUpdateOrderStatus) {
+                            await onUpdateOrderStatus(order.id, 'returned', null, { returnStatus: 'returned_to_branch' });
+                            alert('تم تسليم الشحنة المرتجعة للفرع');
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-lg text-[11px]"
+                      >
+                        تسليم للمستودع
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+          </div>
+
+          {/* زر الخريطة والملاحة العائم بالأسفل على اليسار مطابق للصورة 4 */}
+          <button
+            type="button"
+            onClick={() => setShowMapModal(true)}
+            className="fixed bottom-24 left-4 z-40 w-12 h-12 rounded-2xl bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer active:scale-95 transition-all"
+            title="عرض الخريطة الحية والملاحة"
+          >
+            <Map className="w-6 h-6 stroke-[2]" />
+          </button>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* التبويب 2: المسارات (ROUTES) - مطابق للصورة 3 تماماً */}
+      {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* التبويب 2: المسارات والملاحة الحية (ROUTES & GPS NAVIGATION) */}
+      {/* ========================================================================= */}
+      {activeBottomTab === 'routes' && (() => {
+        const activeRouteOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup', 'in_transit', 'picked_up'].includes(o.status));
+        const currentOrder = activeRouteOrders.find(o => o.id === selectedRouteOrderId) || activeRouteOrders[0] || null;
+
+        const orderBranch = currentOrder ? (branches.find(b => b.id === currentOrder.branchId) || { name: 'المستودع الرئيسي', phone: '0501122334', coords: [26.4380, 50.1110] }) : null;
+        const isHeadingToBranch = currentOrder ? ['assigned', 'ready_for_pickup'].includes(currentOrder.status) : false;
+
+        const driverCoords = driverLiveCoords || currentDriver.coords || [26.4380, 50.1110];
+        const targetCoords = currentOrder ? (isHeadingToBranch ? orderBranch.coords : (currentOrder.customerCoords || [26.4450, 50.1150])) : driverCoords;
+        const targetPhone = currentOrder ? (isHeadingToBranch ? orderBranch.phone : currentOrder.customerPhone) : '';
+        const targetTitle = currentOrder
+          ? (isHeadingToBranch ? `استلام من فرع: ${orderBranch.name}` : `تسليم العميل: ${currentOrder.customerName}`)
+          : 'جاهز لتوجيه المسارات';
+        const targetAddress = currentOrder
+          ? (isHeadingToBranch ? (orderBranch.district || 'موقع الفرع') : (currentOrder.customerAddress || 'المنطقة الشرقية'))
+          : 'أنت متصل بالرادار الميداني';
+
+        const distanceKm = currentOrder ? calculateDistanceKm(driverCoords, targetCoords) : 0;
+        const etaMins = currentOrder ? calculateDrivingMins(distanceKm) : 0;
+
+        return (
+          <div className="p-3 sm:p-4 space-y-3">
+            {/* ترويسة المسارات مع مبدل الطبقات وزر التنبيهات */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <h1 className="text-base font-black text-slate-900 dark:text-white">
+                  الملاحة وتوجيه المسار
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {/* مبدل نمط خريطة السعودية */}
+                <div className="flex items-center bg-white dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setRouteMapLayer('streets')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${routeMapLayer === 'streets' ? 'bg-[#00d2d3] text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-300'}`}
+                    title="شوارع وأحياء المملكة بالعربي"
+                  >
+                    شوارع 🗺️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRouteMapLayer('satellite')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${routeMapLayer === 'satellite' ? 'bg-[#00d2d3] text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-300'}`}
+                    title="قمر صناعي هجين مع الشوارع"
+                  >
+                    قمر 🛰️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRouteMapLayer('dark')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${routeMapLayer === 'dark' ? 'bg-[#00d2d3] text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-300'}`}
+                    title="الوضع الليلي"
+                  >
+                    ليلي 🌙
+                  </button>
+                </div>
+
+                {/* زر الإشعارات */}
+                <button
+                  type="button"
+                  onClick={() => { setShowNotificationsModal(true); setUnreadNotificationsCount(0); }}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-2xs relative cursor-pointer"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-[#00d2d3] hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,210,211,0.4)] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{loginLoading ? 'جاري التحقق...' : 'تسجيل الدخول إلى حسابي 🚀'}</span>
-            </button>
-          </form>
-
-          {/* تنبيه أمان وخصوصية */}
-          <div className="p-3 bg-[#090d16] border border-cyan-950 rounded-2xl text-[11px] text-slate-400 text-center space-y-1">
-            <div className="flex items-center justify-center gap-1 text-emerald-400 font-bold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>نظام حماية وخصوصية المندوب</span>
-            </div>
-            <div>بياناتك وطلباتك ومحفظتك سرية ومحمية بكلمة المرور الخاصة بك فقط. في حال نسيت كلمة المرور، يرجى التواصل مع إدارة المتجر لإعادة تعيينها.</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // الشاشة الرئيسية للمندوب بعد تسجيل الدخول (مع الخصوصية التامة)
-  // =========================================================================
-  return (
-    <div className="w-full max-w-md mx-auto min-h-[92vh] flex flex-col font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] text-slate-100 select-none pb-24" dir="rtl">
-      
-      {/* Toast Notification Alert */}
-      {toastMessage && (
-        <div className="fixed top-16 left-4 right-4 z-[9999] max-w-md mx-auto bg-gradient-to-r from-cyan-900 to-slate-900 border-2 border-cyan-400 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-          <Sparkles className="w-5 h-5 text-[#00d2d3] shrink-0" />
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
-      {/* 1. ترويسة هوية المندوب ومعرفه بالحساب (بدون أي تبديل لحسابات أخرى) */}
-      <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-4 shadow-2xl mb-3 space-y-3 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-[#00d2d3] flex items-center justify-center text-slate-950 font-black text-lg shadow-[0_0_15px_rgba(0,210,211,0.4)]">
-                {currentDriver.name ? currentDriver.name.charAt(0) : 'س'}
-              </div>
-              <span className={'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0f1523] ' + (isOnline ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-red-500')}></span>
-            </div>
-
-            <div>
-              {/* معرف المندوب المميز */}
-              <div className="flex items-center gap-2">
-                <span className="bg-cyan-950 text-[#00d2d3] border border-cyan-700/60 text-[10px] font-mono font-black px-2 py-0.5 rounded-md tracking-wider shadow-sm">
-                  {currentDriver.code || ('DRV-0' + (currentDriver.id?.replace(/\D/g, '') || '1'))}
-                </span>
-                <span className="font-black text-sm text-white">{currentDriver.name}</span>
-              </div>
-              
-              <div className="text-[11px] text-slate-400 font-mono mt-1 flex items-center gap-2">
-                <span className="text-[#00d2d3] font-bold">{currentDriver.vehicle || 'سيارة توصيل'}</span>
-                <span>•</span>
-                <span className="text-amber-400 font-bold">⭐ {currentDriver.rating || 5.0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* أزرار الاتصال وتسجيل الخروج الآمن */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onToggleDriverStatus && onToggleDriverStatus(currentDriver.id)}
-              className={'flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all shadow-md cursor-pointer ' + (isOnline ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 shadow-emerald-950/50' : 'bg-red-950/80 text-red-300 border border-red-700/60')}
-            >
-              <Power className="w-3 h-3" />
-              <span>{isOnline ? 'متصل' : 'أوفلاين'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="p-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800/60 text-red-300 transition-colors cursor-pointer"
-              title="تسجيل الخروج الآمن"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* شريط معلومات سريعة: كاش العهدة، جاري التوصيل، عمولات اليوم */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-cyan-900/30 text-center text-xs font-mono">
-          <div className="bg-[#090d16] p-2 rounded-xl border border-cyan-900/30">
-            <div className="text-[10px] text-slate-400 font-sans">كاش العهدة:</div>
-            <div className="font-bold text-[#00d2d3] text-sm mt-0.5">
-              {(currentDriver.cashOnHand || currentDriver.walletBalance || 0).toFixed(2)} ﷼
-            </div>
-          </div>
-          <div className="bg-[#090d16] p-2 rounded-xl border border-cyan-900/30">
-            <div className="text-[10px] text-slate-400 font-sans">قيد التوصيل:</div>
-            <div className="font-bold text-amber-400 text-sm mt-0.5">
-              {inTransitOrders.length}
-            </div>
-          </div>
-          <div className="bg-[#090d16] p-2 rounded-xl border border-cyan-900/30">
-            <div className="text-[10px] text-slate-400 font-sans">أرباح اليوم:</div>
-            <div className="font-bold text-emerald-400 text-sm mt-0.5">
-              {deliveredOrders.length * 20} ﷼
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. محتوى شاشة الطلبات الرئيسية مع التبويبات الثلاثة المطلوبة */}
-      {mobileTab === 'orders' && (
-        <div className="flex-1 space-y-3">
-          
-          {/* شريط التبويبات الثلاثة الرئيسية: جديد + جاري التوصيل + مسترجع */}
-          <div className="bg-[#0f1523] p-1.5 rounded-2xl border border-cyan-900/50 grid grid-cols-3 gap-1.5 shadow-xl">
-            {/* تبويب 1: جديد */}
-            <button
-              type="button"
-              onClick={() => { setOrdersSubTab('new'); sound.playClick(); }}
-              className={'py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ' + 
-                (ordersSubTab === 'new' 
-                  ? 'bg-[#00d2d3] text-slate-950 shadow-[0_0_12px_rgba(0,210,211,0.4)] font-black' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900')}
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>جديد</span>
-              <span className={'text-[10px] px-1.5 py-0.2 rounded-full font-mono ' + 
-                (ordersSubTab === 'new' ? 'bg-slate-950 text-[#00d2d3]' : 'bg-cyan-950 text-cyan-300 border border-cyan-800')}>
-                {newOrders.length}
-              </span>
-            </button>
-
-            {/* تبويب 2: جاري التوصيل */}
-            <button
-              type="button"
-              onClick={() => { setOrdersSubTab('in_transit'); sound.playClick(); }}
-              className={'py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ' + 
-                (ordersSubTab === 'in_transit' 
-                  ? 'bg-[#00d2d3] text-slate-950 shadow-[0_0_12px_rgba(0,210,211,0.4)] font-black' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900')}
-            >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>جاري التوصيل</span>
-              <span className={'text-[10px] px-1.5 py-0.2 rounded-full font-mono ' + 
-                (ordersSubTab === 'in_transit' ? 'bg-slate-950 text-[#00d2d3]' : 'bg-amber-950 text-amber-300 border border-amber-800')}>
-                {inTransitOrders.length}
-              </span>
-            </button>
-
-            {/* تبويب 3: مسترجع */}
-            <button
-              type="button"
-              onClick={() => { setOrdersSubTab('returned'); sound.playClick(); }}
-              className={'py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer relative ' + 
-                (ordersSubTab === 'returned' 
-                  ? 'bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)] font-black' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900')}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>مسترجع</span>
-              {returnedOrders.length > 0 && (
-                <span className={'text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ' + 
-                  (ordersSubTab === 'returned' ? 'bg-slate-950 text-red-400' : 'bg-red-950 text-red-300 border border-red-800 animate-pulse')}>
-                  {returnedOrders.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* أ) محتوى تبويب: 1. جديد */}
-          {ordersSubTab === 'new' && (
-            <div className="space-y-3">
-              {newOrders.length === 0 ? (
-                <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-8 text-center space-y-3 shadow-xl">
-                  <div className="w-16 h-16 rounded-3xl bg-cyan-950/60 border border-cyan-800/50 flex items-center justify-center text-[#00d2d3] mx-auto text-3xl shadow-inner">
-                    📦
-                  </div>
-                  <h3 className="text-base font-bold text-white">لا توجد طلبات جديدة حالياً</h3>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    أنت جاهز بالميدان، وبمجرد إسناد أي شحنة جديدة لك من لوحة الإدارة ستظهر هنا فوراً للإستلام وبدء التوصيل.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onRefresh}
-                    className="mt-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-cyan-900/60 rounded-xl text-xs font-bold text-[#00d2d3] inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>تحديث الطلبات</span>
-                  </button>
-                </div>
-              ) : (
-                newOrders.map(order => (
-                  <div key={order.id} className="bg-[#0f1523] border-2 border-cyan-500/40 rounded-3xl p-4 shadow-xl space-y-3.5 relative overflow-hidden">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-full bg-cyan-950 text-[#00d2d3] border border-cyan-800 font-mono font-bold text-xs">
-                          {order.id}
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-800 text-[10px] font-bold">
-                          طلب جديد بانتظار الاستلام 🆕
-                        </span>
-                      </div>
-                      <div className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-lg">
-                        +20 ﷼ عمولة
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <Store className="w-3.5 h-3.5 text-[#00d2d3]" />
-                        <span>الفرع المستلم منه: <strong className="text-slate-200">{order.branchId ? (branches.find(b => b.id === order.branchId)?.name || 'فرع إكليل الدمام') : 'فرع إكليل الدمام'}</strong></span>
-                      </div>
-                      <h4 className="text-base font-black text-white">{order.customerName}</h4>
-                      <p className="text-xs text-slate-300 flex items-start gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#00d2d3] shrink-0 mt-0.5" />
-                        <span>{order.customerAddress || 'الدمام - الشرقية'}</span>
-                      </p>
-                    </div>
-
-                    <div className="bg-[#090d16] p-3 rounded-2xl border border-cyan-900/40 flex items-center justify-between text-xs font-mono">
-                      <div>
-                        <span className="text-slate-400 font-sans">طريقة التحصيل: </span>
-                        <strong className="text-white font-bold">{order.paymentMethod === 'cash' ? '💵 كاش عند الاستلام' : '💳 مدى / شبكة'}</strong>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-slate-400 font-sans">المبلغ: </span>
-                        <strong className="text-base font-black text-[#00d2d3]">{order.totalAmount} ﷼</strong>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handlePickupOrder(order)}
-                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-[#00d2d3] hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,210,211,0.4)] active:scale-95 transition-all cursor-pointer"
-                    >
-                      <Package className="w-5 h-5" />
-                      <span>استلام الطلب وبدء التوصيل 🚀</span>
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* ب) محتوى تبويب: 2. جاري التوصيل */}
-          {ordersSubTab === 'in_transit' && (
-            <div className="space-y-3">
-              {inTransitOrders.length === 0 ? (
-                <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-8 text-center space-y-3 shadow-xl">
-                  <div className="w-16 h-16 rounded-3xl bg-amber-950/60 border border-amber-800/50 flex items-center justify-center text-amber-400 mx-auto text-3xl shadow-inner">
-                    🚚
-                  </div>
-                  <h3 className="text-base font-bold text-white">لا توجد طلبات قيد التوصيل الآن</h3>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    توجه إلى تبويب <strong>"جديد"</strong> واضغط على زر <strong>"استلام الطلب"</strong> لبدء المشوار.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setOrdersSubTab('new')}
-                    className="mt-2 px-4 py-2 bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>عرض الطلبات الجديدة ({newOrders.length})</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                inTransitOrders.map(order => (
-                  <div key={order.id} className="bg-[#0f1523] border-2 border-cyan-500/60 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-4 relative overflow-hidden">
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 rounded-full bg-cyan-950 text-[#00d2d3] border border-cyan-800 font-mono font-bold text-xs">
-                        {order.id}
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800 text-[11px] font-bold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                        <span>قيد التوصيل للعميل ⚡</span>
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-black text-white">{order.customerName}</h3>
-                      <p className="text-xs text-slate-300 mt-1 flex items-start gap-1.5">
-                        <MapPin className="w-4 h-4 text-[#00d2d3] shrink-0 mt-0.5" />
-                        <span>{order.customerAddress || 'الدمام - الشرقية'}</span>
-                      </p>
-                    </div>
-
-                    <div className="bg-[#090d16] p-3 rounded-2xl border border-cyan-900/40 flex items-center justify-between text-xs font-mono">
-                      <div>
-                        <span className="text-slate-400 font-sans">التحصيل المطلوب: </span>
-                        <strong className="text-white font-bold">{order.paymentMethod === 'cash' ? '💵 كاش عند الاستلام' : '💳 مدى / شبكة'}</strong>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-slate-400 font-sans">المبلغ: </span>
-                        <strong className="text-lg font-black text-[#00d2d3]">{order.totalAmount} ﷼</strong>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <a
-                        href={'tel:' + order.customerPhone}
-                        className="py-3 px-2 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-400 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform"
-                      >
-                        <Phone className="w-5 h-5 text-emerald-400" />
-                        <span>اتصال</span>
-                      </a>
-
-                      <a
-                        href={'https://wa.me/966' + (order.customerPhone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '') + '?text=' + encodeURIComponent('مرحباً يا غالي، أنا مندوبك من سند إكسبريس ومعي شحنتك رقم ' + order.id + '، هل الموقع مناسب للتسليم؟')}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-3 px-2 rounded-2xl bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform"
-                      >
-                        <MessageSquare className="w-5 h-5 text-emerald-400" />
-                        <span>واتساب</span>
-                      </a>
-
-                      <a
-                        href={order.customerCoords ? 'https://www.google.com/maps/dir/?api=1&destination=' + order.customerCoords[0] + ',' + order.customerCoords[1] : 'https://maps.google.com'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-3 px-2 rounded-2xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-800/60 text-[#00d2d3] font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-transform"
-                      >
-                        <Navigation className="w-5 h-5 text-[#00d2d3]" />
-                        <span>خرائط Google</span>
-                      </a>
-                    </div>
-
-                    <div className="space-y-2 pt-2 border-t border-cyan-900/30">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeliveryConfirmOrder(order);
-                          setConfirmPaymentMethod(order.paymentMethod || 'cash');
-                        }}
-                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-transform cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>تم تسليم الشحنة للعميل بنجاح ✅</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setExceptionOrder(order)}
-                        className="w-full py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/50 border border-red-800/60 text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                        <span>تسجيل تعثر / إرجاع الشحنة ⚠️</span>
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* ج) محتوى تبويب: 3. مسترجع */}
-          {ordersSubTab === 'returned' && (
-            <div className="space-y-3">
-              <div className="bg-gradient-to-r from-red-950/80 via-amber-950/60 to-slate-900 border-2 border-red-600/60 rounded-3xl p-4 shadow-2xl space-y-1.5">
-                <div className="flex items-center gap-2 text-red-300 font-black text-sm">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 animate-pulse" />
-                  <span>تنبيه المرتجعات الميدانية للعملاء</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  تنزل الطلبات المسترجعة من العملاء مباشرة في هذا القسم لكي تعرف أن لديك شحنة تحتاج استرجاعاً وتوجهاً للعميل لاستلامها وإعادتها للمتجر.
-                </p>
-              </div>
-
-              {returnedOrders.length === 0 ? (
-                <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-8 text-center space-y-3 shadow-xl">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-950/60 border border-emerald-800/50 flex items-center justify-center text-emerald-400 mx-auto text-3xl shadow-inner">
-                    ✨
-                  </div>
-                  <h3 className="text-base font-bold text-white">لا توجد طلبات مسترجعة مسندة لك</h3>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    جميع الشحنات في مسارها الطبيعي ولا توجد أي مرتجعات معلقة تتطلب استلاماً من العملاء.
-                  </p>
-                </div>
-              ) : (
-                returnedOrders.map(order => {
-                  const isPickedUpFromCustomer = order.returnStatus === 'return_picked_up';
-                  const isReturnedToBranch = order.returnStatus === 'returned_to_branch' || order.status === 'returned_to_branch';
-
+            {/* شريط اختيار الشحنات النشطة في حال وجود أكثر من شحنة */}
+            {activeRouteOrders.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {activeRouteOrders.map((ord) => {
+                  const isSelected = ord.id === (currentOrder?.id);
+                  const isPickup = ['assigned', 'ready_for_pickup'].includes(ord.status);
                   return (
-                    <div key={order.id} className="bg-[#0f1523] border-2 border-red-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3.5 relative overflow-hidden">
-                      <div className="flex items-center justify-between">
-                        <span className="px-3 py-1 rounded-full bg-red-950 text-red-300 border border-red-800 font-mono font-bold text-xs">
-                          {order.id}
-                        </span>
-                        <span className={'px-2.5 py-0.5 rounded-full text-[10px] font-bold border ' + 
-                          (isReturnedToBranch 
-                            ? 'bg-slate-900 text-slate-300 border-slate-700' 
-                            : isPickedUpFromCustomer 
-                              ? 'bg-blue-950 text-blue-300 border-blue-800' 
-                              : 'bg-red-950 text-red-300 border-red-700 animate-pulse')}>
-                          {isReturnedToBranch ? 'تم تسليمه للمستودع 🏢' : isPickedUpFromCustomer ? 'المرتجع معك بالسيارة 🚗' : 'مطلوب استرجاع من عميل ⚠️'}
-                        </span>
-                      </div>
-
-                      <div className="bg-red-950/40 border border-red-800/50 p-3 rounded-2xl space-y-1">
-                        <div className="text-[11px] font-bold text-red-300 flex items-center gap-1.5">
-                          <RotateCcw className="w-3.5 h-3.5 text-red-400" />
-                          <span>سبب الاسترجاع من العميل:</span>
-                        </div>
-                        <p className="text-xs text-white font-medium">
-                          {order.returnReason || order.exceptionReason || order.notes || 'طلب العميل استبدال أو استرجاع الشحنة'}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-base font-black text-white">{order.customerName}</h4>
-                        <p className="text-xs text-slate-300 mt-1 flex items-start gap-1.5">
-                          <MapPin className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                          <span>عنوان الاستلام: {order.customerAddress || 'الدمام - الشرقية'}</span>
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <a
-                          href={'tel:' + order.customerPhone}
-                          className="py-2.5 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-400 font-bold text-xs flex flex-col items-center justify-center gap-1"
-                        >
-                          <Phone className="w-4 h-4 text-emerald-400" />
-                          <span>اتصال</span>
-                        </a>
-
-                        <a
-                          href={'https://wa.me/966' + (order.customerPhone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '') + '?text=' + encodeURIComponent('مرحباً يا غالي، بخصوص طلب الاسترجاع للشحنة رقم ' + order.id + '، أنا مندوب سند إكسبريس وفي طريقي لاستلام السلعة منك.')}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="py-2.5 px-2 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 font-bold text-xs flex flex-col items-center justify-center gap-1"
-                        >
-                          <MessageSquare className="w-4 h-4 text-emerald-400" />
-                          <span>واتساب</span>
-                        </a>
-
-                        <a
-                          href={order.customerCoords ? 'https://www.google.com/maps/dir/?api=1&destination=' + order.customerCoords[0] + ',' + order.customerCoords[1] : 'https://maps.google.com'}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="py-2.5 px-2 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-800/60 text-[#00d2d3] font-bold text-xs flex flex-col items-center justify-center gap-1"
-                        >
-                          <Navigation className="w-4 h-4 text-[#00d2d3]" />
-                          <span>موقع العميل</span>
-                        </a>
-                      </div>
-
-                      <div className="pt-2 border-t border-cyan-900/30 space-y-2">
-                        {!isPickedUpFromCustomer && !isReturnedToBranch ? (
-                          <button
-                            type="button"
-                            onClick={() => handlePickupReturnFromCustomer(order)}
-                            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.4)] active:scale-95 transition-transform cursor-pointer"
-                          >
-                            <Box className="w-4 h-4" />
-                            <span>تم استلام المرتجع من العميل باليد 📦</span>
-                          </button>
-                        ) : !isReturnedToBranch ? (
-                          <button
-                            type="button"
-                            onClick={() => handleHandoverReturnToBranch(order)}
-                            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-[#00d2d3] hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,210,211,0.4)] active:scale-95 transition-transform cursor-pointer"
-                          >
-                            <Store className="w-4 h-4" />
-                            <span>تسليم المرتجع لمستودع / فرع المتجر 🏢</span>
-                          </button>
-                        ) : (
-                          <div className="p-2.5 bg-emerald-950/50 border border-emerald-800/50 rounded-xl text-center text-xs text-emerald-300 font-bold flex items-center justify-center gap-1.5">
-                            <CheckCircle className="w-4 h-4 text-emerald-400" />
-                            <span>تم تسليم هذا المرتجع لفرع المتجر واكتمال الإجراء ✅</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <button
+                      key={ord.id}
+                      type="button"
+                      onClick={() => setSelectedRouteOrderId(ord.id)}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-md scale-102'
+                          : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-400'
+                      }`}
+                    >
+                      <span>{isPickup ? '🏪 استلام' : '📍 تسليم'} #{ord.id.slice(-6)}</span>
+                      <span className="opacity-75 text-[10px]">({ord.customerName})</span>
+                    </button>
                   );
-                })
+                })}
+              </div>
+            )}
+
+            {/* بطاقة الملاحة العلوية HUD (المحطة القادمة وزمن الوصول) */}
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 shadow-md">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white ${isHeadingToBranch ? 'bg-purple-600 shadow-purple-900/30' : 'bg-emerald-600 shadow-emerald-900/30'} shadow-md`}>
+                    {isHeadingToBranch ? <Store className="w-4 h-4" /> : <Navigation className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400">
+                      {currentOrder ? (isHeadingToBranch ? 'المحطة الحالية (الاستلام من الفرع)' : 'المحطة الحالية (التسليم للعميل)') : 'حالة الملاحة'}
+                    </div>
+                    <div className="text-xs font-black text-slate-800 dark:text-white truncate max-w-[210px]">
+                      {targetTitle}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-left">
+                  <div className="text-[10px] font-bold text-slate-400">زمن الوصول المقدر</div>
+                  <div className="text-sm font-black text-[#00d2d3] font-mono">
+                    {currentOrder ? `${etaMins} دقيقة` : 'جاهز'}
+                  </div>
+                </div>
+              </div>
+
+              {/* عدادات الملاحة الثلاثية */}
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-bold">المسافة</div>
+                  <div className="font-black font-mono text-slate-700 dark:text-slate-200 mt-0.5">
+                    {currentOrder ? `${distanceKm} كم` : '0 كم'}
+                  </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-bold">سرعتك الحالية</div>
+                  <div className="font-black font-mono text-amber-500 mt-0.5">
+                    {currentDriver.speed || 0} كم/س
+                  </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-bold">التحصيل المطلوب</div>
+                  <div className="font-black font-mono text-emerald-500 mt-0.5">
+                    {currentOrder ? `${currentOrder.totalAmount} ر.س` : '0 ر.س'}
+                  </div>
+                </div>
+              </div>
+
+              {currentOrder && (
+                <div className="mt-2.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                  <MapPin className="w-3.5 h-3.5 text-[#00d2d3] shrink-0" />
+                  <span className="truncate">{targetAddress}</span>
+                </div>
               )}
             </div>
-          )}
 
-          {/* سجل الشحنات المنجزة اليوم */}
-          <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-4 shadow-xl space-y-3 mt-4">
-            <div className="flex items-center justify-between text-xs font-bold border-b border-cyan-900/30 pb-2">
-              <span className="text-white flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>شحناتك المسلمة بنجاح اليوم ({deliveredOrders.length})</span>
-              </span>
-              <span className="text-[#00d2d3] font-mono font-bold">
-                +{deliveredOrders.length * 20} ﷼ عمولات
-              </span>
+            {/* وعاء خريطة الملاحة الحية Leaflet */}
+            <div className="relative w-full h-[48vh] min-h-[360px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-950">
+              <div ref={routeMapContainerRef} className="w-full h-full min-h-[360px]" />
+
+              {/* شارة توجيه عائمة فوق الخريطة */}
+              <div className="absolute top-3 right-3 z-[1000] bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl px-2.5 py-1 text-[10px] font-bold text-white shadow-lg flex items-center gap-1.5 pointer-events-auto">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>توجيه GPS نشط • شوارع وأحياء المملكة</span>
+              </div>
+
+              {/* زر إعادة ضبط موقع المندوب على الخريطة */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (routeMapInstanceRef.current) {
+                    routeMapInstanceRef.current.flyTo(driverCoords, 16, { duration: 1 });
+                  }
+                }}
+                className="absolute bottom-3 left-3 z-[1000] w-9 h-9 rounded-xl bg-slate-900/90 text-white border border-slate-700 flex items-center justify-center shadow-lg hover:bg-slate-800 cursor-pointer pointer-events-auto"
+                title="تمركز حول موقعي"
+              >
+                <Navigation className="w-4 h-4 text-cyan-400" />
+              </button>
             </div>
 
-            {deliveredOrders.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-500 font-semibold">
-                لم تقم بتسليم شحنات حتى الآن اليوم
+            {/* لوحة إجراءات الملاحة والتواصل الميدانية السريعة */}
+            {currentOrder ? (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* فتح في خرائط جوجل */}
+                  <a
+                    href={getGoogleNavUrl(targetCoords[0], targetCoords[1])}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>خرائط Google</span>
+                  </a>
+
+                  {/* فتح في Waze */}
+                  <a
+                    href={getWazeNavUrl(targetCoords[0], targetCoords[1])}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>تطبيق Waze</span>
+                  </a>
+
+                  {/* اتصال هاتفي */}
+                  <a
+                    href={`tel:${targetPhone}`}
+                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs border border-slate-700 shadow-md flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>اتصال</span>
+                  </a>
+
+                  {/* مراسلة واتساب */}
+                  <a
+                    href={`https://wa.me/${(targetPhone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`السلام عليكم، معك مندوب منصة سند إكسبريس بخصوص طلبك #${currentOrder.id}. أنا في طريقي إليك للتسليم.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>واتساب</span>
+                  </a>
+                </div>
+
+                {/* زر الإجراء الرئيسي: تأكيد الاستلام من الفرع أو تأكيد التسليم للعميل */}
+                {isHeadingToBranch ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onUpdateOrderStatus) {
+                        onUpdateOrderStatus(currentOrder.id, 'picked_up');
+                      }
+                      sound.playSuccess();
+                      alert(`✅ تم تأكيد استلام الشحنة #${currentOrder.id} من الفرع، جاري الآن توجيه المسار إلى العميل!`);
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>تأكيد استلام الشحنة من الفرع والبدء بالتوصيل للعميل 🚀</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryConfirmOrder(currentOrder)}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>وصلت للعميل — تأكيد تسليم الشحنة وتحصيل المبلغ 🏁</span>
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="space-y-2">
-                {deliveredOrders.slice(0, 5).map(o => (
-                  <div key={o.id} className="p-2.5 rounded-xl bg-[#090d16] border border-cyan-900/30 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="font-bold text-white">{o.customerName}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{o.id} • {o.paymentMethod === 'cash' ? 'كاش' : 'مدى'}</div>
-                    </div>
-                    <div className="text-right font-mono">
-                      <div className="text-emerald-400 font-bold">{o.totalAmount} ﷼</div>
-                      <div className="text-[10px] text-slate-400">عمولة: 20 ﷼</div>
-                    </div>
-                  </div>
-                ))}
+              /* حالة عدم وجود شحنات نشطة */
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-2">
+                <div className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-[#00d2d3] mx-auto">
+                  <Navigation className="w-5 h-5 animate-pulse" />
+                </div>
+                <div className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  أنت متصل بالرادار الميداني • جاهز لاستقبال الطلبات
+                </div>
+                <div className="text-xs text-slate-400">
+                  بمجرد إسناد شحنة جديدة لك سيصدر النظام رنيناً صوتياً وسيتم رسم مسار الملاحة تلقائياً.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { if (onRefresh) onRefresh(); sound.click(); }}
+                  className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>تحديث قائمة الطلبات</span>
+                </button>
               </div>
             )}
           </div>
+        );
+      })()}
 
+      {/* ========================================================================= */}
+      {/* التبويب 4: المخزون (INVENTORY) */}
+      {/* ========================================================================= */}
+      {activeBottomTab === 'inventory' && (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between pt-1">
+            <h1 className="text-base font-black text-slate-900 dark:text-white">
+              المخزون والعهدة الميدانية
+            </h1>
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/50 text-[#00d2d3] border border-cyan-300 dark:border-cyan-800">
+              {inTransitOrders.length} شحنات بالسيارة
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-[#111726] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+            <div className="font-bold text-xs text-slate-700 dark:text-slate-300">
+              بيانات العهدة في سيارتك ({currentDriver.vehicle || 'كامري 2023'}):
+            </div>
+            
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+              <div className="py-2 flex justify-between">
+                <span className="text-slate-400">جهاز نقاط بيع مدى:</span>
+                <span className="font-bold font-mono">SN-POS-9812 (Geidea)</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-slate-400">حقيبة حرارية عازلة:</span>
+                <span className="font-bold font-mono">BAG-EXP-04 (سند)</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-slate-400">الكاش المسلم بالعهدة:</span>
+                <span className="font-bold font-mono text-emerald-600">{currentDriver.cashOnHand || '327.74'} ﷼</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* 3. تبويب الملاحة والخريطة */}
-      {mobileTab === 'map' && (
-        <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-4 shadow-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-              <Compass className="w-4 h-4 text-[#00d2d3]" />
-              <span>رادار الملاحة وتتبع موقعك الميداني</span>
-            </h3>
+      {/* ========================================================================= */}
+      {/* التبويب 5: حسابي (ACCOUNT) - مطابق للصورتين 1 و 2 تماماً */}
+      {/* ========================================================================= */}
+      {activeBottomTab === 'account' && (
+        <div className="p-4 space-y-4">
+          
+          {/* الترويسة العلوية لصفحة حسابي (مطابقة للصورة 1) */}
+          <div className="flex items-start justify-between pt-1">
+            {/* جهة اليمين: اسم يونس وأيقونة المستخدم والمعرف والتقييم */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white">
+                  <User className="w-4 h-4" />
+                </div>
+                <h1 className="text-lg font-black text-slate-900 dark:text-white">
+                  {currentDriver.name || 'يونس'}
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-0.5 rounded-lg text-xs font-bold shadow-2xs">
+                  المُعَرّف {currentDriver.code || '957'}
+                </span>
+                <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-0.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1">
+                  <span>تقييم: -</span>
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                </span>
+              </div>
+            </div>
+
+            {/* جهة اليسار: زر غير متاح */}
             <button
               type="button"
-              onClick={toggleRealGps}
-              className={'px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 ' + (gpsActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-900 text-slate-300 border border-slate-700')}
+              onClick={toggleAvailability}
+              className={
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-xs ' +
+                (isAvailable
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800'
+                  : 'bg-[#fef2f2] text-[#dc2626] border-[#fecaca] dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
+                )
+              }
             >
-              <Radio className="w-3.5 h-3.5" />
-              <span>{gpsActive ? 'GPS متصل' : 'تشغيل GPS'}</span>
+              <span className={'w-2 h-2 rounded-full ' + (isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500')}></span>
+              <span>{isAvailable ? 'متاح للطلب' : 'غير متاح'}</span>
             </button>
           </div>
 
-          <div className="bg-[#090d16] rounded-2xl p-4 border border-cyan-900/30 text-xs space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-400">المركبة المسجلة:</span>
-              <span className="font-bold text-white">{currentDriver.vehicle || 'سيارة توصيل'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">نطاق التغطية:</span>
-              <span className="font-bold text-[#00d2d3]">الدمام، الخبر، الجبيل</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">سرعة المركبة الحالية:</span>
-              <span className="font-mono font-bold text-emerald-400">{currentDriver.speed || 0} كم/س</span>
-            </div>
-          </div>
-
-          {activeOrder && activeOrder.customerCoords && (
-            <a
-              href={'https://www.google.com/maps/dir/?api=1&destination=' + activeOrder.customerCoords[0] + ',' + activeOrder.customerCoords[1]}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-3 rounded-2xl bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,210,211,0.4)]"
+          {/* البطاقات الثلاثة السريعة: سجل الطلبات + المحفظة + إعداداتي */}
+          <div className="grid grid-cols-3 gap-2.5 pt-2">
+            
+            {/* سجل الطلبات 📅 */}
+            <button
+              type="button"
+              onClick={() => setShowHistoryModal(true)}
+              className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1.5 cursor-pointer hover:border-cyan-400 active:scale-95 transition-all"
             >
-              <Navigation className="w-4 h-4" />
-              <span>فتح التوجيه المباشر في خرائط Google 🗺️</span>
-            </a>
-          )}
-        </div>
-      )}
-
-      {/* 4. تبويب المحفظة */}
-      {mobileTab === 'wallet' && (
-        <div className="space-y-3">
-          <DriverWallet driver={currentDriver} orders={orders} onRefresh={onRefresh} />
-        </div>
-      )}
-
-      {/* 5. تبويب حسابي (مع الخصوصية التامة وإمكانية تغيير كلمة المرور) */}
-      {mobileTab === 'profile' && (
-        <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center gap-3 pb-3 border-b border-cyan-900/30">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-[#00d2d3] flex items-center justify-center text-slate-950 font-black text-xl shadow-[0_0_15px_rgba(0,210,211,0.4)]">
-              {currentDriver.name ? currentDriver.name.charAt(0) : 'س'}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="bg-cyan-950 text-[#00d2d3] border border-cyan-700/60 text-[10px] font-mono font-black px-2 py-0.5 rounded-md">
-                  {currentDriver.code || ('DRV-0' + (currentDriver.id?.replace(/\D/g, '') || '1'))}
-                </span>
-                <h3 className="text-base font-black text-white">{currentDriver.name}</h3>
+              <div className="w-11 h-11 rounded-full bg-[#fef9c3] border border-[#fef08a] flex items-center justify-center text-[#ca8a04]">
+                <Calendar className="w-5 h-5" />
               </div>
-              <p className="text-xs text-[#00d2d3] font-mono mt-1">{currentDriver.phone}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">الهوية / الإقامة: {currentDriver.nationalId || '2463794624'}</p>
-            </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                سجل الطلبات
+              </span>
+            </button>
+
+            {/* المحفظة 👛 */}
+            <button
+              type="button"
+              onClick={() => setShowWalletModal(true)}
+              className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1.5 cursor-pointer hover:border-emerald-400 active:scale-95 transition-all"
+            >
+              <div className="w-11 h-11 rounded-full bg-[#dcfce7] border border-[#bbf7d0] flex items-center justify-center text-[#16a34a]">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                المحفظة
+              </span>
+            </button>
+
+            {/* إعداداتي ⚙️ */}
+            <button
+              type="button"
+              onClick={() => setShowSettingsModal(true)}
+              className="bg-white dark:bg-[#111726] p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs flex flex-col items-center justify-center space-y-1.5 cursor-pointer hover:border-cyan-400 active:scale-95 transition-all"
+            >
+              <div className="w-11 h-11 rounded-full bg-[#cffafe] border border-[#a5f3fc] flex items-center justify-center text-[#0891b2]">
+                <Settings className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                إعداداتي
+              </span>
+            </button>
+
           </div>
 
-          <div className="space-y-2 text-xs">
-            {/* بطاقة الخصوصية والأمان وحماية الحساب */}
-            <div className="p-3.5 bg-gradient-to-r from-cyan-950/70 to-[#090d16] rounded-2xl border border-cyan-800/60 space-y-3">
-              <div className="font-bold text-white flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[#00d2d3]">
-                  <ShieldCheck className="w-4 h-4 text-[#00d2d3]" />
-                  <span>أمان وخصوصية الحساب:</span>
-                </span>
-                <span className="text-[10px] text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">محمي بكلمة مرور 🔒</span>
+          <div className="border-t border-slate-200 dark:border-slate-800 my-1"></div>
+
+          {/* قسم المزيد مع القائمة الكاملة المطابقة للصورتين 1 و 2 */}
+          <div className="space-y-2.5">
+            <h2 className="text-sm font-black text-slate-900 dark:text-white text-right">
+              المزيد
+            </h2>
+
+            {/* 1. بطاقة: تم التوصيل (قائمة بآخر عشرين طلب تم توصيلهم) */}
+            <button
+              type="button"
+              onClick={() => setShowDeliveredModal(true)}
+              className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-cyan-400 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+              <div className="text-right">
+                <div className="font-bold text-xs text-slate-900 dark:text-white">تم التوصيل</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">قائمة بآخر عشرين طلب تم توصيلهم</div>
               </div>
+              <div className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                <CheckSquare className="w-4 h-4" />
+              </div>
+            </button>
+
+            {/* 2. بطاقة: إحصائياتي (تشمل الاحصائيات منذ بدأ العمل) */}
+            <button
+              type="button"
+              onClick={() => setShowStatsModal(true)}
+              className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-cyan-400 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+              <div className="text-right">
+                <div className="font-bold text-xs text-slate-900 dark:text-white">إحصائياتي</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">تشمل الاحصائيات منذ بدأ العمل</div>
+              </div>
+              <div className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </button>
+
+            {/* 3. بطاقة مشتركة: البيانات الشخصية + سياسة الخصوصية + تقييم التطبيق */}
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800 shadow-xs overflow-hidden">
               
-              <div className="flex justify-between items-center text-[11px] py-1 border-b border-cyan-900/30">
-                <span className="text-slate-400">اسم المستخدم (رقم الجوال):</span>
-                <span className="font-mono font-bold text-white">{currentDriver.phone}</span>
+              {/* البيانات الشخصية */}
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(true)}
+                className="w-full p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-400" />
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-200">البيانات الشخصية</span>
+                <User className="w-4 h-4 text-slate-500" />
+              </button>
+
+              {/* سياسة الخصوصية */}
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="w-full p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-400" />
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-200">سياسة الخصوصية</span>
+                <Lock className="w-4 h-4 text-slate-500" />
+              </button>
+
+              {/* تقييم التطبيق */}
+              <button
+                type="button"
+                onClick={() => setShowAppRatingModal(true)}
+                className="w-full p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-400" />
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-200">تقييم التطبيق</span>
+                <Star className="w-4 h-4 text-slate-500" />
+              </button>
+
+            </div>
+
+            {/* 4. بطاقة: من نحن (تعرف أكثر على طيار و كيف بدأ رحلته) */}
+            <button
+              type="button"
+              onClick={() => setShowAboutModal(true)}
+              className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-cyan-400 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+              <div className="text-right">
+                <div className="font-bold text-xs text-slate-900 dark:text-white">من نحن</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">تعرف أكثر على منصة سند إكسبريس للخدمات اللوجستية</div>
               </div>
-
-              <div className="flex justify-between items-center text-[11px] pt-1">
-                <span className="text-slate-400">كلمة المرور السرية:</span>
-                <button
-                  type="button"
-                  onClick={() => setShowChangePasswordModal(true)}
-                  className="px-3 py-1 bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 font-black rounded-lg text-[11px] flex items-center gap-1 shadow-sm cursor-pointer"
-                >
-                  <Key className="w-3 h-3" />
-                  <span>تغيير كلمة المرور 🔑</span>
-                </button>
+              <div className="w-9 h-9 rounded-full bg-teal-500 flex items-center justify-center text-white shadow-xs">
+                <Package className="w-4 h-4" />
               </div>
-            </div>
+            </button>
 
-            <div className="p-3 bg-[#090d16] rounded-xl border border-cyan-900/30 flex justify-between items-center">
-              <span className="text-slate-400">معرف المندوب بالنظام:</span>
-              <span className="font-mono font-bold text-[#00d2d3]">{currentDriver.code || currentDriver.id}</span>
-            </div>
-            <div className="p-3 bg-[#090d16] rounded-xl border border-cyan-900/30 flex justify-between items-center">
-              <span className="text-slate-400">الفرع الرئيسي:</span>
-              <span className="font-bold text-white">فرع إكليل الدمام</span>
-            </div>
-            <div className="p-3 bg-[#090d16] rounded-xl border border-cyan-900/30 flex justify-between items-center">
-              <span className="text-slate-400">عمولة التوصيل لكل طلب:</span>
-              <span className="font-mono font-bold text-emerald-400">20.00 ﷼</span>
-            </div>
-          </div>
-
-          {/* زر تسجيل الخروج الكامل من الحساب */}
-          <div className="pt-3 border-t border-cyan-900/30">
+            {/* 5. بطاقة: تسجيل الخروج (مطابقة لأسفل الصورة 2) */}
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full py-3 rounded-2xl bg-red-950/70 hover:bg-red-900/80 border border-red-800 text-red-200 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-lg"
+              className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-400 active:scale-[0.99] transition-all shadow-xs text-rose-600"
             >
-              <LogOut className="w-4 h-4" />
-              <span>تسجيل الخروج وقفل الحساب 🚪</span>
+              <div className="w-4"></div>
+              <span className="font-bold text-xs">تسجيل الخروج</span>
+              <LogOut className="w-4 h-4 stroke-[2]" />
             </button>
+
           </div>
+
         </div>
       )}
 
-      {/* 6. شريط التنقل السفلي الثابت للموبايل */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-[#0a0e18]/95 backdrop-blur-lg border-t border-cyan-950/60 px-3 py-2 flex items-center justify-around shadow-2xl">
+      {/* ========================================================================= */}
+      {/* شريط التنقل السفلي الثابت (5 عناصر مع زر المسح البارز بالوسط) */}
+      {/* ========================================================================= */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-[#1c2438] text-white px-3 py-2 flex items-center justify-around shadow-2xl border-t border-slate-800">
+        
+        {/* 1. الرئيسية */}
         <button
           type="button"
-          onClick={() => { setMobileTab('orders'); sound.playClick(); }}
-          className={'flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors cursor-pointer ' + (mobileTab === 'orders' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
+          onClick={() => setActiveBottomTab('home')}
+          className={'flex flex-col items-center gap-1 py-1 px-2.5 transition-colors cursor-pointer ' + 
+            (activeBottomTab === 'home' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px]">الرئيسية</span>
+        </button>
+
+        {/* 2. المسارات */}
+        <button
+          type="button"
+          onClick={() => setActiveBottomTab('routes')}
+          className={'flex flex-col items-center gap-1 py-1 px-2.5 transition-colors cursor-pointer ' + 
+            (activeBottomTab === 'routes' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
+        >
+          <Route className="w-5 h-5" />
+          <span className="text-[10px]">المسارات</span>
+        </button>
+
+        {/* 3. زر المسح الباركود البارز الدائري بالوسط (FAB) */}
+        <div className="relative -top-5">
+          <button
+            type="button"
+            onClick={() => setShowScanModal(true)}
+            className="w-14 h-14 rounded-full bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/40 border-4 border-[#1c2438] active:scale-95 transition-all cursor-pointer"
+            title="مسح الباركود السريع"
+          >
+            <ScanLine className="w-6 h-6 stroke-[2.5]" />
+          </button>
+        </div>
+
+        {/* 4. المخزون */}
+        <button
+          type="button"
+          onClick={() => setActiveBottomTab('inventory')}
+          className={'flex flex-col items-center gap-1 py-1 px-2.5 transition-colors cursor-pointer ' + 
+            (activeBottomTab === 'inventory' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
         >
           <Package className="w-5 h-5" />
-          <span className="text-[10px]">الطلبات</span>
+          <span className="text-[10px]">المخزون</span>
         </button>
 
+        {/* 5. حسابي */}
         <button
           type="button"
-          onClick={() => { setMobileTab('map'); sound.playClick(); }}
-          className={'flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors cursor-pointer ' + (mobileTab === 'map' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
-        >
-          <Compass className="w-5 h-5" />
-          <span className="text-[10px]">الملاحة</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => { setMobileTab('wallet'); sound.playClick(); }}
-          className={'flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors cursor-pointer ' + (mobileTab === 'wallet' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
-        >
-          <Wallet className="w-5 h-5" />
-          <span className="text-[10px]">المحفظة</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => { setMobileTab('profile'); sound.playClick(); }}
-          className={'flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors cursor-pointer ' + (mobileTab === 'profile' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
+          onClick={() => setActiveBottomTab('account')}
+          className={'flex flex-col items-center gap-1 py-1 px-2.5 transition-colors cursor-pointer ' + 
+            (activeBottomTab === 'account' ? 'text-[#00d2d3] font-black' : 'text-slate-400 hover:text-slate-200')}
         >
           <User className="w-5 h-5" />
           <span className="text-[10px]">حسابي</span>
         </button>
+
       </div>
+
+      {/* ========================================================================= */}
+      {/* جميع النوافذ المنبثقة التفاعلية لفتح كافة الصلاحيات المذكورة بالصور */}
+      {/* ========================================================================= */}
+
+      {/* 1. نافذة: سجل الطلبات (Calendar 📅) */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-amber-500" />
+                <span>سجل الطلبات والمشاوير المكتملة</span>
+              </h3>
+              <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2.5 text-xs">
+              {deliveredOrders.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">لا توجد شحنات سابقة مسجلة اليوم.</div>
+              ) : (
+                deliveredOrders.map((o, idx) => (
+                  <div key={idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
+                    <div>
+                      <div className="font-bold font-mono">#{o.id}</div>
+                      <div className="text-[11px] text-slate-500">{o.customerName}</div>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-600">+{o.totalAmount} ﷼</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <button onClick={() => setShowHistoryModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. نافذة: المحفظة (Wallet 👛) */}
+      {showWalletModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-emerald-500" />
+                <span>محفظة المندوب والتحصيلات</span>
+              </h3>
+              <button onClick={() => setShowWalletModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                <div className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">رصيد العمولات المستحقة لك</div>
+                <div className="text-2xl font-black font-mono text-emerald-600 mt-1">
+                  {(deliveredOrders.length * 20).toFixed(2)} ﷼
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">الكاش المسلم باليد (العهدة):</span>
+                  <span className="font-bold font-mono">{currentDriver.cashOnHand || '327.74'} ﷼</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">عمولة كل مشوار:</span>
+                  <span className="font-bold font-mono text-[#00d2d3]">20.00 ﷼</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setShowWalletModal(false)} className="w-full py-2.5 bg-[#00d2d3] text-slate-950 rounded-xl text-xs font-black">
+              تم الاطلاع
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. نافذة: إعداداتي (Settings ⚙️) */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Settings className="w-4 h-4 text-cyan-500" />
+                <span>إعدادات التطبيق والملاحة</span>
+              </h3>
+              <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1">تطبيق الملاحة المفضل:</label>
+                <select
+                  value={appNavPreference}
+                  onChange={(e) => setAppNavPreference(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs font-bold outline-none"
+                >
+                  <option value="google">خرائط جوجل (Google Maps)</option>
+                  <option value="waze">ويز (Waze)</option>
+                  <option value="apple">خرائط آبل (Apple Maps)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <span className="font-bold">التنبيهات الصوتية للطلبات:</span>
+                <input
+                  type="checkbox"
+                  checked={soundAlerts}
+                  onChange={(e) => setSoundAlerts(e.target.checked)}
+                  className="w-4 h-4 accent-[#00d2d3]"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                <span className="font-bold block">تغيير كلمة المرور:</span>
+                <input
+                  type="password"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  placeholder="كلمة المرور الجديدة"
+                  className="w-full bg-white dark:bg-slate-800 border rounded-lg p-2 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newPasswordInput.length >= 4) {
+                      alert('تم تحديث كلمة المرور بنجاح');
+                      setNewPasswordInput('');
+                    } else {
+                      alert('يجب أن تكون 4 خانات على الأقل');
+                    }
+                  }}
+                  className="w-full py-1.5 bg-[#00d2d3] text-slate-950 font-bold rounded-lg text-xs"
+                >
+                  حفظ كلمة المرور
+                </button>
+              </div>
+            </div>
+            <button onClick={() => setShowSettingsModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. نافذة: تم التوصيل (قائمة بآخر 20 طلب) */}
+      {showDeliveredModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-emerald-500" />
+                <span>قائمة بآخر عشرين طلب تم توصيلهم</span>
+              </h3>
+              <button onClick={() => setShowDeliveredModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2 text-xs">
+              {[
+                { id: 'SND-284741285', customer: 'yara alshehri', amount: '148.00 ﷼', date: 'اليوم 04:30 م', status: 'تم التسليم' },
+                { id: 'SND-284741190', customer: 'عبدالله السبيعي', amount: '220.00 ﷼', date: 'اليوم 02:15 م', status: 'تم التسليم' },
+                { id: 'SND-284741040', customer: 'فهد المطيري', amount: '95.00 ﷼', date: 'اليوم 01:00 م', status: 'تم التسليم' },
+                { id: 'SND-284739981', customer: 'سارة الدوسري', amount: '340.00 ﷼', date: 'أمس', status: 'تم التسليم' },
+                { id: 'SND-284739820', customer: 'خالد الحربي', amount: '180.00 ﷼', date: 'أمس', status: 'تم التسليم' }
+              ].map((row, idx) => (
+                <div key={idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
+                  <div>
+                    <div className="font-bold font-mono text-slate-800 dark:text-slate-100">#{row.id}</div>
+                    <div className="text-[11px] text-slate-500">{row.customer} • {row.date}</div>
+                  </div>
+                  <div className="text-left">
+                    <div className="font-mono font-bold text-emerald-600">{row.amount}</div>
+                    <div className="text-[10px] text-emerald-700 font-bold">{row.status}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setShowDeliveredModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. نافذة: إحصائياتي (تشمل الإحصائيات منذ بدأ العمل) */}
+      {showStatsModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[#00d2d3]" />
+                <span>إحصائياتي منذ بدء العمل</span>
+              </h3>
+              <button onClick={() => setShowStatsModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border text-center">
+                <div className="text-slate-400 text-[10px]">إجمالي المشاوير المكتملة</div>
+                <div className="text-xl font-black font-mono text-[#00d2d3] mt-1">184 مشوار</div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border text-center">
+                <div className="text-slate-400 text-[10px]">نسبة الالتزام بالوقت SLA</div>
+                <div className="text-xl font-black font-mono text-emerald-500 mt-1">99.2%</div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border text-center">
+                <div className="text-slate-400 text-[10px]">متوسط سرعة التوصيل</div>
+                <div className="text-xl font-black font-mono text-amber-500 mt-1">28 دقيقة</div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border text-center">
+                <div className="text-slate-400 text-[10px]">مجموع العمولات المكتسبة</div>
+                <div className="text-xl font-black font-mono text-emerald-600 mt-1">3,680 ﷼</div>
+              </div>
+            </div>
+            <button onClick={() => setShowStatsModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. نافذة: البيانات الشخصية */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <User className="w-4 h-4 text-cyan-500" />
+                <span>البيانات الشخصية للمندوب</span>
+              </h3>
+              <button onClick={() => setShowProfileModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs space-y-2">
+              <div className="pt-2 flex justify-between">
+                <span className="text-slate-400">الاسم الكامل:</span>
+                <span className="font-bold">{currentDriver.name || 'يونس'}</span>
+              </div>
+              <div className="pt-2 flex justify-between">
+                <span className="text-slate-400">رقم الجوال:</span>
+                <span className="font-mono font-bold">{currentDriver.phone || '+966502893163'}</span>
+              </div>
+              <div className="pt-2 flex justify-between">
+                <span className="text-slate-400">رقم الهوية الوطنية:</span>
+                <span className="font-mono font-bold">{currentDriver.nationalId || '2463794624'}</span>
+              </div>
+              <div className="pt-2 flex justify-between">
+                <span className="text-slate-400">المركبة المسجلة:</span>
+                <span className="font-bold">{currentDriver.vehicle || 'سيارة خاصة (كامري 2023)'}</span>
+              </div>
+              <div className="pt-2 flex justify-between">
+                <span className="text-slate-400">الفرع الرئيسي التابع له:</span>
+                <span className="font-bold">فرع إكليل الدمام</span>
+              </div>
+              <div className="pt-3">
+                <label className="text-slate-400 block mb-1 text-[11px] font-bold">تبديل حساب المندوب (للاختبار والمحاكاة):</label>
+                <select
+                  value={currentDriver.id}
+                  onChange={(e) => {
+                    if (onChangeDriver) onChangeDriver(e.target.value);
+                  }}
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
+                >
+                  {drivers.map(d => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} — {d.phone} ({d.code || d.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button onClick={() => setShowProfileModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 7. نافذة: سياسة الخصوصية */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Lock className="w-4 h-4 text-cyan-500" />
+                <span>سياسة الخصوصية وأمن البيانات</span>
+              </h3>
+              <button onClick={() => setShowPrivacyModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed max-h-60 overflow-y-auto">
+              <p>نحن في سند إكسبريس نلتزم بأعلى معايير حماية وخصوصية بيانات المندوب والعملاء وفق الأنظمة المعمول بها في المملكة العربية السعودية.</p>
+              <p>• بيانات الموقع الجغرافي تُستخدم فقط أثناء ساعات العمل والملاحة للطلبات المسندة.</p>
+              <p>• معلومات الاتصال بالعملاء مشفرة ومخصصة لإتمام التوصيل فقط.</p>
+              <p>• سجل المبالغ المالية والتحصيلات محفوظ ومطابق للحساب البنكي المعتمد.</p>
+            </div>
+            <button onClick={() => setShowPrivacyModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              موافق وإغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 8. نافذة: تقييم التطبيق */}
+      {showAppRatingModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-center">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">تقييم تطبيق المندوب</h3>
+              <button onClick={() => setShowAppRatingModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            
+            {ratingSuccess ? (
+              <div className="py-6 space-y-2">
+                <div className="text-4xl">🎉</div>
+                <div className="font-bold text-emerald-600">شكراً لتقييمك الرائع!</div>
+                <div className="text-xs text-slate-400">ملاحظاتك تساعدنا في تطوير وتحديث التطبيق باستمرار.</div>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                <div className="text-slate-500">ما مدى رضاك عن تجربة استخدام تطبيق سند إكسبريس؟</div>
+                <div className="flex items-center justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingStars(star)}
+                      className="cursor-pointer transition-transform hover:scale-110"
+                    >
+                      <Star className={'w-8 h-8 ' + (star <= ratingStars ? 'fill-amber-400 text-amber-400' : 'text-slate-300')} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={ratingFeedback}
+                  onChange={(e) => setRatingFeedback(e.target.value)}
+                  placeholder="أكتب ملاحظاتك أو اقتراحاتك هنا..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs outline-none focus:border-[#00d2d3] h-20"
+                ></textarea>
+                <button
+                  type="button"
+                  onClick={() => setRatingSuccess(true)}
+                  className="w-full py-3 bg-[#00d2d3] hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs shadow-md"
+                >
+                  إرسال التقييم ⭐
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 9. نافذة: من نحن */}
+      {showAboutModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-right">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Package className="w-4 h-4 text-cyan-500" />
+                <span>عن سند إكسبريس للخدمات اللوجستية</span>
+              </h3>
+              <button onClick={() => setShowAboutModal(false)} className="text-slate-400 p-1">✕</button>
+            </div>
+            <div className="space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-3">
+                <img src="/sanad-express-logo.jpg?v=3" alt="سند" className="w-12 h-12 rounded-xl object-cover border" />
+                <div>
+                  <div className="font-black text-slate-900 dark:text-white">سَنَد إكسبريس</div>
+                  <div className="font-mono text-[10px] text-cyan-600">SANAD EXPRESS LOGISTICS</div>
+                </div>
+              </div>
+              <p>منصة لوجستية رائدة متخصصة في التوصيل السريع لطلبات المتاجر الإلكترونية وإدارة الأسطول والمستودعات في المنطقة الشرقية (الدمام، الخبر، الجبيل، والظهران).</p>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border space-y-1 font-mono text-[11px]">
+                <div>الدعم الفني والعمليات: 0502893163</div>
+                <div>البريد المعتمد: support@sanad-express.sa</div>
+              </div>
+            </div>
+            <button onClick={() => setShowAboutModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 10. نافذة: مسح الباركود السريع (الزر الأوسط FAB) */}
+      {showScanModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <ScanLine className="w-5 h-5 text-[#00d2d3]" />
+                <span>ماسح الباركود للشحنات</span>
+              </h3>
+              <button onClick={() => { setShowScanModal(false); setBarcodeScanSuccess(null); }} className="text-slate-400 p-1">✕</button>
+            </div>
+
+            {/* إطار المسح الافتراضي المحاكي للكاميرا */}
+            <div className="relative w-full h-44 bg-slate-950 rounded-2xl overflow-hidden flex flex-col items-center justify-center border-2 border-cyan-500/50">
+              <div className="w-32 h-32 border-2 border-dashed border-[#00d2d3] rounded-xl flex items-center justify-center animate-pulse">
+                <QrCode className="w-16 h-16 text-cyan-400/80" />
+              </div>
+              <div className="absolute top-2 text-[10px] text-cyan-300 font-mono bg-cyan-950/80 px-3 py-0.5 rounded-full">
+                وجّه الكاميرا نحو باركود الشحنة
+              </div>
+            </div>
+
+            {/* إدخال رقم الشحنة يدوياً */}
+            <div className="space-y-2 text-xs">
+              <label className="block text-slate-600 dark:text-slate-400 font-bold">أو أدخل رقم الشحنة يدوياً:</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualBarcode}
+                  onChange={(e) => setManualBarcode(e.target.value)}
+                  placeholder="مثال: 284741285"
+                  className="flex-1 bg-slate-50 dark:bg-slate-900 border rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none focus:border-[#00d2d3]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (manualBarcode.trim()) {
+                      sound.playSuccess();
+                      setBarcodeScanSuccess(manualBarcode.trim());
+                    }
+                  }}
+                  className="px-4 py-2 bg-[#00d2d3] text-slate-950 font-black rounded-xl text-xs cursor-pointer"
+                >
+                  بحث
+                </button>
+              </div>
+            </div>
+
+            {barcodeScanSuccess && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 rounded-xl text-xs space-y-1 text-emerald-800 dark:text-emerald-300">
+                <div className="font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>تم مسح الشحنة بنجاح! (#{barcodeScanSuccess})</span>
+                </div>
+                <div>الشحنة مسندة لك وهي جاهزة للتوصيل.</div>
+              </div>
+            )}
+
+            <button onClick={() => { setShowScanModal(false); setBarcodeScanSuccess(null); }} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 11. نافذة: الخريطة المباشرة العائمة */}
+      {showMapModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-xs flex items-center justify-center p-3">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl text-center">
+            <div className="w-14 h-14 rounded-full bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-[#00d2d3] mx-auto">
+              <Navigation className="w-7 h-7 animate-pulse" />
+            </div>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              فتح خريطة الملاحة والتوجيه الميداني GPS
+            </h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              خريطة تفاعلية كاملة مع شوارع وأحياء المملكة وتوجيه خطوة بخطوة بالمسافات وأزمنة الوصول.
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMapModal(false);
+                  setActiveBottomTab('routes');
+                }}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Navigation className="w-4 h-4" />
+                <span>فتح الخريطة الحية</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMapModal(false)}
+                className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 12. نافذة: الإشعارات 🔔 */}
+      {showNotificationsModal && (
+        <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-500" />
+                <span>التنبيهات والإشعارات ({notificationsList.length})</span>
+              </h3>
+              <button onClick={() => setShowNotificationsModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">✕</button>
+            </div>
+            
+            <div className="space-y-2.5 text-xs overflow-y-auto flex-1 pr-1">
+              {notificationsList.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`p-3 rounded-2xl border transition-all ${
+                    notif.order
+                      ? 'bg-amber-500/10 border-amber-500/30 dark:bg-amber-950/20'
+                      : 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      {notif.order && <span className="w-2 h-2 rounded-full bg-amber-500"></span>}
+                      <span>{notif.title}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{notif.time}</span>
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-300 text-[11px] mt-1 leading-relaxed">
+                    {notif.text}
+                  </div>
+                  {notif.order && (
+                    <div className="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between">
+                      <span className="font-mono font-bold text-amber-500">{notif.order.totalAmount} ر.س</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRouteOrderId(notif.order.id);
+                          setActiveBottomTab('routes');
+                          setShowNotificationsModal(false);
+                        }}
+                        className="px-2.5 py-1 bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 rounded-lg font-black text-[10px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <Navigation className="w-3 h-3" />
+                        <span>ملاحة 🧭</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowNotificationsModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* نافذة تأكيد تسليم الشحنة للعميل */}
       {deliveryConfirmOrder && (
-        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0f1523] border-2 border-emerald-500/60 rounded-3xl max-w-sm w-full p-6 text-right space-y-4 shadow-2xl" dir="rtl">
-            <div className="flex items-center justify-between border-b border-cyan-900/40 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-right">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 <span>تأكيد تسليم الشحنة ({deliveryConfirmOrder.id})</span>
               </h3>
-              <button onClick={() => setDeliveryConfirmOrder(null)} className="text-slate-400 hover:text-white font-bold p-1">✕</button>
+              <button onClick={() => setDeliveryConfirmOrder(null)} className="text-slate-400 p-1">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-[#090d16] rounded-2xl border border-cyan-900/30 space-y-1">
-                <div className="text-slate-400">العميل: <strong className="text-white">{deliveryConfirmOrder.customerName}</strong></div>
-                <div className="text-slate-400">المبلغ المطلوب: <strong className="text-[#00d2d3] text-sm font-mono">{deliveryConfirmOrder.totalAmount} ﷼</strong></div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-1">
+                <div>العميل: <strong className="text-slate-900 dark:text-white">{deliveryConfirmOrder.customerName}</strong></div>
+                <div>المبلغ المطلوب تحصيله: <strong className="text-emerald-600 text-sm font-mono">{deliveryConfirmOrder.totalAmount} ﷼</strong></div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-bold mb-1.5">طريقة استلام المبلغ من العميل:</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1.5">طريقة الدفع المستلمة:</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setConfirmPaymentMethod('cash')}
                     className={'p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 cursor-pointer ' + 
-                      (confirmPaymentMethod === 'cash' ? 'bg-cyan-950 border-[#00d2d3] text-[#00d2d3]' : 'bg-slate-900 border-slate-800 text-slate-400')}
+                      (confirmPaymentMethod === 'cash' ? 'bg-cyan-50 border-[#00d2d3] text-cyan-800' : 'bg-white dark:bg-slate-800 text-slate-600')}
                   >
-                    <DollarSign className="w-4 h-4" />
                     <span>💵 كاش باليد</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmPaymentMethod('mada')}
                     className={'p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 cursor-pointer ' + 
-                      (confirmPaymentMethod === 'mada' ? 'bg-cyan-950 border-[#00d2d3] text-[#00d2d3]' : 'bg-slate-900 border-slate-800 text-slate-400')}
+                      (confirmPaymentMethod === 'mada' ? 'bg-cyan-50 border-[#00d2d3] text-cyan-800' : 'bg-white dark:bg-slate-800 text-slate-600')}
                   >
-                    <Wallet className="w-4 h-4" />
-                    <span>💳 شبكة مدى / حوالة</span>
+                    <span>💳 شبكة مدى</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2 pt-2">
+            <div className="pt-2 space-y-2">
               <button
                 type="button"
                 onClick={handleConfirmDelivery}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black rounded-2xl text-xs cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-md"
               >
                 تأكيد التسليم بنجاح وإيداع 20 ﷼ بالرصيد ✅
               </button>
               <button
                 type="button"
                 onClick={() => setDeliveryConfirmOrder(null)}
-                className="w-full py-2 bg-slate-900 text-slate-400 hover:text-white rounded-xl text-xs"
+                className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl text-xs"
               >
                 تراجع
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* نافذة تغيير كلمة المرور لخصوصية المندوب التامة */}
-      {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0f1523] border-2 border-cyan-500/60 rounded-3xl max-w-sm w-full p-6 text-right space-y-4 shadow-2xl" dir="rtl">
-            <div className="flex items-center justify-between border-b border-cyan-900/40 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Key className="w-5 h-5 text-[#00d2d3]" />
-                <span>تغيير كلمة المرور السرية</span>
-              </h3>
-              <button onClick={() => setShowChangePasswordModal(false)} className="text-slate-400 hover:text-white font-bold p-1">✕</button>
-            </div>
-
-            {changePassError && (
-              <div className="p-2.5 bg-red-950/70 border border-red-800 rounded-xl text-red-200 text-xs font-bold">
-                {changePassError}
-              </div>
-            )}
-
-            <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">كلمة المرور الحالية *:</label>
-                <input
-                  type="password"
-                  required
-                  value={currentPasswordInput}
-                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
-                  placeholder="أدخل كلمة المرور الحالية"
-                  className="w-full bg-[#090d16] border border-cyan-900/60 rounded-xl p-2.5 text-white font-mono outline-none focus:border-[#00d2d3]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">كلمة المرور الجديدة *:</label>
-                <div className="relative">
-                  <input
-                    type={showNewPass ? 'text' : 'password'}
-                    required
-                    value={newPasswordInput}
-                    onChange={(e) => setNewPasswordInput(e.target.value)}
-                    placeholder="أدخل كلمة المرور الجديدة"
-                    className="w-full bg-[#090d16] border border-cyan-900/60 rounded-xl p-2.5 pr-3 pl-9 text-white font-mono outline-none focus:border-[#00d2d3]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute left-2.5 top-2.5 text-slate-400"
-                  >
-                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">تأكيد كلمة المرور الجديدة *:</label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPasswordInput}
-                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                  placeholder="أعد إدخال كلمة المرور الجديدة"
-                  className="w-full bg-[#090d16] border border-cyan-900/60 rounded-xl p-2.5 text-white font-mono outline-none focus:border-[#00d2d3]"
-                />
-              </div>
-
-              <div className="pt-2 space-y-2">
-                <button
-                  type="submit"
-                  disabled={changePassLoading}
-                  className="w-full py-3 bg-[#00d2d3] hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs cursor-pointer shadow-md disabled:opacity-50"
-                >
-                  {changePassLoading ? 'جاري الحفظ...' : 'حفظ كلمة المرور الجديدة 🔒'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowChangePasswordModal(false)}
-                  className="w-full py-2 bg-slate-900 text-slate-400 hover:text-white rounded-xl text-xs"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
@@ -1231,13 +2013,12 @@ export default function DriverApp({
           order={exceptionOrder}
           onClose={() => setExceptionOrder(null)}
           onSuccess={() => {
-            sound.playCancel();
             setExceptionOrder(null);
-            showToast('⚠️ تم توثيق تعثر الشحنة ونقلها لقسم المرتجعات.');
             if (onRefresh) onRefresh();
           }}
         />
       )}
+
     </div>
   );
 }

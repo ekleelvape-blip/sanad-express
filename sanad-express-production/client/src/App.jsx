@@ -20,7 +20,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { Menu, Search, Store, Bell, RefreshCw, Smartphone, Package, CheckCircle2, UserCheck } from 'lucide-react';
 import { sound } from './utils/sound';
 
-const socket = io();
+export const socket = io();
 
 export default function App() {
 
@@ -115,6 +115,11 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
+
+    if (currentDriverId) {
+      socket.emit('join_driver_room', currentDriverId);
+    }
+
     socket.on('driver_location_changed', (data) => {
       setDrivers(prev => prev.map(d => d.id === data.driverId ? { ...d, coords: data.coords, speed: data.speed, heading: data.heading, lastUpdate: data.lastUpdate } : d));
     });
@@ -139,13 +144,27 @@ export default function App() {
     socket.on('order_updated', ({ order, driver }) => {
       setOrders(prev => prev.map(o => o.id === order.id ? order : o));
       if (driver) setDrivers(prev => prev.map(d => d.id === driver.id ? driver : d));
+      if (order && (order.assignedDriverId === currentDriverId || order.assignedDriverId === currentDriverId.replace('drv-10', 'drv-'))) {
+        sound.playOrderAssigned();
+      }
+    });
+    socket.on('order_assigned_to_me', ({ order, driver }) => {
+      sound.playOrderAssigned();
+      fetchData();
     });
     socket.on('cod_settled', () => fetchData());
     socket.on('driver_created', () => fetchData());
     return () => {
-      socket.off('driver_location_changed'); socket.off('driver_status_changed'); socket.off('order_created'); socket.off('orders_updated'); socket.off('order_updated'); socket.off('cod_settled'); socket.off('driver_created');
+      socket.off('driver_location_changed');
+      socket.off('driver_status_changed');
+      socket.off('order_created');
+      socket.off('orders_updated');
+      socket.off('order_updated');
+      socket.off('order_assigned_to_me');
+      socket.off('cod_settled');
+      socket.off('driver_created');
     };
-  }, [selectedBranch]);
+  }, [selectedBranch, currentDriverId]);
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
@@ -266,6 +285,7 @@ export default function App() {
             onUpdateDriverLocation={handleUpdateDriverLocation}
             onToggleDriverStatus={handleToggleDriverStatus}
             onRefresh={fetchData}
+            socket={socket}
           />
         </main>
       </div>
@@ -478,8 +498,10 @@ export default function App() {
             />
           )}
 
-          {['reports', 'delivery_reports'].includes(activeTab) && (
+          {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods'].includes(activeTab) && (
             <ReportsCenter
+              activeTab={activeTab}
+              onSelectTab={setActiveTab}
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
@@ -521,6 +543,7 @@ export default function App() {
               onUpdateDriverLocation={handleUpdateDriverLocation}
               onToggleDriverStatus={handleToggleDriverStatus}
               onRefresh={fetchData}
+              socket={socket}
             />
           )}
         </main>

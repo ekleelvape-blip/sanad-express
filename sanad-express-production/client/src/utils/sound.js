@@ -54,6 +54,43 @@ class SoundFX {
     }
   }
 
+  // صوت تنبيه قوي ومميز لإسناد شحنة جديدة للمندوب (نغمة إشعار مسموعة حتى لو كان المندوب يقود السيارة)
+  playDriverAlert() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+
+      const now = this.ctx.currentTime;
+      // تسلسل نغمات التنبيه الميداني (رنين ثلاثي متصاعد ومكرر مرتين)
+      const notes = [
+        { f: 587.33, t: 0.00, d: 0.12 }, // D5
+        { f: 880.00, t: 0.14, d: 0.14 }, // A5
+        { f: 1174.66, t: 0.30, d: 0.25 }, // D6
+        { f: 880.00, t: 0.60, d: 0.12 }, // تكرار النبضة الثانية
+        { f: 1174.66, t: 0.74, d: 0.14 },
+        { f: 1567.98, t: 0.90, d: 0.35 }  // G6 ذروة التنبيه
+      ];
+
+      notes.forEach(note => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.f, now + note.t);
+        gain.gain.setValueAtTime(0.45, now + note.t);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + note.t + note.d);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + note.t);
+        osc.stop(now + note.t + note.d);
+      });
+    } catch (e) {
+      console.warn('Audio FX alert error:', e);
+    }
+  }
+
   // صوت إتمام التوصيل أو التحصيل المالي (نجاح)
   playSuccess() {
     try {
@@ -105,6 +142,48 @@ class SoundFX {
     } catch (e) {
       console.warn('Audio FX error:', e);
     }
+  }
+
+  // صوت النقر الخفيف
+  click() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.05);
+    } catch (e) {}
+  }
+
+  // صوت التأكيد أو الإجراء المنبثق
+  pop() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch (e) {}
   }
 }
 

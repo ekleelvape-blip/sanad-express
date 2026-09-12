@@ -291,13 +291,18 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders, driver
                   const neighborhood = order.customerAddress ? order.customerAddress.split('-')[0].trim() : '—';
 
                   return (
-                    <tr key={order.id} className="hover:bg-cyan-950/20 transition-colors group">
+                    <tr 
+                      key={order.id} 
+                      onClick={() => setSelectedOrderForDetails(order)}
+                      className="hover:bg-cyan-950/40 hover:shadow-inner transition-all group cursor-pointer"
+                      title="انقر لعرض تفاصيل الطلب والإجراءات السريعة"
+                    >
                       <td className="py-3.5 px-4">
                         <button
                           type="button"
-                          onClick={() => setSelectedOrderForDetails(order)}
-                          className="font-mono font-bold text-slate-100 hover:text-emerald-700 hover:underline cursor-pointer text-xs text-right block"
-                          title="انقر لفتح تفاصيل الطلب وتعديل الإسناد أو الاسترجاع أو الإلغاء"
+                          onClick={(e) => { e.stopPropagation(); setSelectedOrderForDetails(order); }}
+                          className="font-mono font-bold text-slate-100 hover:text-cyan-400 hover:underline cursor-pointer text-xs text-right block"
+                          title="انقر لفتح تفاصيل الطلب"
                         >
                           {trackingId}
                         </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AddEmployeeForm from './AddEmployeeForm';
 import { Users, Shield, Package, Star, MapPin, Plus, Check, Search, Phone, Mail, Award, Clock, DollarSign, Sparkles, CheckCircle2, ChevronRight, SlidersHorizontal, AlertCircle, Laptop, Truck } from 'lucide-react';
 
 export default function UsersManagementHub({ activeTab, onSelectTab, branches, drivers }) {
@@ -8,6 +9,7 @@ export default function UsersManagementHub({ activeTab, onSelectTab, branches, d
   const [ratings, setRatings] = useState([]);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
 
   // تحديث التبويب النشط
   useEffect(() => {
@@ -54,6 +56,18 @@ export default function UsersManagementHub({ activeTab, onSelectTab, branches, d
       return copy;
     });
   };
+
+    if (isAddingEmployee) {
+    return (
+      <AddEmployeeForm
+        onSave={(newEmp) => {
+          setIsAddingEmployee(false);
+          setManagers(prev => [newEmp, ...prev]);
+        }}
+        onCancel={() => setIsAddingEmployee(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] text-slate-100" dir="rtl">
@@ -118,11 +132,11 @@ export default function UsersManagementHub({ activeTab, onSelectTab, branches, d
             </div>
             <button
               type="button"
-              onClick={() => alert('إضافة مشرف جديد: يرجى إدخال بيانات المشرف وتحديد الفرع')}
+              onClick={() => setIsAddingEmployee(true)}
               className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 font-black shadow-[0_0_15px_rgba(0,210,211,0.35)] text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>إضافة مشرف جديد</span>
+              <span>إضافة موظف جديد</span>
             </button>
           </div>
 

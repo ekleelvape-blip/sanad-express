@@ -1,16 +1,66 @@
-# React + Vite
+# 💨 منصة وتطبيق إكليل مندوب (Iklil Mandoub)
+### المساعد الذكي لإدارة المناديب وتتبع المسارات والمالية لمتجر إكليل فيب وفيب الشرق وفروعها
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+---
 
-Currently, two official plugins are available:
+## 🌟 نظرة عامة
+منصة متكاملة تربط فروع متجر **إكليل فيب** و**فيب الشرق** بالمناديب في الميدان لتنسيق وتوزيع الطلبات، مراقبة حركة المناديب ومساراتهم على الخريطة لحظياً، وضبط العمليات المالية والعهد النقدية بكل دقة وسهولة.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 المميزات الرئيسية
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. 🏪 لوحة تحكم المتجر ورادار الخريطة المباشر:
+- **دعم الفروع المتعددة**: إكليل فيب (فرع الرياض الرئيسي)، فيب الشرق (فرع الخبر)، إكليل فيب (فرع جدة).
+- **رادار الخريطة اللحظي (Live Radar Map)**:
+  - تتبع حركة المناديب اللحظية وأماكن تواجدهم وسرعاتهم.
+  - أيقونات تفاعلية للفروع، المناديب (🚗/🛵)، ومواقع العملاء (📍).
+  - رسم خطوط المسار التفاعلية (Polylines) بين المندوب والعميل.
+  - بطاقة معلومات منبثقة عند النقر على أي مندوب أو فرع.
 
-## Expanding the Oxlint configuration
+### 2. 📦 نظام توزيع وإسناد الطلبات (Order Dispatch):
+- استعراض الطلبات الجديدة غير المسندة.
+- قائمة منسدلة ذكية بالمناديب المتاحين للفرع.
+- زر إسناد فوري يرسل تنبيهاً صوتياً واهتزازاً لهاتف المندوب فوراً عبر WebSockets.
+- إمكانية إضافة طلب جديد يدوياً في أي فرع مع تحديد تفاصيل العميل والمنتجات ونوع الدفع وعمولة التوصيل.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### 3. 💰 المركز المالي وإدارة العهد والتسويات (Financial Hub):
+- **متابعة دقيقة للعهدة النقدية (Cash on Hand)** في جيب كل مندوب في الميدان.
+- إحصائيات فورية:
+  - إجمالي مبيعات التوصيل اليوم.
+  - المبالغ المحصلة نقدياً (كاش) مقابل بطاقات مدى / الشبكة.
+  - إجمالي عمولات المناديب المكتسبة.
+- **تسوية وتوريد الكاش بضغطة زر**:
+  - نافذة لإغلاق عهدة المندوب واستلام الكاش المورد لخزينة الفرع.
+  - توليد سند توريد نقدي برقم إيصال رسمي وأرشفته في سجل التسويات.
+
+### 4. 📱 تطبيق المندوب الميداني (Driver Mobile View):
+- واجهة جوال ذكية بتصميم عصري داكن فاخر بهوية إكليل فيب.
+- زر تفعيل الوردية (أونلاين / أوفلاين) مع تفعيل بث إحداثيات GPS تلقائياً.
+- كارت تفاصيل الطلب المسند:
+  - اتصال هاتفي بالعميل بلمسة واحدة (`tel:`).
+  - محادثة واتساب بنص رسالة جاهز مع اسم العميل وتفاصيل طلبه (`wa.me`).
+  - فتح موقع العميل في Google Maps للملاحة.
+- تسلسل مراحل التوصيل التفاعلية:
+  1. `تأكيد استلام الطلب من الفرع`
+  2. `في الطريق للعميل`
+  3. `تم التسليم واستلام الكاش / مدى`
+- **محاكي القيادة بالشارع (GPS Simulator)**: يتيح محاكاة حركة القيادة في الشوارع مباشرة لبث الإحداثيات وتجربة النظام بدون الحاجة للتحرك الفعلي.
+- محفظة المندوب الشخصية لمتابعة كاش العهدة وأرباح اليوم.
+
+---
+
+## 🛠️ كيفية التشغيل
+
+1. **تشغيل الخادم والتطبيق معاً (منفذ 5000)**:
+   ```bash
+   node server/server.js
+   ```
+   ثم افتح المتصفح على: [http://localhost:5000](http://localhost:5000)
+
+2. **تشغيل وضع التطوير للواجهة (Vite Dev)**:
+   ```bash
+   cd client
+   npm run dev
+   ```
+   سيفتح التطبيق على [http://localhost:3000](http://localhost:3000) مع ميزة التحديث اللحظي (HMR).

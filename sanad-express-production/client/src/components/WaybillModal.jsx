@@ -1,11 +1,106 @@
-import React from 'react';
-import { Printer, X, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, X, Check, Copy } from 'lucide-react';
 
 export default function WaybillModal({ order, branch, driver, onClose }) {
   if (!order) return null;
 
+  const [copies, setCopies] = useState(1);
+
   const handlePrint = () => {
-    window.print();
+    const printArea = document.getElementById('thermal-print-area');
+    if (!printArea) return;
+
+    // استخدام إطار طباعة معزول لمنع طباعة صفحات إضافية فارغة وضمان طباعة العدد المحدد بدقة
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const waybillHtml = printArea.outerHTML;
+    let pagesHtml = '';
+    for (let i = 0; i < copies; i++) {
+      pagesHtml += `<div class="waybill-page">${waybillHtml}</div>`;
+    }
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="utf-8">
+        <title>بوليصة شحن - ${order.id}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>
+          @page {
+            size: 100mm 150mm;
+            margin: 0;
+          }
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+          }
+          html, body {
+            width: 100mm;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+          }
+          .waybill-page {
+            width: 100mm;
+            height: 150mm;
+            max-height: 150mm;
+            page-break-after: always;
+            page-break-inside: avoid;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 2mm;
+          }
+          .waybill-page:last-child {
+            page-break-after: auto;
+          }
+          #thermal-print-area {
+            width: 96mm !important;
+            height: 144mm !important;
+            max-height: 144mm !important;
+            margin: 0 auto !important;
+            padding: 3mm !important;
+            border: 2px solid #000 !important;
+            box-sizing: border-box !important;
+            background: #fff !important;
+            color: #000 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+          }
+        </style>
+      </head>
+      <body>
+        ${pagesHtml}
+      </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    }, 400);
   };
 
   // التحقق هل الفرع هو فيب الشرق أو أحد فروع إكليل
@@ -80,16 +175,60 @@ export default function WaybillModal({ order, branch, driver, onClose }) {
       <style>{printCss}</style>
       <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95">
         {/* شريط الإجراءات العلوي */}
-        <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-slate-200 print:hidden">
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer" title="إغلاق">
-            <X className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2 font-bold text-sm text-slate-100">
-            <span>بوليصة الشحن الحرارية 4×6</span>
+        <div className="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-slate-200 print:hidden">
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer" title="إغلاق">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="font-bold text-sm text-slate-100 flex items-center gap-2">
+              <span>بوليصة الشحن 4×6</span>
+              <span className="text-[10px] bg-purple-950 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded-full font-mono font-bold">حراري</span>
+            </div>
           </div>
-          <button onClick={handlePrint} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-purple-900/40 transition-all cursor-pointer active:scale-95" title="طباعة بوليصة 4x6">
+
+          {/* محدد عدد النسخ المطبوعة (افتراضياً 1 مع إمكانية الزيادة) */}
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+            <span className="text-slate-400">عدد النسخ:</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCopies(prev => Math.max(1, prev - 1))}
+                className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+                title="تقليل عدد النسخ"
+              >
+                -
+              </button>
+              <span className="w-6 text-center font-mono font-black text-sm text-[#00d2d3]">{copies}</span>
+              <button
+                type="button"
+                onClick={() => setCopies(prev => Math.min(10, prev + 1))}
+                className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+                title="زيادة عدد النسخ"
+              >
+                +
+              </button>
+            </div>
+            <div className="flex items-center gap-1 mr-1 border-r border-slate-700 pr-2">
+              <button
+                type="button"
+                onClick={() => setCopies(1)}
+                className={`px-2 py-0.5 rounded-md text-[10px] cursor-pointer transition-colors ${copies === 1 ? 'bg-purple-600 text-white font-black' : 'bg-slate-800 text-slate-400'}`}
+              >
+                نسخة 1
+              </button>
+              <button
+                type="button"
+                onClick={() => setCopies(2)}
+                className={`px-2 py-0.5 rounded-md text-[10px] cursor-pointer transition-colors ${copies === 2 ? 'bg-purple-600 text-white font-black' : 'bg-slate-800 text-slate-400'}`}
+              >
+                نسختين
+              </button>
+            </div>
+          </div>
+
+          <button onClick={handlePrint} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-lg shadow-purple-900/40 transition-all cursor-pointer active:scale-95" title="طباعة بوليصة 4x6">
             <Printer className="w-4 h-4" />
-            <span>طباعة 4×6</span>
+            <span>طباعة {copies === 1 ? 'بوليصة واحدة' : `${copies} نسخ`}</span>
           </button>
         </div>
 
@@ -191,7 +330,7 @@ export default function WaybillModal({ order, branch, driver, onClose }) {
             <span>شعار البوليصة: <strong className="text-purple-300">{isVapeSharq ? 'شعار فيب الشرق المعتمد' : 'شعار تاج إكليل المعتمد'}</strong> (مقاس 4×6 حراري)</span>
           </div>
           <button onClick={handlePrint} className="text-purple-400 hover:text-purple-300 font-bold underline cursor-pointer">
-            بدء الطباعة الآن 🖨️
+            بدء الطباعة الآن ({copies === 1 ? 'نسخة واحدة' : `${copies} نسخ`}) 🖨️
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Wallet, ArrowDownLeft, Receipt, CheckCircle, Clock, TrendingUp, Building, CreditCard, Banknote, CheckSquare, Square, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Wallet, ArrowDownLeft, Receipt, CheckCircle, Clock, TrendingUp, Building, CreditCard, Banknote, CheckSquare, Square, ChevronDown, ChevronUp, Calendar, Sparkles, RefreshCw } from 'lucide-react';
 import { sound } from '../utils/sound';
+import FridayInvoicesHub from './FridayInvoicesHub';
 
 export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
   const [financialData, setFinancialData] = useState(null);
@@ -10,6 +11,7 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
   const [settleNotes, setSettleNotes] = useState('');
   const [lastReceipt, setLastReceipt] = useState(null);
   const [expandedDriverId, setExpandedDriverId] = useState(null);
+  const [showFridayInvoices, setShowFridayInvoices] = useState(false);
 
   const fetchFinancials = async () => {
     try {
@@ -28,10 +30,38 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
     fetchFinancials();
   }, [drivers, orders]);
 
+  // تصفير وتسوية عهدة المندوب بالكامل بنقرة واحدة (100% Zero-Out)
+  const handleDirectZeroOutDriver = async (driver) => {
+    if (!driver) return;
+    try {
+      const res = await fetch(`/api/drivers/${driver.id}/settle-zero`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchId: driver.branchId,
+          notes: `تصفير وتسوية عهدة المندوب ${driver.name} واعتماد الرصيد 0.00 ﷼`
+        })
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        sound.playCashRegister();
+        setLastReceipt(result.transaction);
+        setSettleDriver(null);
+        fetchFinancials();
+        if (onRefresh) onRefresh();
+        alert(`✅ تم تصفير وتسوية عهدة المندوب (${driver.name}) بالكامل وأصبح الرصيد 0.00 ﷼!`);
+      } else {
+        alert(result.error || 'فشلت عملية التصفير');
+      }
+    } catch (err) {
+      console.error('Error zeroing driver:', err);
+      alert('تعذر الاتصال بالسيرفر');
+    }
+  };
+
   // فتح نافذة تسوية طلبات الدفع عند الاستلام لمندوب
   const handleOpenSettleCOD = (driver) => {
     setSettleDriver(driver);
-    // افتراضياً تحديد جميع طلبات الدفع عند الاستلام غير المسواة
     const unsettled = driver.unsettledCodOrders || orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered' && o.paymentMethod === 'cash' && !o.codSettled);
     setSelectedOrderIds(unsettled.map(o => o.id));
     setSettleNotes('تسوية واستلام كاش طلبات الدفع عند الاستلام');
@@ -40,7 +70,7 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
   // تأكيد تسوية الدفع عند الاستلام وتوريد الكاش لمحفظة المتجر
   const handleConfirmSettleCOD = async (e) => {
     e.preventDefault();
-    if (!settleDriver || selectedOrderIds.length === 0) return;
+    if (!settleDriver) return;
 
     try {
       const res = await fetch('/api/settlements/cod', {
@@ -88,6 +118,14 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowFridayInvoices(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-900/40 border border-purple-400/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
+          >
+            <span>📑</span>
+            <span>فواتير الجمعة التلقائية للمناديب</span>
+          </button>
           <span className="text-xs px-3 py-1.5 rounded-xl bg-purple-950/80 text-purple-300 border border-purple-800/60 font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
             <span>نظام تسوية النقدية الفوري</span>
@@ -226,14 +264,28 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
                     <button
                       onClick={() => handleOpenSettleCOD(driver)}
                       disabled={!hasCash}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                         hasCash
                           ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-900/40 active:scale-95'
                           : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                       }`}
                     >
                       <ArrowDownLeft className="w-4 h-4" />
-                      <span>تسوية الدفع عند الاستلام</span>
+                      <span>تسوية الكاش</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDirectZeroOutDriver(driver)}
+                      disabled={!hasCash}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        hasCash
+                          ? 'bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 active:scale-95'
+                          : 'bg-slate-800/40 text-slate-600 cursor-not-allowed border border-slate-800'
+                      }`}
+                      title="تصفير العهدة فورا إلى 0 ﷼ بدون تعليق"
+                    >
+                      <span>⚡</span>
+                      <span>تصفير العهدة (0 ﷼)</span>
                     </button>
                   </div>
                 </div>
@@ -393,22 +445,33 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setSettleDriver(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                  onClick={() => handleDirectZeroOutDriver(settleDriver)}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-900/40 cursor-pointer active:scale-95 transition-all"
+                  title="تصفير عهدة المندوب فوراً بالكامل وتوريد الرصيد للمتجر"
                 >
-                  إلغاء
+                  <span>⚡</span>
+                  <span>تصفير كامل العهدة فوراً (0 ﷼)</span>
                 </button>
-                <button
-                  type="submit"
-                  disabled={selectedOrderIds.length === 0}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>تأكيد التسوية وتوريد الكاش للمتجر</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettleDriver(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs cursor-pointer hover:bg-slate-700"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>تأكيد التسوية المحددة</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -452,6 +515,19 @@ export default function FinancialHub({ drivers, branches, orders, onRefresh }) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* نافذة فواتير الجمعة الأسبوعية التلقائية */}
+      {showFridayInvoices && (
+        <FridayInvoicesHub
+          drivers={drivers}
+          branches={branches}
+          onClose={() => {
+            setShowFridayInvoices(false);
+            fetchFinancials();
+            if (onRefresh) onRefresh();
+          }}
+        />
       )}
     </div>
   );
