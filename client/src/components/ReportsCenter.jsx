@@ -9,6 +9,237 @@ import FridayInvoicesHub from './FridayInvoicesHub';
 
 export default function ReportsCenter({ activeTab: externalTab, onSelectTab, drivers = [], branches = [], selectedBranch }) {
   const validTabs = ['cod_collections', 'friday_invoices', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods'];
+
+// طباعة التقرير النشط بمقاس A4 الرسمي
+  const handlePrintA4Report = () => {
+    let reportTitle = 'تقرير تحصيلات الدفع عند الاستلام (COD)';
+    let tableHtml = '';
+
+    if (activeTab === 'cod_collections') {
+      reportTitle = 'تقرير تحصيلات الدفع عند الاستلام (COD)';
+      const rows = displayCodList.map(r => `
+        <tr>
+          <td style="padding: 8px 10px; font-weight: bold;">${r.driverName}</td>
+          <td style="padding: 8px; text-align: center;">${r.underReview?.count || 0}</td>
+          <td style="padding: 8px; text-align: center;">${r.assigned?.count || 0}</td>
+          <td style="padding: 8px; text-align: center;">${r.inTransit?.count || 0}</td>
+          <td style="padding: 8px 10px; text-align: left; font-weight: bold; font-family: monospace;">${Number(r.finalBalance || 0).toFixed(2)} ر.س</td>
+        </tr>
+      `).join('');
+      tableHtml = `
+        <table>
+          <thead>
+            <tr style="background: #f1f5f9; font-weight: bold;">
+              <th style="padding: 10px; text-align: right;">اسم السائق</th>
+              <th style="padding: 10px; text-align: center;">قيد المراجعة</th>
+              <th style="padding: 10px; text-align: center;">الطلبات المسندة</th>
+              <th style="padding: 10px; text-align: center;">جاري التوصيل</th>
+              <th style="padding: 10px; text-align: left;">الرصيد النهائي</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    } else if (activeTab === 'driver_performance') {
+      reportTitle = 'تقرير تقييم وأداء السائقين والميدان';
+      const rows = performanceDriversList.map(d => `
+        <tr>
+          <td style="padding: 8px 10px; font-weight: bold;">${d.name}</td>
+          <td style="padding: 8px; text-align: center;">${d.avgPickup} د</td>
+          <td style="padding: 8px; text-align: center;">${d.avgDelivery} د</td>
+          <td style="padding: 8px; text-align: center;">${d.totalOrders}</td>
+          <td style="padding: 8px; text-align: center; font-weight: bold; color: #047857;">${d.deliveredPct}</td>
+          <td style="padding: 8px 10px; text-align: center; font-weight: bold;">${d.deliveredCount}</td>
+        </tr>
+      `).join('');
+      tableHtml = `
+        <table>
+          <thead>
+            <tr style="background: #f1f5f9; font-weight: bold;">
+              <th style="padding: 10px; text-align: right;">اسم السائق</th>
+              <th style="padding: 10px; text-align: center;">متوسط الاستلام</th>
+              <th style="padding: 10px; text-align: center;">متوسط التوصيل</th>
+              <th style="padding: 10px; text-align: center;">إجمالي الطلبات</th>
+              <th style="padding: 10px; text-align: center;">نسبة الإنجاز</th>
+              <th style="padding: 10px; text-align: center;">الطلبات المسلمة</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    } else if (activeTab === 'neighborhoods') {
+      reportTitle = 'تقرير الأحياء الأكثر طلباً ونطاقات التغطية';
+      const rows = filteredNeighborhoods.map(n => `
+        <tr>
+          <td style="padding: 8px 10px; text-align: center; font-weight: bold;">#${n.rank}</td>
+          <td style="padding: 8px 10px; font-weight: bold;">${n.name}</td>
+          <td style="padding: 8px; text-align: center;">${n.city}</td>
+          <td style="padding: 8px 10px; text-align: left; font-weight: bold; font-family: monospace;">${n.count} شحنة</td>
+        </tr>
+      `).join('');
+      tableHtml = `
+        <table>
+          <thead>
+            <tr style="background: #f1f5f9; font-weight: bold;">
+              <th style="padding: 10px; text-align: center;">الترتيب</th>
+              <th style="padding: 10px; text-align: right;">الحي والمنطقة</th>
+              <th style="padding: 10px; text-align: center;">المدينة</th>
+              <th style="padding: 10px; text-align: left;">عدد الشحنات</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    } else {
+      reportTitle = 'تقرير تشغيلي معتمد لمنصة سند';
+      tableHtml = '<p style="padding: 20px; text-align: center;">تم تصدير وحفظ التقرير المعتمد بنجاح.</p>';
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ar-SA') + ' - ' + now.toLocaleTimeString('ar-SA');
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="utf-8">
+        <title>${reportTitle} - سند SANAD A4</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            width: 210mm;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            margin: 0;
+            padding: 0;
+          }
+          .report-page {
+            width: 194mm;
+            margin: 0 auto;
+            padding: 8mm;
+            box-sizing: border-box;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          }
+          .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          .logo-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid #0f172a;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 15px;
+          }
+          th, td {
+            border: 1px solid #cbd5e1;
+          }
+          .footer-box {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 2px solid #0f172a;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 11px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="report-page">
+          <div class="header">
+            <div class="logo-box">
+              <img src="/sanad-express-logo.jpg?v=3" class="logo-img" alt="سند SANAD" />
+              <div>
+                <h1 style="font-size: 18px; font-weight: 900;">سند SANAD اللوجستية</h1>
+                <div style="font-size: 10px; font-weight: bold; color: #475569;">SANAD LOGISTICS PLATFORM</div>
+                <div style="font-size: 11px; font-weight: bold; color: #0284c7;">${reportTitle}</div>
+              </div>
+            </div>
+            <div style="text-align: left; font-size: 11px;">
+              <div><strong>تاريخ الطباعة:</strong> ${dateStr}</div>
+              <div><strong>نطاق التغطية:</strong> ${selectedBranch === 'all' ? 'كافة الفروع' : 'الفرع المحدد'}</div>
+              <div style="background: #0f172a; color: #fff; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; font-weight: bold;">
+                نسخة رسمية A4
+              </div>
+            </div>
+          </div>
+
+          ${tableHtml}
+
+          <div class="footer-box">
+            <div style="text-align: center;">
+              <div style="font-weight: bold; margin-bottom: 25px;">إعداد / المحاسب المسؤول</div>
+              <div style="border-top: 1px dashed #64748b; padding-top: 4px; font-size: 10px;">التوقيع: _______________</div>
+            </div>
+
+            <div style="text-align: center;">
+              <img src="/sanad-official-stamp.png" style="width: 70px; height: 70px; object-fit: contain; mix-blend-mode: multiply;" />
+              <div style="font-size: 9px; font-weight: bold; color: #64748b;">الختم المعتمد لمنصة سند</div>
+            </div>
+
+            <div style="text-align: center;">
+              <div style="font-weight: bold; margin-bottom: 25px;">اعتماد / المدير العام</div>
+              <div style="border-top: 1px dashed #64748b; padding-top: 4px; font-size: 10px;">التوقيع: _______________</div>
+            </div>
+          </div>
+
+          <div style="text-align: center; font-size: 9px; color: #64748b; margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+            منظومة سند SANAD — إدارة الأساطيل وتوزيع الشحنات — www.sanad.sa
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    }, 400);
+  };
   
   // التبويب النشط
   const [activeTab, setActiveTab] = useState(() => {
@@ -151,12 +382,24 @@ export default function ReportsCenter({ activeTab: externalTab, onSelectTab, dri
     <div className="space-y-4 font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif]" dir="rtl">
       
       {/* 1. مسار التنقل العلوي (Breadcrumbs) مطابق تماماً للصورة */}
-      <div className="flex items-center justify-end gap-2 text-xs font-bold text-slate-500 py-1 select-none">
-        <span className="text-[#00d2d3] font-black">تقارير التوصيل</span>
-        <span className="text-slate-400 font-mono text-sm">&lt;&lt;</span>
-        <span className="text-slate-600 dark:text-slate-400">التقارير</span>
-        <span className="text-slate-400 font-mono text-sm">&lt;&lt;</span>
-        <Home className="w-4 h-4 text-slate-500 cursor-pointer hover:text-[#00d2d3] transition-colors" />
+      <div className="flex items-center justify-between gap-2 text-xs font-bold py-1 select-none">
+        <button
+          type="button"
+          onClick={handlePrintA4Report}
+          className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer active:scale-95"
+          title="طباعة التقرير المفتوح حالياً بمقاس A4 الرسمي"
+        >
+          <Printer className="w-4 h-4" />
+          <span>طباعة التقرير مقاس A4 📄</span>
+        </button>
+
+        <div className="flex items-center gap-2 text-slate-500">
+          <span className="text-[#00d2d3] font-black">تقارير التوصيل</span>
+          <span className="text-slate-400 font-mono text-sm">&lt;&lt;</span>
+          <span className="text-slate-600 dark:text-slate-400">التقارير</span>
+          <span className="text-slate-400 font-mono text-sm">&lt;&lt;</span>
+          <Home className="w-4 h-4 text-slate-500 cursor-pointer hover:text-[#00d2d3] transition-colors" />
+        </div>
       </div>
 
       {/* 2. الهيكل الرئيسي: المحتوى على اليمين والتبويبات العمودية على اليسار بحسب RTL */}

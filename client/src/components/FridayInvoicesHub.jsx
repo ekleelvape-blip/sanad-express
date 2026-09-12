@@ -56,7 +56,81 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], onClose
   };
 
   const handlePrintInvoice = () => {
-    window.print();
+    const printElement = document.getElementById('friday-invoice-print');
+    if (!printElement) {
+      window.print();
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const invoiceHtml = printElement.outerHTML;
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="utf-8">
+        <title>فاتورة تسوية سند A4 - ${selectedInvoice?.invoiceNumber || ''}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            width: 210mm;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            margin: 0;
+            padding: 0;
+          }
+          #friday-invoice-print {
+            width: 194mm !important;
+            max-width: 194mm !important;
+            margin: 0 auto !important;
+            padding: 6mm !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            box-sizing: border-box !important;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #cbd5e1; }
+        </style>
+      </head>
+      <body>
+        ${invoiceHtml}
+      </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    }, 400);
   };
 
   const filteredInvoices = invoices.filter(inv => {
