@@ -523,7 +523,10 @@ export default function DataExportCenter({
               type="date"
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setDatePreset('custom'); }}
-              className="w-full bg-[#090f1d] border border-cyan-900/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-[#00d2d3]"
+              dir="ltr"
+              lang="en-CA"
+              style={{ direction: 'ltr', colorScheme: 'dark' }}
+              className="w-full bg-[#090f1d] border border-cyan-900/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-[#00d2d3] font-mono"
             />
           </div>
 
@@ -533,7 +536,10 @@ export default function DataExportCenter({
               type="date"
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setDatePreset('custom'); }}
-              className="w-full bg-[#090f1d] border border-cyan-900/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-[#00d2d3]"
+              dir="ltr"
+              lang="en-CA"
+              style={{ direction: 'ltr', colorScheme: 'dark' }}
+              className="w-full bg-[#090f1d] border border-cyan-900/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none focus:border-[#00d2d3] font-mono"
             />
           </div>
 
