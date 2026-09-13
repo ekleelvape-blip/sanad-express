@@ -101,15 +101,19 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('track')) return 'tracking';
+      if (params.get('track') || params.get('tracking')) return 'tracking';
       if (params.get('tab')) return params.get('tab');
     }
     return 'dashboard';
   });
   const [trackingInitialNum, setTrackingInitialNum] = useState(() => {
     if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/track/')) {
+        return decodeURIComponent(path.replace('/track/', '').trim());
+      }
       const params = new URLSearchParams(window.location.search);
-      return params.get('track') || '';
+      return params.get('track') || params.get('tracking') || params.get('number') || '';
     }
     return '';
   });
@@ -357,7 +361,12 @@ export default function App() {
           </button>
         </header>
         <main className="max-w-4xl w-full mx-auto p-4 md:p-6">
-          <TrackingPortal initialTrackingNumber={trackingInitialNum} onBack={() => navigateTo('admin', '/admin')} />
+          <TrackingPortal 
+            defaultTrackingNumber={trackingInitialNum} 
+            initialTrackingNumber={trackingInitialNum} 
+            onBack={() => navigateTo('admin', '/admin')} 
+            onClose={() => navigateTo('admin', '/admin')} 
+          />
         </main>
       </div>
     );
@@ -574,7 +583,11 @@ export default function App() {
           )}
 
           {activeTab === 'tracking' && (
-            <TrackingPortal defaultTrackingNumber={trackingInitialNum} />
+            <TrackingPortal 
+              defaultTrackingNumber={trackingInitialNum} 
+              initialTrackingNumber={trackingInitialNum}
+              onClose={() => handleTabChange('dashboard')} 
+            />
           )}
 
           {activeTab === 'salla_integration' && (

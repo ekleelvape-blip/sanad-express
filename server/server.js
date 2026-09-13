@@ -2095,22 +2095,49 @@ io.on('connection', (socket) => {
   });
 });
 
-// 1. استعلام تتبع الشحنة العام للعميل برقم التتبع
+// 1. استعلام تتبع الشحنة العام للعميل برقم التتبع أو الجوال
 app.get('/api/track/:trackingNumber', (req, res) => {
   const { trackingNumber } = req.params;
-  const cleanTrack = trackingNumber.trim().toUpperCase();
+  if (!trackingNumber || !trackingNumber.trim()) {
+    return res.status(400).json({ error: 'يرجى إدخال رقم الشحنة أو رقم الجوال' });
+  }
+
+  const raw = trackingNumber.trim();
+  const cleanTrack = raw.toUpperCase();
+  const cleanDigits = raw.replace(/\D/g, '');
   
-  const order = orders.find(o => 
-    o.id.toUpperCase() === cleanTrack ||
-    (o.orderNumber && String(o.orderNumber) === cleanTrack) ||
-    (o.sallaOrderNumber && String(o.sallaOrderNumber) === cleanTrack) || 
-    o.id.replace(/\D/g, '') === cleanTrack.replace(/\D/g, '') ||
-    ('SND-' + o.id.replace(/\D/g, '')) === cleanTrack ||
-    o.customerPhone === cleanTrack
-  );
+  const order = orders.find(o => {
+    const oId = String(o.id || '').toUpperCase();
+    const oIdDigits = oId.replace(/\D/g, '');
+    const oNum = String(o.orderNumber || '').toUpperCase();
+    const oSalla = String(o.sallaOrderNumber || '').toUpperCase();
+    const oPhone = String(o.customerPhone || '').replace(/\D/g, '');
+    
+    // 1. تطابق المعرف الصريح أو مع بادئة SND- أو بدون فواصل
+    if (oId === cleanTrack || oNum === cleanTrack || oSalla === cleanTrack) return true;
+    if (cleanTrack.replace(/[\s\-_#]/g, '') === oId.replace(/[\s\-_#]/g, '')) return true;
+    if (('SND-' + cleanTrack.replace(/[\s\-_#]/g, '')) === oId.replace(/[\s\-_#]/g, '')) return true;
+    if (cleanDigits && oIdDigits && cleanDigits === oIdDigits && cleanDigits.length <= 6) return true;
+    
+    // 2. تطابق رقم جوال العميل بأي صيغة (محلي، دولي، مع أو بدون 966 / 05)
+    if (cleanDigits.length >= 7 && oPhone) {
+      if (oPhone === cleanDigits) return true;
+      if (oPhone.endsWith(cleanDigits) || cleanDigits.endsWith(oPhone)) return true;
+      const oPhone9 = oPhone.slice(-9);
+      const clean9 = cleanDigits.slice(-9);
+      if (oPhone9 && clean9 && oPhone9 === clean9) return true;
+    }
+    
+    // 3. تطابق اسم العميل
+    if (raw.length >= 3 && o.customerName && o.customerName.toLowerCase().includes(raw.toLowerCase())) {
+      return true;
+    }
+    
+    return false;
+  });
 
   if (!order) {
-    return res.status(404).json({ error: 'لم يتم العثور على شحنة بهذا الرقم' });
+    return res.status(404).json({ error: 'لم يتم العثور على شحنة بهذا الرقم أو رقم الجوال' });
   }
 
   const branch = branches.find(b => b.id === order.branchId);

@@ -32,6 +32,7 @@ export default function Sidebar({
   const navItems = [
     { key: 'dashboard', label: 'الرئيسية', icon: <Home className="w-4 h-4" /> },
     { key: 'orders', label: 'كل الطلبات', icon: <Package className="w-4 h-4" /> },
+    { key: 'tracking', label: 'بوابة تتبع الشحنات للعميل', icon: <Search className="w-4 h-4 text-cyan-400" /> },
     {
       key: 'delivery_group',
       label: 'طلبات التوصيل',
