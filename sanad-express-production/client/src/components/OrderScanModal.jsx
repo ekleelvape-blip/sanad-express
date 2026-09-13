@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { 
   ScanLine, QrCode, Camera, AlertTriangle, CheckCircle2, X, Sparkles, 
-  ShieldCheck, Box, User, MapPin, DollarSign, RefreshCw, Upload, Image as ImageIcon 
+  ShieldCheck, Box, User, MapPin, DollarSign, RefreshCw, Upload, Image as ImageIcon,
+  Zap, ZapOff, FlipHorizontal
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
@@ -21,11 +22,16 @@ export default function OrderScanModal({
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [cameraStarting, setCameraStarting] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+  const [torchOn, setTorchOn] = useState(false);
+  const [hasTorch, setHasTorch] = useState(false);
 
   const scannerRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const isMountedRef = useRef(true);
+  const isTransitioningRef = useRef(false);
 
   // استخراج الكود النظيف من أي رابط أو نص
   const extractCode = (raw) => {
@@ -86,7 +92,7 @@ export default function OrderScanModal({
         code === oIdClean ||
         (codeDigits && oNumDigits && codeDigits === oNumDigits) ||
         code === ('SND-' + oNumDigits) ||
-        (o.sallaOrderNumber && code === o.sallaOrderNumber)
+        (o.sallaOrderNumber && code === order.sallaOrderNumber)
       );
     });
 
@@ -102,82 +108,7 @@ export default function OrderScanModal({
     setErrorMessage(`❌ الباركود الممسوح [${code}] غير مطابق لهذه الشحنة. يرجى مسح بوليصة الشحنة الصحيحة المطبوعة على الكرتون.`);
   };
 
-  const startScanner = async () => {
-    setCameraError('');
-    setCameraStarting(true);
-
-    try {
-      // إيقاف أي ماسح قديم إن وُجد
-      await stopScanner();
-
-      const qrContainer = document.getElementById('sanad-qr-reader');
-      if (!qrContainer) {
-        setCameraStarting(false);
-        return;
-      }
-
-      const html5QrCode = new Html5Qrcode('sanad-qr-reader');
-      scannerRef.current = html5QrCode;
-
-      // محاولة البدء بالكاميرا الخلفية (environment)
-      try {
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          {
-            fps: 15,
-            qrbox: { width: 220, height: 220 },
-            aspectRatio: 1.0
-          },
-          (decodedText) => {
-            if (isMountedRef.current) {
-              handleVerifyBarcode(decodedText);
-            }
-          },
-          () => {} // تجاهل أخطاء الإطارات الفارغة
-        );
-      } catch (backCamErr) {
-        // إذا فشلت الكاميرا الخلفية، جرب أي كاميرا متاحة بالجهاز
-        const cameras = await Html5Qrcode.getCameras().catch(() => []);
-        if (cameras.length > 0) {
-          const selectedCam = cameras[cameras.length - 1].id;
-          await html5QrCode.start(
-            selectedCam,
-            {
-              fps: 15,
-              qrbox: { width: 220, height: 220 },
-              aspectRatio: 1.0
-            },
-            (decodedText) => {
-              if (isMountedRef.current) {
-                handleVerifyBarcode(decodedText);
-              }
-            },
-            () => {}
-          );
-        } else {
-          throw backCamErr;
-        }
-      }
-
-      if (isMountedRef.current) {
-        setCameraActive(true);
-        setCameraStarting(false);
-      }
-    } catch (err) {
-      console.warn('Camera start error:', err);
-      if (isMountedRef.current) {
-        setCameraActive(false);
-        setCameraStarting(false);
-        const errMsg = String(err?.message || err || '');
-        if (errMsg.includes('Permission') || errMsg.includes('NotAllowedError')) {
-          setCameraError('تم رفض إذن الكاميرا. يرجى السماح بالوصول للكاميرا من إعدادات المتصفح، أو استخدم التقاط صورة.');
-        } else {
-          setCameraError('الكاميرا غير متاحة حالياً، يمكنك التقاط صورة مباشرة أو استخدام قارئ الباركود.');
-        }
-      }
-    }
-  };
-
+  // إيقاف الماسح وتنظيف الموارد بأمان
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
@@ -186,12 +117,155 @@ export default function OrderScanModal({
         }
         scannerRef.current.clear();
       } catch (e) {
-        // ignore clean-up warnings
+        // تجاهل أخطاء التحرير العادية
       }
       scannerRef.current = null;
     }
     if (isMountedRef.current) {
       setCameraActive(false);
+      setCameraStarting(false);
+      setTorchOn(false);
+      setHasTorch(false);
+    }
+  };
+
+  // تشغيل الكاميرا والماسح الضوئي
+  const startScanner = async (preferredCameraId = null) => {
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+
+    if (isMountedRef.current) {
+      setCameraError('');
+      setCameraStarting(true);
+    }
+
+    try {
+      await stopScanner();
+
+      const qrContainer = document.getElementById('sanad-qr-reader');
+      if (!qrContainer) {
+        if (isMountedRef.current) setCameraStarting(false);
+        isTransitioningRef.current = false;
+        return;
+      }
+
+      // تهيئة الماسح مع دعم جميع أنواع الباركود وQR
+      const html5QrCode = new Html5Qrcode('sanad-qr-reader', {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E
+        ],
+        verbose: false
+      });
+      scannerRef.current = html5QrCode;
+
+      // حساب أبعاد صندوق المسح ديناميكياً لتفادي أي خطأ
+      const qrboxFunction = (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const edgeSize = Math.max(160, Math.floor(minEdge * 0.75));
+        return {
+          width: Math.min(edgeSize, viewfinderWidth - 20),
+          height: Math.min(edgeSize, viewfinderHeight - 20)
+        };
+      };
+
+      const scanConfig = {
+        fps: 20,
+        qrbox: qrboxFunction
+      };
+
+      // فحص قائمة الكاميرات المتاحة بالجهاز
+      let cams = [];
+      try {
+        cams = await Html5Qrcode.getCameras();
+        if (isMountedRef.current && cams && cams.length > 0) {
+          setAvailableCameras(cams);
+        }
+      } catch (e) {
+        // بعض المتصفحات تمنع حصر الكاميرات قبل الحصول على الإذن، سنتعامل مع الكاميرا الافتراضية
+      }
+
+      // تحديد الكاميرا المراد استخدامها
+      let cameraConstraint = { facingMode: 'environment' };
+      if (preferredCameraId) {
+        cameraConstraint = preferredCameraId;
+      } else if (cams && cams.length > 0) {
+        // تفضيل الكاميرا الخلفية إن أمكن
+        const backCam = cams.find(c => /back|rear|environment|خلفية/i.test(c.label)) || cams[cams.length - 1];
+        cameraConstraint = backCam.id;
+        const camIdx = cams.findIndex(c => c.id === cameraConstraint);
+        if (camIdx >= 0 && isMountedRef.current) setCurrentCameraIndex(camIdx);
+      }
+
+      const onScanSuccess = (decodedText) => {
+        if (isMountedRef.current) {
+          handleVerifyBarcode(decodedText);
+        }
+      };
+
+      try {
+        await html5QrCode.start(cameraConstraint, scanConfig, onScanSuccess, () => {});
+      } catch (camErr) {
+        console.warn('Initial camera constraint failed, retrying with fallback:', camErr);
+        // محاولة بديلة بكاميرا البيئة العامة
+        await html5QrCode.start({ facingMode: 'environment' }, scanConfig, onScanSuccess, () => {});
+      }
+
+      // فحص دعم الفلاش (Torch)
+      try {
+        const capabilities = html5QrCode.getRunningTrackCapabilities?.();
+        if (capabilities && capabilities.torch) {
+          if (isMountedRef.current) setHasTorch(true);
+        }
+      } catch (e) {}
+
+      if (isMountedRef.current) {
+        setCameraActive(true);
+        setCameraStarting(false);
+      }
+    } catch (err) {
+      console.warn('Camera start final error:', err);
+      if (isMountedRef.current) {
+        setCameraActive(false);
+        setCameraStarting(false);
+        const errMsg = String(err?.message || err || '');
+        if (errMsg.includes('Permission') || errMsg.includes('NotAllowedError') || errMsg.includes('denied')) {
+          setCameraError('تم حظر إذن الكاميرا. يرجى تفعيل إذن الكاميرا من إعدادات المتصفح، أو اضغط على "التقاط صورة 📸" فوراً.');
+        } else if (errMsg.includes('NotFound') || errMsg.includes('DevicesNotFoundError')) {
+          setCameraError('لم يتم العثور على كاميرا في هذا الجهاز، يمكنك استخدام التقاط صورة أو إدخال الكود يدوياً.');
+        } else {
+          setCameraError('تعذر فتح بث الفيديو المباشر. يمكنك استخدام زر "التقاط صورة 📸" لالتقاط الباركود فوراً.');
+        }
+      }
+    } finally {
+      isTransitioningRef.current = false;
+    }
+  };
+
+  // تبديل الكاميرا (إذا توفرت أكثر من كاميرا بالجهاز)
+  const toggleCamera = async () => {
+    if (availableCameras.length <= 1) return;
+    const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
+    setCurrentCameraIndex(nextIndex);
+    await startScanner(availableCameras[nextIndex].id);
+  };
+
+  // تشغيل / إيقاف الفلاش (الكشاف)
+  const toggleTorch = async () => {
+    if (!scannerRef.current || !hasTorch) return;
+    try {
+      const nextTorch = !torchOn;
+      await scannerRef.current.applyVideoConstraints({
+        advanced: [{ torch: nextTorch }]
+      });
+      setTorchOn(nextTorch);
+    } catch (e) {
+      console.warn('Torch toggle failed:', e);
     }
   };
 
@@ -208,7 +282,7 @@ export default function OrderScanModal({
       const timer = setTimeout(() => {
         startScanner();
         if (inputRef.current) inputRef.current.focus();
-      }, 250);
+      }, 200);
 
       return () => {
         clearTimeout(timer);
@@ -231,7 +305,16 @@ export default function OrderScanModal({
 
     setErrorMessage('');
     try {
-      const html5Qr = new Html5Qrcode('sanad-qr-temp-reader');
+      const html5Qr = new Html5Qrcode('sanad-qr-temp-reader', {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.UPC_A
+        ],
+        verbose: false
+      });
       const result = await html5Qr.scanFile(file, true);
       html5Qr.clear();
       if (result) {
@@ -240,6 +323,8 @@ export default function OrderScanModal({
     } catch (err) {
       setErrorMessage('لم نتمكن من قراءة باركود أو QR واضح من الصورة، تأكد من وضوح الإضاءة وحاول مجدداً');
       sound.playOrderAlert();
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -333,17 +418,18 @@ export default function OrderScanModal({
         </div>
 
         {/* نافذة المسح المباشر بالكاميرا */}
-        <div className="relative w-full h-48 bg-black rounded-2xl overflow-hidden border-2 border-cyan-500/40 flex flex-col items-center justify-center mb-3 shadow-inner">
+        <div className="relative w-full h-56 sm:h-64 bg-black rounded-2xl overflow-hidden border-2 border-cyan-500/40 flex flex-col items-center justify-center mb-3 shadow-inner">
           {/* عنصر حاوية Html5Qrcode */}
           <div id="sanad-qr-reader" className="w-full h-full object-cover"></div>
 
           {/* في حال كانت الكاميرا قيد التشغيل أو فشلت */}
           {!cameraActive && (
-            <div className="absolute inset-0 bg-[#070c16] flex flex-col items-center justify-center p-4 text-center space-y-2 z-10">
+            <div className="absolute inset-0 bg-[#070c16] flex flex-col items-center justify-center p-4 text-center space-y-2.5 z-10">
               {cameraStarting ? (
                 <>
-                  <RefreshCw className="w-8 h-8 text-[#00d2d3] animate-spin" />
+                  <RefreshCw className="w-9 h-9 text-[#00d2d3] animate-spin" />
                   <span className="text-xs font-bold text-slate-300">جاري تشغيل الكاميرا والماسح الضوئي...</span>
+                  <p className="text-[10px] text-slate-400">يرجى الضغط على "سماح / Allow" عند طلب إذن الكاميرا</p>
                 </>
               ) : (
                 <>
@@ -351,21 +437,21 @@ export default function OrderScanModal({
                   <p className="text-[11px] text-slate-300 max-w-xs leading-relaxed">
                     {cameraError || 'وجّه الكاميرا أو التقط صورة لبوليصة الشحنة المطبوعة على الكرتون.'}
                   </p>
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={startScanner}
-                      className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-[#00d2d3] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => startScanner()}
+                      className="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-[#00d2d3] hover:from-cyan-500 hover:to-cyan-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 transition-all"
                     >
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>تشغيل الكاميرا</span>
+                      <Camera className="w-4 h-4" />
+                      <span>تشغيل الكاميرا 📷</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer border border-slate-600 active:scale-95 transition-all"
                     >
-                      <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+                      <ImageIcon className="w-4 h-4 text-cyan-400" />
                       <span>التقاط صورة 📸</span>
                     </button>
                   </div>
@@ -383,19 +469,50 @@ export default function OrderScanModal({
               <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00d2d3] pointer-events-none"></div>
               <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#00d2d3] pointer-events-none"></div>
 
-              {/* أزرار التحكم بالكاميرا العائمة */}
+              {/* شريط التحكم المباشر بالكاميرا */}
               <div className="absolute bottom-2 inset-x-2 flex items-center justify-between pointer-events-auto">
-                <span className="text-[10px] bg-black/75 backdrop-blur-xs text-cyan-300 font-mono px-2 py-0.5 rounded-full border border-cyan-900/60">
-                  🔴 جارٍ المسح المباشر (15 FPS)
+                <span className="text-[10px] bg-black/80 backdrop-blur-xs text-cyan-300 font-mono px-2.5 py-1 rounded-full border border-cyan-900/60 shadow">
+                  🔴 مسح فوري نشط
                 </span>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[10px] font-bold px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1 cursor-pointer"
-                >
-                  <Camera className="w-3 h-3 text-cyan-400" />
-                  <span>التقاط صورة</span>
-                </button>
+
+                <div className="flex items-center gap-1.5">
+                  {availableCameras.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={toggleCamera}
+                      title="تبديل الكاميرا"
+                      className="bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <FlipHorizontal className="w-3 h-3 text-cyan-400" />
+                      <span>عدسة أخرى</span>
+                    </button>
+                  )}
+
+                  {hasTorch && (
+                    <button
+                      type="button"
+                      onClick={toggleTorch}
+                      title="تشغيل الفلاش"
+                      className={`text-[10px] font-bold px-2 py-1 rounded-lg border flex items-center gap-1 cursor-pointer ${
+                        torchOn 
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-black'
+                          : 'bg-slate-900/90 text-slate-200 border-slate-700'
+                      }`}
+                    >
+                      {torchOn ? <ZapOff className="w-3 h-3" /> : <Zap className="w-3 h-3 text-amber-400" />}
+                      <span>{torchOn ? 'إطفاء' : 'فلاش'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Camera className="w-3 h-3 text-cyan-400" />
+                    <span>صورة</span>
+                  </button>
+                </div>
               </div>
             </>
           )}
