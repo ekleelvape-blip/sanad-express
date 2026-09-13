@@ -101,6 +101,20 @@ app.use('/api', (req, res, next) => {
 // 1. الفروع والمتاجر الأربعة المعتمدة
 
 // حسابات الإدارة والمستخدمين للنظام
+let systemSettings = {
+  selfAssign: true,
+  readyOnly: true,
+  reassignAfterDelay: true,
+  soundEnabled: true,
+  voiceEnabled: true,
+  soundVolume: 0.90,
+  defaultPrinterType: 'thermal',
+  thermalCopies: 1,
+  a4Copies: 1,
+  a4Layout: 'full',
+  storeNameOnWaybill: 'سند إكسبريس SANAD EXPRESS'
+};
+
 const systemUsers = [
   {
     id: 'user-admin',
@@ -2802,6 +2816,42 @@ app.post('/api/zones/reset-official', (req, res) => {
 });
 
 // ============================================================
+
+// ============================================================
+// مسارات إعدادات النظام وقواعد التوصيل وحفظ التفضيلات
+// ============================================================
+app.get('/api/settings', (req, res) => {
+  res.json({ success: true, settings: systemSettings });
+});
+
+app.post('/api/settings', (req, res) => {
+  const updates = req.body || {};
+  systemSettings = { ...systemSettings, ...updates };
+  scheduleSave();
+  io.emit('settings_updated', systemSettings);
+  res.json({ success: true, settings: systemSettings, message: 'تم حفظ إعدادات النظام بنجاح' });
+});
+
+// تحديث كلمة مرور / رمز PIN المندوب
+app.post('/api/drivers/:id/change-password', async (req, res) => {
+  const { newPassword } = req.body;
+  const driverId = req.params.id;
+  if (!newPassword || String(newPassword).length < 4) {
+    return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 4 خانات على الأقل' });
+  }
+
+  const driver = drivers.find(d => d.id === driverId || d.id === driverId.replace('drv-10', 'drv-') || ('drv-10' + d.id.replace('drv-', '')) === driverId);
+  if (!driver) {
+    return res.status(404).json({ error: 'المندوب غير موجود' });
+  }
+
+  const hashed = await bcrypt.hash(String(newPassword), 10);
+  driver.password = hashed;
+  driver.pin = hashed;
+  scheduleSave();
+  res.json({ success: true, message: 'تم تحديث وتشفير كلمة المرور بنجاح' });
+});
+
 //  طبقة الحفظ الدائم (Persistence Layer)
 //  تُحمّل البيانات من ملف عند الإقلاع وتُحفظ تلقائياً بعد أي تعديل
 // ============================================================
@@ -2821,7 +2871,8 @@ const PERSISTED = {
   get equipment() { return equipment; },
   get ratings() { return ratings; },
   get zones() { return zones; },
-  get storeReceivedCashWallet() { return storeReceivedCashWallet; }
+  get storeReceivedCashWallet() { return storeReceivedCashWallet; },
+  get systemSettings() { return systemSettings; }
 };
 
 // التحميل عند الإقلاع (إذا الملف موجود يستعيد البيانات، وإلا يستخدم البيانات الأولية)
@@ -2833,6 +2884,9 @@ if (fs.existsSync(DATA_FILE)) {
         PERSISTED[key].length = 0;
         PERSISTED[key].push(...loaded[key]);
       }
+    }
+    if (loaded.systemSettings) {
+      systemSettings = { ...systemSettings, ...loaded.systemSettings };
     }
     if (loaded.storeReceivedCashWallet) {
       storeReceivedCashWallet.totalBalance = Number(loaded.storeReceivedCashWallet.totalBalance) || 0;

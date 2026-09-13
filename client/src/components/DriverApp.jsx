@@ -1951,10 +1951,25 @@ export default function DriverApp({
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     if (newPasswordInput.length >= 4) {
-                      alert('تم تحديث كلمة المرور بنجاح');
-                      setNewPasswordInput('');
+                      try {
+                        const res = await fetch(`/api/drivers/${currentDriver.id}/change-password`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ newPassword: newPasswordInput })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          alert('✅ تم تحديث وتشفير كلمة المرور وحفظها في قاعدة البيانات بنجاح!');
+                          setNewPasswordInput('');
+                          sound.playSuccess();
+                        } else {
+                          alert(data.error || 'فشل تحديث كلمة المرور');
+                        }
+                      } catch (err) {
+                        alert('حدث خطأ أثناء حفظ كلمة المرور في السيرفر');
+                      }
                     } else {
                       alert('يجب أن تكون 4 خانات على الأقل');
                     }

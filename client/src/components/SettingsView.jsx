@@ -20,6 +20,23 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
   const [reassignAfterDelay, setReassignAfterDelay] = useState(true);
   const [saved, setSaved] = useState(false);
 
+  // استرجاع إعدادات وقواعد النظام من الخادم وقاعدة البيانات
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.settings) {
+          if (data.settings.selfAssign !== undefined) setSelfAssign(data.settings.selfAssign);
+          if (data.settings.readyOnly !== undefined) setReadyOnly(data.settings.readyOnly);
+          if (data.settings.reassignAfterDelay !== undefined) setReassignAfterDelay(data.settings.reassignAfterDelay);
+          if (data.settings.soundEnabled !== undefined) setAudioEnabled(data.settings.soundEnabled);
+          if (data.settings.voiceEnabled !== undefined) setVoiceEnabled(data.settings.voiceEnabled);
+          if (data.settings.soundVolume !== undefined) setVolumeLevel(data.settings.soundVolume);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // إعدادات الطابعات والبوالص
   const [printerConfig, setPrinterConfig] = useState(loadPrinterSettings);
   const [printerSaved, setPrinterSaved] = useState(false);
@@ -49,6 +66,15 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
       voiceEnabled,
       volume: volumeLevel
     });
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        soundEnabled: audioEnabled,
+        voiceEnabled,
+        soundVolume: volumeLevel
+      })
+    }).catch(() => {});
     setAudioSaved(true);
     sound.playSanadBrand();
     setTimeout(() => setAudioSaved(false), 2500);
@@ -60,10 +86,22 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
     }
   }, [initialSubTab]);
 
-  const handleSaveRules = (e) => {
+  const handleSaveRules = async (e) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selfAssign, readyOnly, reassignAfterDelay })
+      });
+      if (res.ok) {
+        setSaved(true);
+        sound.playSuccess();
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء حفظ الإعدادات في قاعدة البيانات');
+    }
   };
 
   const handleSavePrinterConfig = (e) => {

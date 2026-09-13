@@ -473,6 +473,66 @@
   ],
   "orders": [
     {
+      "id": "SND-1021",
+      "orderNumber": "1021",
+      "trackingNumber": "SND-1021",
+      "branchId": "branch-iklil-dammam",
+      "customerName": "تجربة الحفظ",
+      "customerPhone": "0509998877",
+      "customerAddress": "الدمام - حي الفيصلية",
+      "customerCoords": [
+        26.42650468935547,
+        50.099537468156676
+      ],
+      "items": [
+        {
+          "name": "شحنة منتجات سَنَد",
+          "qty": 1,
+          "price": 150
+        }
+      ],
+      "deliveryFee": 25,
+      "totalAmount": 150,
+      "paymentMethod": "cash",
+      "driverCommission": 20,
+      "status": "unassigned",
+      "assignedDriverId": null,
+      "orderSource": "يدوي (Manual)",
+      "codSettled": false,
+      "createdAt": "2026-09-13T17:25:01.559Z",
+      "notes": ""
+    },
+    {
+      "id": "SND-1020",
+      "orderNumber": "1020",
+      "trackingNumber": "SND-1020",
+      "branchId": "branch-iklil-dammam",
+      "customerName": "تجربة الحفظ",
+      "customerPhone": "0509998877",
+      "customerAddress": "الدمام - حي الفيصلية",
+      "customerCoords": [
+        26.45208549165085,
+        50.11964649618525
+      ],
+      "items": [
+        {
+          "name": "شحنة منتجات سَنَد",
+          "qty": 1,
+          "price": 150
+        }
+      ],
+      "deliveryFee": 25,
+      "totalAmount": 150,
+      "paymentMethod": "cash",
+      "driverCommission": 20,
+      "status": "unassigned",
+      "assignedDriverId": null,
+      "orderSource": "يدوي (Manual)",
+      "codSettled": false,
+      "createdAt": "2026-09-13T17:24:56.879Z",
+      "notes": ""
+    },
+    {
       "id": "SND-1001",
       "orderNumber": "1001",
       "sallaOrderNumber": "284741285",
@@ -2226,5 +2286,9 @@
       "store": "فرع إكليل الدمام",
       "status": "نشط"
     }
-  ]
+  ],
+  "storeReceivedCashWallet": {
+    "totalBalance": 14500,
+    "transactions": []
+  }
 }
