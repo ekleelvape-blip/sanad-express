@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Home, Package, Truck, XCircle, Users, MapPin, Star, DollarSign, Wallet,
   FileText, Download, ShoppingBag, Headphones, Settings, ChevronDown,
-  Smartphone, Search, LogOut, CheckCircle2, ShieldCheck, Box, Zap
+  Smartphone, Search, LogOut, CheckCircle2, ShieldCheck, Box, Zap, Store
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -31,6 +31,7 @@ export default function Sidebar({
 
   const navItems = [
     { key: 'dashboard', label: 'الرئيسية', icon: <Home className="w-4 h-4" /> },
+    { key: 'branches_control', label: 'إدارة الفروع والتحكم الكامل 🏢', icon: <Store className="w-4 h-4 text-[#00d2d3]" /> },
     { key: 'orders', label: 'كل الطلبات', icon: <Package className="w-4 h-4" /> },
     { key: 'tracking', label: 'بوابة تتبع الشحنات للعميل', icon: <Search className="w-4 h-4 text-cyan-400" /> },
     {

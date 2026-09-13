@@ -128,8 +128,15 @@ export default function App() {
     } catch (e) {}
     return 'all';
   });
+  const DEFAULT_BRANCHES = [
+    { id: 'branch-iklil-dammam', name: 'فرع إكليل الدمام', brand: 'إكليل فيب', city: 'الدمام', district: 'حي الشاطئ - طريق الخليج', phone: '0501122334' },
+    { id: 'branch-iklil-jubail', name: 'فرع إكليل الجبيل', brand: 'إكليل فيب', city: 'الجبيل', district: 'حي الفردوس - طريق اللؤلؤ', phone: '0543322110' },
+    { id: 'branch-vape-sharq', name: 'متجر فيب الشرق', brand: 'فيب الشرق', city: 'الخبر / الدمام', district: 'حي العليا - شارع الأمير فيصل بن فهد', phone: '0559876543' },
+    { id: 'branch-iklil-main', name: 'متجر إكليل فيب', brand: 'إكليل فيب', city: 'الدمام / الظهران', district: 'طريق الملك فهد الرئيسي', phone: '0501234567' }
+  ];
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [branches, setBranches] = useState([]);
+  const [branches, setBranches] = useState(DEFAULT_BRANCHES);
   const [drivers, setDrivers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [currentDriverId, setCurrentDriverId] = useState(() => {
@@ -155,7 +162,10 @@ export default function App() {
         fetch('/api/drivers' + branchParam),
         fetch('/api/orders' + branchParam)
       ]);
-      if (brRes.ok) setBranches(await brRes.json());
+      if (brRes.ok) {
+        const brData = await brRes.json();
+        if (Array.isArray(brData) && brData.length > 0) setBranches(brData);
+      }
       if (drvRes.ok) setDrivers(await drvRes.json());
       if (ordRes.ok) setOrders(await ordRes.json());
     } catch (err) {
@@ -426,11 +436,11 @@ export default function App() {
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="bg-transparent text-slate-200 font-bold outline-none cursor-pointer text-xs"
+                  className="bg-[#0f1523] text-slate-200 font-bold outline-none cursor-pointer text-xs"
                 >
-                  <option value="all">كل الفروع (الإدارة العامة)</option>
+                  <option value="all">👑 كل الفروع (الإدارة العامة - تحكم شامل)</option>
                   {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                    <option key={b.id} value={b.id}>🏢 {b.name} ({b.brand || b.city})</option>
                   ))}
                 </select>
               </div>
@@ -491,6 +501,7 @@ export default function App() {
               drivers={drivers}
               branches={branches}
               selectedBranch={selectedBranch}
+              onSelectBranch={setSelectedBranch}
               onSelectTab={handleTabChange}
               onSelectDriver={(d) => { setCurrentDriverId(d.id); setActiveTab('driver_app'); }}
             />
@@ -509,15 +520,16 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'driver_tracking' && (
+          {(activeTab === 'branches_control' || activeTab === 'driver_tracking') && (
             <div className="bg-[#0f1b23] border border-slate-800 p-6 rounded-3xl shadow-xl">
               <AdminDashboard
                 branches={branches}
                 drivers={drivers}
                 orders={orders}
                 selectedBranch={selectedBranch}
+                onSelectBranch={setSelectedBranch}
                 onSelectDriver={(d) => { setCurrentDriverId(d.id); setActiveTab('driver_app'); }}
-                onSwitchTab={setActiveTab}
+                onSwitchTab={handleTabChange}
               />
             </div>
           )}

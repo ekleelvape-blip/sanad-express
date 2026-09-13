@@ -8,6 +8,7 @@ export default function DashboardView({
   drivers,
   branches,
   selectedBranch,
+  onSelectBranch,
   onSelectTab,
   onSelectDriver,
   onOpenWaybill
@@ -228,6 +229,7 @@ export default function DashboardView({
           drivers={drivers}
           orders={orders}
           selectedBranch={selectedBranch}
+          onSelectBranch={onSelectBranch}
           onSelectDriver={onSelectDriver}
           onSwitchTab={onSelectTab}
         />
