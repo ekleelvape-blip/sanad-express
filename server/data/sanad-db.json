@@ -12,67 +12,67 @@
   "branches": [
     {
       "id": "branch-iklil-dammam",
+      "name": "فرع إكليل الكيف - الدمام حي طيبة",
+      "brand": "إكليل الكيف",
       "city": "الدمام",
-      "name": "فرع إكليل الدمام",
-      "role": "branch",
-      "brand": "إكليل فيب",
-      "phone": "0501122334",
+      "district": "الدمام - حي طيبة (شارع الإمام الشافعي)",
       "coords": [
-        26.438,
-        50.111
+        26.3583,
+        50.0501
       ],
-      "district": "حي الشاطئ - طريق الخليج",
+      "phone": "0538041826",
+      "username": "dammam",
       "password": "$2b$10$nCdAk.evHkqKTD9SWTYJHO.v8p/7v5oXBlSGNfAqx1R6.Y8cy8Z6W",
-      "syncPool": "sync-group-east",
-      "username": "dammam"
+      "role": "branch",
+      "syncPool": "sync-group-east"
     },
     {
       "id": "branch-iklil-jubail",
-      "city": "الجبيل",
-      "name": "فرع إكليل الجبيل",
-      "role": "branch",
+      "name": "فرع إكليل فيب - الجبيل البلد",
       "brand": "إكليل فيب",
-      "phone": "0543322110",
+      "city": "الجبيل",
+      "district": "الجبيل البلد - طريق الملك فيصل الغربي",
       "coords": [
-        27.0046,
-        49.6582
+        26.9836,
+        49.6465
       ],
-      "district": "حي الفردوس - طريق اللؤلؤ",
+      "phone": "0535139959",
+      "username": "jubail",
       "password": "123",
-      "syncPool": "sync-group-jubail",
-      "username": "jubail"
+      "role": "branch",
+      "syncPool": "sync-group-jubail"
     },
     {
       "id": "branch-vape-sharq",
-      "city": "الخبر / الدمام",
-      "name": "متجر فيب الشرق",
-      "role": "branch",
-      "brand": "فيب الشرق",
-      "phone": "0559876543",
+      "name": "متجر إكليل الكيف - فرع طيبة",
+      "brand": "إكليل الكيف",
+      "city": "الدمام",
+      "district": "الدمام - حي طيبة",
       "coords": [
-        26.3023,
-        50.2104
+        26.3583,
+        50.0501
       ],
-      "district": "حي العليا - شارع الأمير فيصل بن فهد",
+      "phone": "0559876543",
+      "username": "sharq",
       "password": "123",
-      "syncPool": "sync-group-east",
-      "username": "sharq"
+      "role": "branch",
+      "syncPool": "sync-group-east"
     },
     {
       "id": "branch-iklil-main",
-      "city": "الدمام / الظهران",
-      "name": "متجر إكليل فيب",
-      "role": "branch",
-      "brand": "إكليل فيب",
-      "phone": "0501234567",
+      "name": "محل إكليل الكيف - الدمام حي طيبة",
+      "brand": "إكليل الكيف",
+      "city": "الدمام",
+      "district": "الدمام - حي طيبة (شارع الأربعين)",
       "coords": [
-        26.3927,
-        50.1815
+        26.3583,
+        50.0501
       ],
-      "district": "طريق الملك فهد الرئيسي",
-      "password": "123",
-      "syncPool": "sync-group-east",
-      "username": "iklil"
+      "phone": "0538041826",
+      "username": "iklil",
+      "password": "$2a$10$3EVgu1OP2fcve3KXJGX9x.8zwK2SNJMlfqjleTl9IDlF5him/DYnG",
+      "role": "branch",
+      "syncPool": "sync-group-east"
     }
   ],
   "drivers": [
@@ -84,13 +84,13 @@
       "phone": "+966502893163",
       "speed": 0,
       "coords": [
-        26.43,
-        50.105
+        26.432,
+        50.1166
       ],
       "online": true,
       "rating": 5,
-      "status": "active",
-      "heading": 45,
+      "status": "available",
+      "heading": 0,
       "vehicle": "سيارة خاصة (كامري 2023)",
       "branchId": "branch-iklil-dammam",
       "branches": [
@@ -101,13 +101,13 @@
       "password": "893163",
       "syncPool": "sync-group-east",
       "username": "+966502893163",
-      "cashOnHand": 327.74,
-      "lastUpdate": "2026-09-13T12:32:22.891Z",
+      "cashOnHand": 0,
+      "lastUpdate": "2026-09-13T19:15:19.449Z",
       "nationalId": "2463794624",
       "sharedStores": "—",
-      "walletBalance": 327.74,
-      "completedToday": 8,
-      "totalCommissionToday": 160
+      "walletBalance": 0,
+      "completedToday": 24,
+      "totalCommissionToday": 565
     },
     {
       "id": "drv-2",
@@ -473,34 +473,78 @@
   ],
   "orders": [
     {
+      "id": "SND-1023",
+      "items": [
+        {
+          "qty": 1,
+          "name": "شحنة منتجات سَنَد",
+          "price": 0
+        }
+      ],
+      "notes": "",
+      "status": "delivered",
+      "branchId": "branch-iklil-dammam",
+      "createdAt": "2026-09-13T19:04:30.661Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T19:15:26.199Z",
+      "deliveryFee": 30,
+      "inTransitAt": "2026-09-13T19:15:22.393Z",
+      "orderNumber": "1023",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 150,
+      "customerName": "0",
+      "scanVerified": true,
+      "customerPhone": "0",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.430941642105683,
+        50.099040317480735
+      ],
+      "trackingNumber": "SND-1023",
+      "customerAddress": "سيهات - 0 - 0",
+      "scannedAtPickup": "2026-09-13T19:15:22.393Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 30,
+      "scannedAtDelivery": "2026-09-13T19:15:26.199Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.947Z"
+    },
+    {
       "id": "SND-1022",
-      "orderNumber": "1022",
-      "trackingNumber": "SND-1022",
+      "items": [
+        {
+          "qty": 1,
+          "name": "شحنة منتجات سَنَد",
+          "price": 175
+        }
+      ],
+      "notes": "",
+      "status": "delivered",
       "branchId": "branch-vape-sharq",
+      "createdAt": "2026-09-13T17:57:00.725Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:10.437Z",
+      "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T18:45:08.389Z",
+      "orderNumber": "1022",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 175,
       "customerName": "فحص الحفظ السحابي في Supabase",
+      "scanVerified": true,
       "customerPhone": "0551122334",
-      "customerAddress": "الخبر - حي العزيزية",
+      "paymentMethod": "cash",
       "customerCoords": [
         26.30970443814711,
         50.212818866719886
       ],
-      "items": [
-        {
-          "name": "شحنة منتجات سَنَد",
-          "qty": 1,
-          "price": 175
-        }
-      ],
-      "deliveryFee": 35,
-      "totalAmount": 175,
-      "paymentMethod": "cash",
-      "driverCommission": 20,
-      "status": "unassigned",
-      "assignedDriverId": null,
-      "orderSource": "يدوي (Manual)",
-      "codSettled": false,
-      "createdAt": "2026-09-13T17:57:00.725Z",
-      "notes": ""
+      "trackingNumber": "SND-1022",
+      "customerAddress": "الخبر - حي العزيزية",
+      "scannedAtPickup": "2026-09-13T18:45:08.389Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T18:45:10.438Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1021",
@@ -512,15 +556,18 @@
         }
       ],
       "notes": "",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T17:25:01.559Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:19.485Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:18.500Z",
       "orderNumber": "1021",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
       "customerName": "تجربة الحفظ",
+      "scanVerified": true,
       "customerPhone": "0509998877",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -529,8 +576,12 @@
       ],
       "trackingNumber": "SND-1021",
       "customerAddress": "الدمام - حي الفيصلية",
-      "assignedDriverId": null,
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:45:18.500Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:19.485Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1020",
@@ -542,15 +593,18 @@
         }
       ],
       "notes": "",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T17:24:56.879Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:26.659Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:23.611Z",
       "orderNumber": "1020",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
       "customerName": "تجربة الحفظ",
+      "scanVerified": true,
       "customerPhone": "0509998877",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -559,8 +613,12 @@
       ],
       "trackingNumber": "SND-1020",
       "customerAddress": "الدمام - حي الفيصلية",
-      "assignedDriverId": null,
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:45:23.611Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:26.659Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1001",
@@ -639,7 +697,7 @@
       "nationalAddress": "EHDC3792",
       "assignedDriverId": "drv-7",
       "deliverySchedule": "لم يتم تحديد موعد التسليم",
-      "driverCommission": 20,
+      "driverCommission": 25,
       "sallaOrderNumber": "284741285"
     },
     {
@@ -657,15 +715,18 @@
         }
       ],
       "notes": "جاهز للاستلام والتوصيل",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-iklil-jubail",
       "createdAt": "2026-09-13T12:17:22.891Z",
-      "codSettled": false,
-      "deliveryFee": 25,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:32.367Z",
+      "deliveryFee": 40,
+      "inTransitAt": "2026-09-13T18:45:30.928Z",
       "orderNumber": "1002",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 280,
       "customerName": "فهد الدوسري",
+      "scanVerified": true,
       "customerPhone": "0561122334",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -673,8 +734,12 @@
         49.665
       ],
       "customerAddress": "الجبيل الصناعية - حي الفناتير",
-      "assignedDriverId": null,
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:45:30.928Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 40,
+      "scannedAtDelivery": "2026-09-13T18:45:32.367Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1003",
@@ -696,15 +761,18 @@
         }
       ],
       "notes": "جاهز للتوصيل",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T12:07:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:37.728Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:36.247Z",
       "orderNumber": "1003",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 340,
       "customerName": "ريان القحطاني",
+      "scanVerified": true,
       "customerPhone": "0553311224",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -712,8 +780,12 @@
         50.112
       ],
       "customerAddress": "الدمام - حي الشاطئ - شارع 18",
-      "assignedDriverId": null,
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:45:36.247Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:37.728Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1004",
@@ -730,15 +802,18 @@
         }
       ],
       "notes": "الدفع شبكة مدى",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T11:57:22.891Z",
       "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:43.599Z",
       "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T18:45:41.433Z",
       "orderNumber": "1004",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 195,
       "customerName": "عبدالله المطيري",
+      "scanVerified": true,
       "customerPhone": "0504488991",
       "paymentMethod": "mada",
       "customerCoords": [
@@ -746,8 +821,11 @@
         50.218
       ],
       "customerAddress": "الخبر - حي العليا - قرب الراشد",
-      "assignedDriverId": null,
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:45:41.433Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T18:45:43.599Z",
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1005",
@@ -759,15 +837,18 @@
         }
       ],
       "notes": "تحصيل كاش عند الاستلام",
-      "status": "unassigned",
+      "status": "delivered",
       "branchId": "branch-iklil-main",
       "createdAt": "2026-09-13T11:52:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:50.231Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:47.917Z",
       "orderNumber": "1005",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 310,
       "customerName": "نواف الشمري",
+      "scanVerified": true,
       "customerPhone": "0547788112",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -775,8 +856,12 @@
         50.089
       ],
       "customerAddress": "الدمام - حي الفيصلية - شارع الملك فهد",
-      "assignedDriverId": null,
-      "driverCommission": 25
+      "scannedAtPickup": "2026-09-13T18:45:47.917Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:50.231Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1006",
@@ -788,15 +873,18 @@
         }
       ],
       "notes": "مسند للمندوب سلطان العتيبي",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T11:32:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:56.531Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:54.645Z",
       "orderNumber": "1006",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 350,
       "customerName": "سلطان العمري",
+      "scanVerified": true,
       "customerPhone": "0522222222",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -804,8 +892,12 @@
         50.075
       ],
       "customerAddress": "الدمام - حي المنار - شارع أبو بكر الصديق",
+      "scannedAtPickup": "2026-09-13T18:45:54.645Z",
       "assignedDriverId": "drv-1",
-      "driverCommission": 20
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:56.531Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1007",
@@ -817,15 +909,18 @@
         }
       ],
       "notes": "مسند للمندوب فيصل الدوسري",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T11:17:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:46:02.659Z",
       "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T18:46:00.878Z",
       "orderNumber": "1007",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 420,
       "customerName": "تركي الحربي",
+      "scanVerified": true,
       "customerPhone": "0500000000",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -833,8 +928,12 @@
         50.222
       ],
       "customerAddress": "الخبر - حي الحزام الذهبي",
-      "assignedDriverId": "drv-2",
-      "driverCommission": 25
+      "scannedAtPickup": "2026-09-13T18:46:00.878Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T18:46:02.659Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1008",
@@ -846,15 +945,18 @@
         }
       ],
       "notes": "مسند للمندوب محمد الشمري",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-iklil-main",
       "createdAt": "2026-09-13T11:02:22.891Z",
       "codSettled": true,
+      "deliveredAt": "2026-09-13T18:51:32.889Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:46:07.383Z",
       "orderNumber": "1008",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 180,
       "customerName": "مشعل الغامدي",
+      "scanVerified": true,
       "customerPhone": "0555555555",
       "paymentMethod": "mada",
       "customerCoords": [
@@ -862,8 +964,11 @@
         50.098
       ],
       "customerAddress": "الدمام - حي المنار",
-      "assignedDriverId": "drv-3",
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T18:46:07.383Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:51:32.889Z",
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1009",
@@ -875,15 +980,18 @@
         }
       ],
       "notes": "مسند للمندوب ياسر الحربي",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-iklil-jubail",
       "createdAt": "2026-09-13T10:52:22.891Z",
-      "codSettled": false,
-      "deliveryFee": 25,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T19:03:08.453Z",
+      "deliveryFee": 40,
+      "inTransitAt": "2026-09-13T19:02:37.074Z",
       "orderNumber": "1009",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 260,
       "customerName": "بدر الخالدي",
+      "scanVerified": true,
       "customerPhone": "0566667788",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -891,8 +999,12 @@
         49.66
       ],
       "customerAddress": "الجبيل الصناعية - محلة الحجاز",
-      "assignedDriverId": "drv-4",
-      "driverCommission": 20
+      "scannedAtPickup": "2026-09-13T19:02:37.074Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 40,
+      "scannedAtDelivery": "2026-09-13T19:03:08.453Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1010",
@@ -904,10 +1016,11 @@
         }
       ],
       "notes": "المندوب في الطريق إلى العميل",
-      "status": "in_transit",
+      "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T10:32:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:13.575Z",
       "deliveryFee": 25,
       "orderNumber": "1010",
       "orderSource": "يدوي (Manual)",
@@ -921,7 +1034,10 @@
       ],
       "customerAddress": "الدمام - حي طيبة - شارع الأربعين",
       "assignedDriverId": "drv-1",
-      "driverCommission": 30
+      "driverCommission": 30,
+      "scannedAtDelivery": "2026-09-13T18:45:13.575Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1011",
@@ -933,15 +1049,18 @@
         }
       ],
       "notes": "جاري التوصيل",
-      "status": "in_transit",
+      "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T10:22:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T19:03:37.081Z",
       "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T19:03:33.722Z",
       "orderNumber": "1011",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 310,
       "customerName": "إبراهيم الصالح",
+      "scanVerified": true,
       "customerPhone": "0502252222",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -949,8 +1068,12 @@
         50.201
       ],
       "customerAddress": "الخبر - حي العقربية",
-      "assignedDriverId": "drv-2",
-      "driverCommission": 25
+      "scannedAtPickup": "2026-09-13T19:03:33.722Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T19:03:37.081Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1012",
@@ -962,15 +1085,18 @@
         }
       ],
       "notes": "المندوب متوجه للموقع",
-      "status": "in_transit",
+      "status": "delivered",
       "branchId": "branch-iklil-main",
       "createdAt": "2026-09-13T10:12:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T19:03:50.201Z",
       "deliveryFee": 30,
+      "inTransitAt": "2026-09-13T19:03:43.233Z",
       "orderNumber": "1012",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 450,
       "customerName": "عادل العيسى",
+      "scanVerified": true,
       "customerPhone": "0543322119",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -978,8 +1104,12 @@
         50.155
       ],
       "customerAddress": "الظهران - حي الدوحة الشمالية",
-      "assignedDriverId": "drv-3",
-      "driverCommission": 25
+      "scannedAtPickup": "2026-09-13T19:03:43.233Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 30,
+      "scannedAtDelivery": "2026-09-13T19:03:50.201Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T19:23:41.948Z"
     },
     {
       "id": "SND-1013",
@@ -994,12 +1124,13 @@
       "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T07:32:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
       "deliveredAt": "2026-09-13T11:32:22.891Z",
       "deliveryFee": 25,
       "orderNumber": "1013",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 440,
+      "codSettledAt": "2026-09-13T18:42:32.042Z",
       "customerName": "أحمد الزهراني",
       "customerPhone": "0555555555",
       "paymentMethod": "cash",
@@ -1024,12 +1155,13 @@
       "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T07:12:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
       "deliveredAt": "2026-09-13T11:22:22.891Z",
       "deliveryFee": 35,
       "orderNumber": "1014",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 330,
+      "codSettledAt": "2026-09-13T18:42:39.371Z",
       "customerName": "خالد السبيعي",
       "customerPhone": "0540000000",
       "paymentMethod": "cash",
@@ -1039,7 +1171,7 @@
       ],
       "customerAddress": "الخبر - حي الراشد",
       "assignedDriverId": "drv-2",
-      "driverCommission": 20
+      "driverCommission": 35
     },
     {
       "id": "SND-1015",
@@ -1054,12 +1186,13 @@
       "status": "delivered",
       "branchId": "branch-iklil-dammam",
       "createdAt": "2026-09-13T06:32:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
       "deliveredAt": "2026-09-13T11:02:22.891Z",
       "deliveryFee": 25,
       "orderNumber": "1015",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 110,
+      "codSettledAt": "2026-09-13T18:42:32.042Z",
       "customerName": "فيصل السالم",
       "customerPhone": "0533344556",
       "paymentMethod": "cash",
@@ -1069,7 +1202,7 @@
       ],
       "customerAddress": "الدمام - حي أحد 71",
       "assignedDriverId": "drv-1",
-      "driverCommission": 20
+      "driverCommission": 25
     },
     {
       "id": "SND-1016",
@@ -1091,7 +1224,7 @@
       "createdAt": "2026-09-13T05:52:22.891Z",
       "codSettled": true,
       "deliveredAt": "2026-09-13T10:42:22.891Z",
-      "deliveryFee": 25,
+      "deliveryFee": 40,
       "orderNumber": "1016",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 245,
@@ -1104,7 +1237,7 @@
       ],
       "customerAddress": "الجبيل الصناعية - حي الفناتير",
       "assignedDriverId": "drv-4",
-      "driverCommission": 20
+      "driverCommission": 40
     },
     {
       "id": "SND-1017",
@@ -1119,12 +1252,13 @@
       "status": "delivered",
       "branchId": "branch-iklil-main",
       "createdAt": "2026-09-13T05:02:22.891Z",
-      "codSettled": false,
+      "codSettled": true,
       "deliveredAt": "2026-09-13T10:02:22.891Z",
       "deliveryFee": 25,
       "orderNumber": "1017",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 280,
+      "codSettledAt": "2026-09-13T18:42:43.423Z",
       "customerName": "عمر العتيبي",
       "customerPhone": "0501199228",
       "paymentMethod": "cash",
@@ -1134,7 +1268,7 @@
       ],
       "customerAddress": "الدمام - حي المنار",
       "assignedDriverId": "drv-3",
-      "driverCommission": 20
+      "driverCommission": 25
     },
     {
       "id": "SND-1018",
@@ -1165,7 +1299,7 @@
       ],
       "customerAddress": "الدمام - حي النورس",
       "assignedDriverId": "drv-1",
-      "driverCommission": 20,
+      "driverCommission": 25,
       "returnRequestedAt": "2026-09-13T12:32:22.891Z"
     },
     {
@@ -1195,7 +1329,7 @@
       ],
       "customerAddress": "الخبر - حي الجسر",
       "assignedDriverId": null,
-      "driverCommission": 20
+      "driverCommission": 35
     }
   ],
   "fridayInvoices": [
@@ -1590,7 +1724,7 @@
       "branchId": "branch-iklil-dammam",
       "cycleKey": "INV-7D-2026-W37-drv-1",
       "driverId": "drv-1",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1013,
@@ -1622,7 +1756,7 @@
       "branchId": "branch-vape-sharq",
       "cycleKey": "INV-7D-2026-W37-drv-2",
       "driverId": "drv-2",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1014,
@@ -1654,7 +1788,7 @@
       "branchId": "branch-iklil-main",
       "cycleKey": "INV-7D-2026-W37-drv-3",
       "driverId": "drv-3",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1015,
@@ -1686,7 +1820,7 @@
       "branchId": "branch-iklil-dammam",
       "cycleKey": "INV-7D-2026-W37-drv-4",
       "driverId": "drv-4",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1016,
@@ -1718,7 +1852,7 @@
       "branchId": "branch-iklil-dammam",
       "cycleKey": "INV-7D-2026-W37-drv-5",
       "driverId": "drv-5",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1017,
@@ -1750,7 +1884,7 @@
       "branchId": "branch-iklil-jubail",
       "cycleKey": "INV-7D-2026-W37-drv-6",
       "driverId": "drv-6",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1018,
@@ -1782,7 +1916,7 @@
       "branchId": "branch-vape-sharq",
       "cycleKey": "INV-7D-2026-W37-drv-7",
       "driverId": "drv-7",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1019,
@@ -1814,7 +1948,7 @@
       "branchId": "branch-iklil-main",
       "cycleKey": "INV-7D-2026-W37-drv-8",
       "driverId": "drv-8",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1020,
@@ -1846,7 +1980,7 @@
       "branchId": "branch-iklil-dammam",
       "cycleKey": "INV-7D-2026-W37-drv-9",
       "driverId": "drv-9",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1021,
@@ -1878,7 +2012,7 @@
       "branchId": "branch-vape-sharq",
       "cycleKey": "INV-7D-2026-W37-drv-10",
       "driverId": "drv-10",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1022,
@@ -1910,7 +2044,7 @@
       "branchId": "branch-iklil-main",
       "cycleKey": "INV-7D-2026-W37-drv-11",
       "driverId": "drv-11",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1023,
@@ -1942,7 +2076,7 @@
       "branchId": "branch-iklil-dammam",
       "cycleKey": "INV-7D-2026-W37-drv-12",
       "driverId": "drv-12",
-      "issuedAt": "2026-09-13T12:32:22.892Z",
+      "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
       "seqNumber": 1024,
@@ -2318,8 +2452,123 @@
     }
   ],
   "storeReceivedCashWallet": {
-    "totalBalance": 14500,
-    "transactions": []
+    "totalBalance": 0,
+    "transactions": [
+      {
+        "id": "TX-DISB-589120",
+        "receiptNumber": "VCH-608575",
+        "type": "disbursement",
+        "recipientType": "accountant",
+        "recipientName": "أ. علي الهاشم (المحاسب المالي المعتمد)",
+        "officerName": "مشرف الخزينة والعمليات",
+        "referenceNumber": "DEP-178964",
+        "branchId": "branch-iklil-dammam",
+        "amount": 4345,
+        "prevBalance": 4345,
+        "newBalance": 0,
+        "notes": "تسليم وتوريد نقدية الخزينة المتراكمة للمحاسب المالي وتصفير رصيد الخزينة بالكامل",
+        "timestamp": "2026-09-13T19:26:29.120Z"
+      },
+      {
+        "id": "TXN-1001",
+        "receiptNumber": "REC-1001",
+        "driverId": "drv-1",
+        "driverName": "يونس",
+        "branchId": "branch-iklil-dammam",
+        "amount": 4345,
+        "orderCount": 13,
+        "settledOrderIds": [
+          "SND-1023",
+          "SND-1022",
+          "SND-1021",
+          "SND-1020",
+          "SND-1002",
+          "SND-1003",
+          "SND-1005",
+          "SND-1006",
+          "SND-1007",
+          "SND-1009",
+          "SND-1010",
+          "SND-1011",
+          "SND-1012"
+        ],
+        "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - يونس",
+        "timestamp": "2026-09-13T19:23:41.948Z"
+      },
+      {
+        "id": "TX-DISB-999021",
+        "type": "disbursement",
+        "notes": "تسليم وتوريد نقدية الخزينة المتراكمة للمحاسب المالي وتصفير رصيد الخزينة بالكامل",
+        "amount": 607.74,
+        "branchId": "branch-iklil-dammam",
+        "timestamp": "2026-09-13T18:43:19.021Z",
+        "newBalance": 0,
+        "officerName": "مشرف الخزينة والعمليات",
+        "prevBalance": 607.74,
+        "receiptNumber": "VCH-797595",
+        "recipientName": "أ. علي الهاشم (المحاسب المالي المعتمد)",
+        "recipientType": "accountant",
+        "referenceNumber": "DEP-341458"
+      },
+      {
+        "id": "TXN-1003",
+        "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - عبدالرحمن الناصر",
+        "amount": 280,
+        "branchId": "branch-iklil-main",
+        "driverId": "drv-3",
+        "timestamp": "2026-09-13T18:42:43.423Z",
+        "driverName": "عبدالرحمن الناصر",
+        "orderCount": 1,
+        "receiptNumber": "REC-1003",
+        "settledOrderIds": [
+          "SND-1017"
+        ]
+      },
+      {
+        "id": "TXN-1002",
+        "notes": "تصفير وتسوية عهدة المندوب زكريا جميل واعتماد الرصيد 0.00 ﷼",
+        "amount": 0,
+        "branchId": "branch-vape-sharq",
+        "driverId": "drv-2",
+        "timestamp": "2026-09-13T18:42:39.371Z",
+        "driverName": "زكريا جميل",
+        "orderCount": 1,
+        "receiptNumber": "REC-1002",
+        "settledOrderIds": [
+          "SND-1014"
+        ]
+      },
+      {
+        "id": "TXN-1001",
+        "notes": "تصفير وتسوية عهدة المندوب يونس واعتماد الرصيد 0.00 ﷼",
+        "amount": 327.74,
+        "branchId": "branch-iklil-dammam",
+        "driverId": "drv-1",
+        "timestamp": "2026-09-13T18:42:32.042Z",
+        "driverName": "يونس",
+        "orderCount": 2,
+        "receiptNumber": "REC-1001",
+        "settledOrderIds": [
+          "SND-1013",
+          "SND-1015"
+        ]
+      },
+      {
+        "id": "TX-DISB-660318",
+        "type": "disbursement",
+        "notes": "تسليم وتوريد نقدية الخزينة المتراكمة للمحاسب المالي وتصفير رصيد الخزينة بالكامل",
+        "amount": 14500,
+        "branchId": "branch-iklil-dammam",
+        "timestamp": "2026-09-13T18:37:40.318Z",
+        "newBalance": 0,
+        "officerName": "مشرف الخزينة والعمليات",
+        "prevBalance": 14500,
+        "receiptNumber": "VCH-890897",
+        "recipientName": "أ. علي الهاشم (المحاسب المالي المعتمد)",
+        "recipientType": "accountant",
+        "referenceNumber": "DEP-753970"
+      }
+    ]
   },
   "systemSettings": {
     "selfAssign": true,
