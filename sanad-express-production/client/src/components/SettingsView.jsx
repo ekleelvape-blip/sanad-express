@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Settings, Sliders, ShieldCheck, CheckCircle2, Save, Cpu, DollarSign, 
+  Settings, Sliders, ShieldCheck, CheckCircle2, Save, Cpu, DollarSign, Volume2, VolumeX, Play, Music, Radio, 
   MapPin, Printer, Tag, FileText, Scissors, AlertCircle, Sparkles, Check
 } from 'lucide-react';
 import DeliveryPricingView from './DeliveryPricingView';
@@ -9,6 +9,7 @@ import {
   savePrinterSettings, executeIframePrint 
 } from '../utils/printerConfig';
 import { generateBarcodeSVG, generateQrSVG } from '../utils/barcode';
+import { sound } from '../utils/sound';
 
 export default function SettingsView({ branches, initialSubTab = 'rules' }) {
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab); // 'rules' | 'pricing' | 'printers'
@@ -23,6 +24,35 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
   const [printerConfig, setPrinterConfig] = useState(loadPrinterSettings);
   const [printerSaved, setPrinterSaved] = useState(false);
   const [isTestPrinting, setIsTestPrinting] = useState(false);
+  
+  // إعدادات الهوية الصوتية والتنبيهات لسَنَد
+  const [audioEnabled, setAudioEnabled] = useState(sound.enabled);
+  const [voiceEnabled, setVoiceEnabled] = useState(sound.voiceEnabled);
+  const [volumeLevel, setVolumeLevel] = useState(sound.volume);
+  const [playingSoundKey, setPlayingSoundKey] = useState(null);
+  const [audioSaved, setAudioSaved] = useState(false);
+
+  const previewSound = (key) => {
+    setPlayingSoundKey(key);
+    if (key === 'brand') sound.playSanadBrand();
+    else if (key === 'dispatch') sound.playDriverAlert();
+    else if (key === 'success') sound.playSuccess();
+    else if (key === 'cash') sound.playCashRegister();
+    else if (key === 'voice') sound.speakArabic('سَنَد للخدمات اللوجستية: تم استلام وتحديث الشحنة بنجاح');
+    setTimeout(() => setPlayingSoundKey(null), 1800);
+  };
+
+  const handleSaveAudioSettings = (e) => {
+    e?.preventDefault();
+    sound.setAudioSettings({
+      enabled: audioEnabled,
+      voiceEnabled,
+      volume: volumeLevel
+    });
+    setAudioSaved(true);
+    sound.playSanadBrand();
+    setTimeout(() => setAudioSaved(false), 2500);
+  };
 
   useEffect(() => {
     if (initialSubTab) {
@@ -178,6 +208,19 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
         {/* أزرار التبديل السريعة داخل الإعدادات */}
         <div className="flex items-center gap-2 bg-[#080d16] p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto text-xs flex-wrap">
           
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('audio')}
+            className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeSubTab === 'audio'
+                ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Volume2 className="w-3.5 h-3.5" />
+            <span>الهوية الصوتية والتنبيهات 🔔🎵</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveSubTab('printers')}
