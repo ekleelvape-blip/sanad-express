@@ -43,6 +43,14 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// حفظ تلقائي بعد أي طلب تعديلي ينجح (POST/PUT/PATCH/DELETE)
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    res.on('finish', () => { if (res.statusCode < 500) scheduleSave(); });
+  }
+  next();
+});
+
 // 1. الفروع والمتاجر الأربعة المعتمدة
 
 // حسابات الإدارة والمستخدمين للنظام
@@ -2589,6 +2597,91 @@ app.post('/api/zones/reset-official', (req, res) => {
   io.emit('zones_updated', zones);
   res.json({ success: true, zones });
 });
+
+// ============================================================
+//  طبقة الحفظ الدائم (Persistence Layer)
+//  تُحمّل البيانات من ملف عند الإقلاع وتُحفظ تلقائياً بعد أي تعديل
+// ============================================================
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'sanad-db.json');
+try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
+
+// الكيانات القابلة للتغيير التي نحفظها
+const PERSISTED = {
+  get systemUsers() { return systemUsers; },
+  get branches() { return branches; },
+  get drivers() { return drivers; },
+  get orders() { return orders; },
+  get fridayInvoices() { return fridayInvoices; },
+  get inventoryItems() { return inventoryItems; },
+  get managers() { return managers; },
+  get equipment() { return equipment; },
+  get ratings() { return ratings; },
+  get zones() { return zones; }
+};
+
+// التحميل عند الإقلاع (إذا الملف موجود يستعيد البيانات، وإلا يستخدم البيانات الأولية)
+if (fs.existsSync(DATA_FILE)) {
+  try {
+    const loaded = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+    for (const key of Object.keys(PERSISTED)) {
+      if (Array.isArray(loaded[key])) {
+        PERSISTED[key].length = 0;
+        PERSISTED[key].push(...loaded[key]);
+      }
+    }
+    // ضمان بقاء رسوم التوصيل وفق تسعيرة سند المعتمدة
+    orders.forEach(o => {
+      if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
+        o.deliveryFee = getCityDeliveryFee(o.customerAddress);
+      }
+    });
+    console.log('✅ تم استعادة البيانات من:', DATA_FILE, '| طلبات:', orders.length, '| مناديب:', drivers.length);
+  } catch (e) {
+    console.error('⚠️ تعذّر قراءة ملف البيانات، سيتم استخدام البيانات الأولية:', e.message);
+  }
+} else {
+  console.log('ℹ️ لا يوجد ملف بيانات محفوظ — بدء بنظيف بالبيانات الأولية');
+}
+
+// حفظ ذري (كتابة مؤقتة ثم نقل) مع تأخير بسيط لتجميع التعديلات المتتالية
+let saveTimer = null;
+function persistNow() {
+  try {
+    const snapshot = {};
+    for (const key of Object.keys(PERSISTED)) snapshot[key] = PERSISTED[key];
+    const tmp = DATA_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(snapshot, null, 2));
+    fs.renameSync(tmp, DATA_FILE);
+  } catch (e) {
+    console.error('❌ فشل حفظ البيانات:', e.message);
+  }
+}
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistNow, 400);
+}
+
+// حفظ أخير عند إيقاف السيرفر
+process.on('SIGTERM', () => { persistNow(); process.exit(0); });
+process.on('SIGINT',  () => { persistNow(); process.exit(0); });
+
+// نقطة تحميل نسخة احتياطية يدوية
+app.get('/api/backup/download', (req, res) => {
+  persistNow();
+  res.setHeader('Content-Disposition', 'attachment; filename="sanad-backup-' + new Date().toISOString().slice(0,10) + '.json"');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  if (fs.existsSync(DATA_FILE)) {
+    fs.createReadStream(DATA_FILE).pipe(res);
+  } else {
+    try {
+      res.sendFile(DATA_FILE);
+    } catch (e) {
+      res.status(404).json({ error: 'ملف النسخة الاحتياطية غير متوفر' });
+    }
+  }
+});
+// ============================================================
 
 // ==========================================
 // 8. محرك تقديم تطبيق سند وتوجيه الروابط المستقلة (SPA Routing)
