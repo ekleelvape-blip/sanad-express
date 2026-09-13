@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Store, Lock, User, ArrowRight, ShieldCheck, ChevronDown, ChevronUp, KeyRound } from 'lucide-react';
 
 export default function LoginModal({ branches = [], onLoginSuccess }) {
-  const [username, setUsername] = useState('dammam');
-  const [password, setPassword] = useState('123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showAccountsGuide, setShowAccountsGuide] = useState(false);
@@ -22,6 +22,9 @@ export default function LoginModal({ branches = [], onLoginSuccess }) {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.token) {
+          localStorage.setItem('sanad_token', data.token);
+        }
         onLoginSuccess(data.user);
       } else {
         setError(data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة');

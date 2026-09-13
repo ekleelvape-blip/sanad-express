@@ -31,6 +31,33 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+// ===== أمان: JWT + تشفير كلمات المرور =====
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const JWT_SECRET = process.env.JWT_SECRET || 'sanad_express_secret_key_2026';
+
+function makeToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
+}
+
+// تحقق من كلمة المرور مع ترقية تلقائية:
+// إذا كانت نصاً عادياً (قديمة) يقارنها ثم يشفّرها ويحفظ التشفير
+async function checkPassword(account, password) {
+  if (!password) return false;
+  const stored = String(account.password || account.pin || '');
+  if (stored.startsWith('$2')) {
+    return await bcrypt.compare(String(password), stored);
+  }
+  if (stored === String(password)) {
+    const hash = await bcrypt.hash(String(password), 10);
+    if (account.password) account.password = hash; else account.pin = hash;
+    if (typeof scheduleSave === 'function') scheduleSave(); // يحفظ فوراً بفضل خطوة 1
+    return true;
+  }
+  return false;
+}
+// ===========================================
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -50,6 +77,26 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ===== حارس الأمان: يرفض أي طلب API بدون توكن JWT =====
+app.use('/api', (req, res, next) => {
+  const p = req.path;
+  // المسارات العامة فقط: تسجيل الدخول + تتبع الشحنة + Webhook سلة
+  if (p === '/auth/login' || p === '/driver/login' ||
+      p.startsWith('/track/') || p.startsWith('/salla/')) {
+    return next();
+  }
+  const h = req.headers.authorization || '';
+  const token = (h.startsWith('Bearer ') ? h.slice(7) : null) || req.query.token;
+  if (!token) return res.status(401).json({ error: 'غير مصرح — يجب تسجيل الدخول' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'انتهت الجلسة — أعد تسجيل الدخول' });
+  }
+});
+// ========================================================
 
 // 1. الفروع والمتاجر الأربعة المعتمدة
 
@@ -907,15 +954,17 @@ orders.forEach(o => {
 
 // 5. مسارات الـ API
 
-// تسجيل الدخول للفروع
-app.post('/api/auth/login', (req, res) => {
+// تسجيل الدخول للفروع والإدارة العامة
+app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   
   // 1. تسجيل دخول خاص للفروع (خصوصية تامة 100%)
-  const branch = branches.find(b => b.username === username && b.password === password);
-  if (branch) {
+  const branch = branches.find(b => b.username === username);
+  if (branch && (await checkPassword(branch, password))) {
+    const token = makeToken({ id: branch.id, role: 'branch', branchId: branch.id });
     return res.json({
       success: true,
+      token,
       user: {
         id: branch.id,
         branchId: branch.id,
@@ -931,10 +980,12 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   // 2. تسجيل دخول الإدارة العامة (المدير العام)
-  const admin = systemUsers.find(u => u.username === username && u.password === password);
-  if (admin) {
+  const admin = systemUsers.find(u => u.username === username);
+  if (admin && (await checkPassword(admin, password))) {
+    const token = makeToken({ id: admin.id, role: 'admin', branchId: 'all' });
     return res.json({
       success: true,
+      token,
       user: {
         id: admin.id,
         branchId: 'all',
@@ -1015,7 +1066,7 @@ app.post('/api/drivers/bulk-action', (req, res) => {
 // تسجيل دخول المندوب الميداني باسم المستخدم (رقم الجوال) وكلمة المرور
 
 // 1. تغيير كلمة المرور من قبل المندوب نفسه لضمان الخصوصية التامة
-app.post('/api/driver/change-password', (req, res) => {
+app.post('/api/driver/change-password', async (req, res) => {
   const { driverId, currentPassword, newPassword } = req.body;
   if (!driverId || !currentPassword || !newPassword) {
     return res.status(400).json({ error: 'يرجى إدخال كلمة المرور الحالية وكلمة المرور الجديدة' });
@@ -1030,11 +1081,14 @@ app.post('/api/driver/change-password', (req, res) => {
     return res.status(404).json({ error: 'حساب المندوب غير موجود' });
   }
 
-  if (String(driver.password).trim() !== String(currentPassword).trim()) {
+  const isCurrentValid = await checkPassword(driver, currentPassword);
+  if (!isCurrentValid) {
     return res.status(400).json({ error: 'كلمة المرور الحالية غير صحيحة' });
   }
 
-  driver.password = String(newPassword).trim();
+  const hash = await bcrypt.hash(String(newPassword).trim(), 10);
+  driver.password = hash;
+  if (typeof scheduleSave === 'function') scheduleSave();
   io.emit('driver_status_changed', driver);
 
   res.json({
@@ -1044,7 +1098,7 @@ app.post('/api/driver/change-password', (req, res) => {
 });
 
 // 2. إعادة تعيين كلمة المرور من قبل الإدارة في حال نسيانها
-app.post('/api/driver/:id/reset-password', (req, res) => {
+app.post('/api/driver/:id/reset-password', async (req, res) => {
   const { id } = req.params;
   const { newPassword } = req.body;
   const driver = drivers.find(d => d.id === id || d.id === id?.replace('drv-10', 'drv-'));
@@ -1052,7 +1106,9 @@ app.post('/api/driver/:id/reset-password', (req, res) => {
   if (!driver) return res.status(404).json({ error: 'المندوب غير موجود' });
 
   const pin = newPassword && newPassword.trim() ? newPassword.trim() : Math.floor(100000 + Math.random() * 900000).toString();
-  driver.password = pin;
+  const hash = await bcrypt.hash(pin, 10);
+  driver.password = hash;
+  if (typeof scheduleSave === 'function') scheduleSave();
   io.emit('driver_status_changed', driver);
 
   res.json({
@@ -1063,7 +1119,7 @@ app.post('/api/driver/:id/reset-password', (req, res) => {
 });
 
 // تسجيل الدخول الآمن للمندوب والتحقق المشفر برمز PIN
-app.post('/api/driver/login', (req, res) => {
+app.post('/api/driver/login', async (req, res) => {
   const { driverId, username, phone, password, pin } = req.body;
   const rawSecret = String(pin || password || '').trim();
 
@@ -1099,14 +1155,13 @@ app.post('/api/driver/login', (req, res) => {
     return res.status(401).json({ error: 'المندوب غير مسجل في المنظومة، يرجى التحقق من الرقم أو اختيار اسمك' });
   }
 
-  // ج) التحقق الصارم من رمز PIN أو كلمة المرور
+  // ج) التحقق الصارم من رمز PIN أو كلمة المرور مع ترقية وتشفير تلقائي
   const cleanPhone = (driver.phone || '').replace(/\D/g, '');
   const last6Digits = cleanPhone.slice(-6);
   const last4Digits = cleanPhone.slice(-4);
-  const storedPass = String(driver.password || '').trim();
 
-  const isPinValid = (
-    rawSecret === storedPass ||
+  const isPasswordValid = await checkPassword(driver, rawSecret);
+  const isPinValid = isPasswordValid || (
     rawSecret === '123456' ||
     rawSecret === '1234' ||
     rawSecret === last6Digits ||
@@ -1114,14 +1169,14 @@ app.post('/api/driver/login', (req, res) => {
   );
 
   if (!isPinValid) {
-    return res.status(401).json({ error: 'رمز PIN أو كلمة المرور غير صحيحة، حاول مجدداً' });
+    return res.status(401).json({ error: 'رمز PIN أو كلمة المرور غير صحيحة' });
   }
 
-  const sessionToken = 'SANAD-SEC-' + Buffer.from(driver.id + ':' + Date.now()).toString('base64');
+  const token = makeToken({ id: driver.id, role: 'driver', driverId: driver.id });
 
   res.json({
     success: true,
-    token: sessionToken,
+    token,
     driver: {
       id: driver.id,
       code: driver.code || ('DRV-0' + driver.id.replace(/\D/g, '')),
@@ -2666,8 +2721,11 @@ function scheduleSave() {
 process.on('SIGTERM', () => { persistNow(); process.exit(0); });
 process.on('SIGINT',  () => { persistNow(); process.exit(0); });
 
-// نقطة تحميل نسخة احتياطية يدوية
+// نقطة تحميل نسخة احتياطية يدوية (للإدارة فقط)
 app.get('/api/backup/download', (req, res) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'هذا الرابط للإدارة العامة فقط' });
+  }
   persistNow();
   res.setHeader('Content-Disposition', 'attachment; filename="sanad-backup-' + new Date().toISOString().slice(0,10) + '.json"');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');

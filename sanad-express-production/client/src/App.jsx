@@ -224,11 +224,16 @@ export default function App() {
       setSelectedBranch('all');
     }
     localStorage.setItem('sanad_user', JSON.stringify(user));
+    setTimeout(() => fetchData(), 50);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('sanad_token');
     localStorage.removeItem('sanad_user');
+    setBranches([]);
+    setDrivers([]);
+    setOrders([]);
   };
 
   const handleAssignOrder = async (orderId, driverId) => {

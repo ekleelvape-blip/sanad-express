@@ -3,6 +3,35 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';
 
+// ===== إرفاق التوكن تلقائياً مع كل طلب API =====
+const _fetch = window.fetch.bind(window);
+window.fetch = (url, options = {}) => {
+  if (typeof url === 'string' && url.startsWith('/api')) {
+    let token = localStorage.getItem('sanad_token');
+    try {
+      const d = JSON.parse(localStorage.getItem('sanad_driver_auth') || 'null');
+      if (d?.token) token = d.token;
+    } catch (e) {}
+    if (token) {
+      options.headers = { ...(options.headers || {}), Authorization: 'Bearer ' + token };
+    }
+  }
+  return _fetch(url, options).then(res => {
+    if (res.status === 401) {
+      const hadToken = !!localStorage.getItem('sanad_token') || !!localStorage.getItem('sanad_driver_auth');
+      localStorage.removeItem('sanad_token');
+      localStorage.removeItem('sanad_user');
+      localStorage.removeItem('sanad_driver_auth');
+      localStorage.removeItem('sanad_driver_id');
+      if (hadToken && !window.location.pathname.startsWith('/track')) {
+        window.location.href = '/';
+      }
+    }
+    return res;
+  });
+};
+// ================================================
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

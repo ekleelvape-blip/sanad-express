@@ -3,7 +3,7 @@
     {
       "id": "user-admin",
       "username": "admin",
-      "password": "123",
+      "password": "$2b$10$QHl4JH1iymiVwe.Xv0XsHO5aN7YFUsnqVWFsu4IaWzTreV2aCZTL.",
       "name": "الإدارة العامة لمنصة سَنَد",
       "role": "admin",
       "branchId": "all"
@@ -22,7 +22,7 @@
       ],
       "phone": "0501122334",
       "username": "dammam",
-      "password": "123",
+      "password": "$2b$10$nCdAk.evHkqKTD9SWTYJHO.v8p/7v5oXBlSGNfAqx1R6.Y8cy8Z6W",
       "role": "branch",
       "syncPool": "sync-group-east"
     },
