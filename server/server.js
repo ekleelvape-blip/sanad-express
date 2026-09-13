@@ -1581,12 +1581,21 @@ app.post('/api/orders/:id/status', (req, res) => {
     order.scannedAtPickup = new Date().toISOString();
     order.scanVerified = true;
   }
+  if (returnStatus === 'pending_pickup' || (status === 'returned' && !order.returnStatus)) {
+    order.returnStatus = 'pending_pickup';
+    if (!order.returnRequestedAt) order.returnRequestedAt = new Date().toISOString();
+    if (!order.notes || !order.notes.includes('استرجاع')) {
+      order.notes = 'طلب استرجاع من العميل - بانتظار استلام المندوب';
+    }
+  }
   if (returnStatus === 'return_picked_up') {
     order.returnPickedUpAt = new Date().toISOString();
     order.notes = 'تم استلام المرتجع من العميل - في الطريق للمستودع';
+    order.status = 'in_transit';
   }
   if (returnStatus === 'returned_to_branch') {
     order.status = 'returned';
+    order.returnStatus = 'returned_to_branch';
     order.returnSettledAt = new Date().toISOString();
     order.notes = 'تم تسليم المرتجع بنجاح لمستودع الفرع';
   }
@@ -1634,6 +1643,8 @@ app.post('/api/orders/:id/status', (req, res) => {
   }
 
   io.emit('order_updated', { order, driver });
+  io.emit('orders_updated', { orders });
+  scheduleSave();
   res.json({ success: true, order, driver });
 });
 
@@ -2028,6 +2039,31 @@ app.get('/api/settlements/requests', (req, res) => {
   }
 
   res.json(list);
+});
+
+// 2.1 جلب سجل التسويات وسندات التوريد الخاصة بالمندوب (الطلبات المعلقة والسندات المعتمدة)
+app.get('/api/driver/:id/settlements', (req, res) => {
+  const { id } = req.params;
+  const matchId = (dId) => {
+    if (!dId) return false;
+    return dId === id || dId === id.replace('drv-10', 'drv-') || ('drv-10' + dId.replace('drv-', '')) === id;
+  };
+
+  const requests = settlementRequests.filter(r => matchId(r.driverId));
+  const transactions = (storeReceivedCashWallet.transactions || []).filter(t => matchId(t.driverId));
+
+  const totalSettledAmount = transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const pendingRequests = requests.filter(r => r.status === 'pending_driver_signature');
+
+  res.json({
+    success: true,
+    driverId: id,
+    totalSettledAmount,
+    pendingCount: pendingRequests.length,
+    settledCount: transactions.length,
+    requests,
+    transactions
+  });
 });
 
 // 3. موافقة واعتماد المندوب للتسوية مع التوقيع الإلكتروني (تنصدر التسوية تلقائياً)

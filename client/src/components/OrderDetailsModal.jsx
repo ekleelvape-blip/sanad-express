@@ -65,8 +65,12 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
     try {
       const res = await fetch('/api/orders/' + order.id + '/status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'returned' })
+        body: JSON.stringify({
+          status: 'returned',
+          returnStatus: 'pending_pickup',
+          returnRequestedAt: new Date().toISOString(),
+          returnReason: 'طلب استرجاع من إدارة المتجر / العميل'
+        })
       });
       if (res.ok) {
         sound.playSuccess();

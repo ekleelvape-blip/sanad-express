@@ -1,10 +1,12 @@
 import React from 'react';
-import { Wallet, DollarSign, PackageCheck, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Wallet, DollarSign, PackageCheck, AlertCircle, ArrowUpRight, Receipt, FileText } from 'lucide-react';
 
-export default function DriverWallet({ driver, orders }) {
+export default function DriverWallet({ driver, orders, settlementsData, onOpenSettlementsModal }) {
   if (!driver) return null;
 
   const myDeliveredOrders = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered');
+  const settledCount = settlementsData?.settledCount || 0;
+  const totalSettledCash = settlementsData?.totalSettledAmount || 0;
 
   return (
     <div className="space-y-4">
@@ -27,7 +29,7 @@ export default function DriverWallet({ driver, orders }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-2">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {/* كاش في الجيب مطلوب توريده */}
           <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
             <div className="text-[10px] text-amber-300 font-bold mb-1">كاش العهدة (في جيبك)</div>
@@ -46,6 +48,35 @@ export default function DriverWallet({ driver, orders }) {
             <div className="text-[9px] text-slate-500 mt-1">عن {driver.completedToday || 0} مشاوير مكتملة</div>
           </div>
         </div>
+
+        {/* بطاقة سندات التسوية المعتمدة والموردة */}
+        <button
+          type="button"
+          onClick={() => {
+            if (onOpenSettlementsModal) onOpenSettlementsModal();
+          }}
+          className="w-full p-3 bg-slate-950/80 hover:bg-slate-950 border border-cyan-500/40 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-sm text-right group"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <Receipt className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>سجل التسويات وسندات التوريد</span>
+                <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded font-black">
+                  {settledCount} سند
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                إجمالي المورد للخزينة: <strong className="text-emerald-400 font-mono">{Number(totalSettledCash).toFixed(2)} ﷼</strong>
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-cyan-400 group-hover:translate-x-[-2px] transition-transform">
+            عرض السندات ←
+          </span>
+        </button>
       </div>
 
       {/* سجل تسليمات اليوم */}

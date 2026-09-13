@@ -8,7 +8,7 @@ import {
   MapPin, Map, Phone, MessageSquare, ExternalLink, Clock, ShieldCheck,
   CheckCircle2, X, ChevronLeft, ChevronRight, Search, RefreshCw, Box,
   DollarSign, Sparkles, Navigation, RotateCcw, AlertTriangle, Key,
-  Eye, EyeOff, Camera, ArrowUpRight, QrCode, Shield, Check, Award, Layers, Radio, Smartphone, Volume2
+  Eye, EyeOff, Camera, ArrowUpRight, QrCode, Shield, Check, Award, Layers, Radio, Smartphone, Volume2, Receipt
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import {
@@ -24,6 +24,7 @@ import DriverWallet from './DriverWallet';
 import DeliveryExceptionModal from './DeliveryExceptionModal';
 import DriverProofOfDeliveryModal from './DriverProofOfDeliveryModal';
 import DriverSettlementSignModal from './DriverSettlementSignModal';
+import DriverSettlementsModal from './DriverSettlementsModal';
 
 
 // دالة مساعدة لإنشاء رابط محادثة واتساب مباشر مع العميل
@@ -133,9 +134,17 @@ export default function DriverApp({
   const routeTileLayerRef = useRef(null);
   const routeMarkersRef = useRef({ driver: null, branch: null, customer: null, polyline: null });
   
-  // طلبات تسوية وتوريد الكاش بانتظار توقيع المندوب
+  // طلبات تسوية وتوريد الكاش بانتظار توقيع المندوب وسجل التسويات
   const [pendingSettlementRequest, setPendingSettlementRequest] = useState(null);
   const [showSettlementSignModal, setShowSettlementSignModal] = useState(false);
+  const [showSettlementsModal, setShowSettlementsModal] = useState(false);
+  const [driverSettlementsData, setDriverSettlementsData] = useState({
+    totalSettledAmount: 0,
+    pendingCount: 0,
+    settledCount: 0,
+    requests: [],
+    transactions: []
+  });
   const [lastSettlementReceipt, setLastSettlementReceipt] = useState(null);
 
   // تأكيد التسليم والتعثر
@@ -190,11 +199,29 @@ export default function DriverApp({
            ('drv-10' + assignedId?.replace('drv-', '')) === currentDriver.id;
   };
 
+  // تصنيف العوائد القادمة: الشحنات المرتجعة المطلوب استلامها من العميل أو المحمولة بالسيارة قيد التسليم للمستودع
+  const isIncomingReturn = (o) => {
+    if (o.status === 'return_requested') return true;
+    if (['return_requested', 'pending_pickup', 'return_picked_up', 'in_return'].includes(o.returnStatus)) return true;
+    if (o.status === 'exception' && (o.exceptionAction === 'return_to_hub' || o.returnStatus !== 'returned_to_branch')) return true;
+    if (o.status === 'returned' && o.returnStatus !== 'returned_to_branch') return true;
+    return false;
+  };
+
+  // تصنيف العوائد المكتملة: الشحنات المرتجعة التي تم تسليمها بنجاح لمستودع الفرع واكتمل إرجاعها
+  const isCompletedReturn = (o) => {
+    if (o.returnStatus === 'returned_to_branch' || o.returnSettledAt) return true;
+    if (o.status === 'returned' && o.returnStatus !== 'pending_pickup' && o.returnStatus !== 'return_picked_up' && o.returnStatus !== 'in_return') return true;
+    return false;
+  };
+
   const myOrders = orders.filter(o => driverMatchId(o.assignedDriverId));
-  const newOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup'].includes(o.status));
-  const inTransitOrders = myOrders.filter(o => ['in_transit', 'picked_up'].includes(o.status));
-  const returnedOrders = myOrders.filter(o => ['returned', 'exception', 'return_requested'].includes(o.status));
-  const deliveredOrders = myOrders.filter(o => o.status === 'delivered');
+  const incomingReturns = myOrders.filter(isIncomingReturn);
+  const completedReturns = myOrders.filter(isCompletedReturn);
+  const newOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup'].includes(o.status) && !isIncomingReturn(o) && !isCompletedReturn(o));
+  const inTransitOrders = myOrders.filter(o => ['in_transit', 'picked_up'].includes(o.status) && !isIncomingReturn(o) && !isCompletedReturn(o));
+  const deliveredOrders = myOrders.filter(o => o.status === 'delivered' && !isIncomingReturn(o) && !isCompletedReturn(o));
+  const returnedOrders = [...incomingReturns, ...completedReturns];
 
   // حساب المبالغ المتوقعة
   const expectedCashAmount = inTransitOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -260,8 +287,81 @@ export default function DriverApp({
     } catch (e) {}
   };
 
+  // جلب سجل التسويات الكامل للمندوب (سندات معتمدة وطلبات معلقة)
+  const fetchDriverSettlements = async () => {
+    if (!currentDriver?.id) return;
+    try {
+      const res = await fetch(`/api/driver/${currentDriver.id}/settlements`);
+      if (res.ok) {
+        const data = await res.json();
+        setDriverSettlementsData(data);
+      }
+    } catch (e) {}
+  };
+
+  // 1. إجراء ميداني: استلام العائد من العميل (يصبح بالسيارة قيد الإرجاع للمستودع)
+  const handlePickupReturnFromCustomer = async (order) => {
+    try {
+      sound.pop();
+      if (onUpdateOrderStatus) {
+        await onUpdateOrderStatus(order.id, 'in_transit', null, {
+          returnStatus: 'return_picked_up',
+          returnPickedUpAt: new Date().toISOString(),
+          notes: 'تم استلام الشحنة المرتجعة من العميل وهي بالسيارة متجهة للمستودع'
+        });
+      } else {
+        await fetch(`/api/orders/${order.id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'in_transit',
+            returnStatus: 'return_picked_up',
+            returnPickedUpAt: new Date().toISOString()
+          })
+        });
+      }
+      sound.playSuccess();
+      alert(`✅ تم استلام العائد للشحنة #${order.id} من العميل بنجاح! الشحنة الآن بالسيارة متجهة للمستودع.`);
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء تحديث حالة العائد');
+    }
+  };
+
+  // 2. إجراء ميداني: تسليم العائد لمستودع الفرع (يكتمل الإرجاع ويوثق بالسستم)
+  const handleDeliverReturnToBranch = async (order) => {
+    try {
+      sound.pop();
+      if (onUpdateOrderStatus) {
+        await onUpdateOrderStatus(order.id, 'returned', null, {
+          returnStatus: 'returned_to_branch',
+          returnSettledAt: new Date().toISOString(),
+          notes: 'تم تسليم الشحنة المرتجعة بنجاح لمستودع الفرع'
+        });
+      } else {
+        await fetch(`/api/orders/${order.id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'returned',
+            returnStatus: 'returned_to_branch',
+            returnSettledAt: new Date().toISOString()
+          })
+        });
+      }
+      sound.playSuccess();
+      alert(`✅ تم تسليم الشحنة المرتجعة #${order.id} لمستودع الفرع بنجاح وتم تسجيلها في العوائد المكتملة!`);
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء تسليم العائد للمستودع');
+    }
+  };
+
   useEffect(() => {
     fetchPendingSettlement();
+    fetchDriverSettlements();
     if (!socket) return;
     const onSettlementCreated = (data) => {
       const targetId = data?.driverId || data?.request?.driverId;
@@ -270,6 +370,7 @@ export default function DriverApp({
         setShowSettlementSignModal(true);
         try { sound.playNewOrderAlert(); } catch (e) {}
       }
+      fetchDriverSettlements();
     };
     const onSettlementApproved = (data) => {
       if (data?.request?.driverId === currentDriver?.id) {
@@ -277,17 +378,32 @@ export default function DriverApp({
         setShowSettlementSignModal(false);
         if (onRefresh) onRefresh();
       }
+      fetchDriverSettlements();
     };
+    const onRefreshSettlements = () => {
+      fetchPendingSettlement();
+      fetchDriverSettlements();
+    };
+
     socket.on('settlement_request_created', onSettlementCreated);
     socket.on('settlement_approved', onSettlementApproved);
-    socket.on('settlement_rejected', fetchPendingSettlement);
-    socket.on('settlement_cancelled', fetchPendingSettlement);
+    socket.on('settlement_rejected', onRefreshSettlements);
+    socket.on('settlement_cancelled', onRefreshSettlements);
+    socket.on('settlement_requests_updated', onRefreshSettlements);
+    socket.on('cod_settled', onRefreshSettlements);
+    socket.on('orders_updated', () => {
+      if (onRefresh) onRefresh();
+      fetchDriverSettlements();
+    });
 
     return () => {
       socket.off('settlement_request_created', onSettlementCreated);
       socket.off('settlement_approved', onSettlementApproved);
-      socket.off('settlement_rejected', fetchPendingSettlement);
-      socket.off('settlement_cancelled', fetchPendingSettlement);
+      socket.off('settlement_rejected', onRefreshSettlements);
+      socket.off('settlement_cancelled', onRefreshSettlements);
+      socket.off('settlement_requests_updated', onRefreshSettlements);
+      socket.off('cod_settled', onRefreshSettlements);
+      socket.off('orders_updated');
     };
   }, [socket, currentDriver?.id]);
 
@@ -935,21 +1051,81 @@ export default function DriverApp({
 
           </div>
 
+          {/* شريط العدادات الثاني: العوائد القادمة + العوائد المكتملة + سجل التسويات */}
+          <div className="grid grid-cols-3 gap-2 pt-0.5">
+            
+            {/* عداد العوائد القادمة */}
+            <div 
+              onClick={() => { sound.pop(); setOrdersSubTab('incoming_returns'); }}
+              className={`p-2.5 rounded-2xl border text-center shadow-sm cursor-pointer transition-all active:scale-95 flex flex-col items-center justify-between ${
+                incomingReturns.length > 0 
+                  ? 'bg-purple-950/40 border-purple-500/50 hover:border-purple-400' 
+                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full text-[10px] text-purple-400 font-bold">
+                <span>العوائد القادمة</span>
+                <RotateCcw className={`w-3 h-3 text-purple-400 ${incomingReturns.length > 0 ? 'animate-spin-slow' : ''}`} />
+              </div>
+              <div className="text-xl font-black font-mono text-purple-300 my-0.5">
+                {incomingReturns.length}
+              </div>
+              <div className="text-[9px] text-purple-200/90 bg-purple-950/90 px-2 py-0.5 rounded-full font-bold">
+                {incomingReturns.length > 0 ? 'مطلوب إرجاعها 🔄' : 'لا توجد عوائد'}
+              </div>
+            </div>
+
+            {/* عداد العوائد المكتملة */}
+            <div 
+              onClick={() => { sound.pop(); setOrdersSubTab('completed_returns'); }}
+              className="bg-emerald-950/20 border border-emerald-500/30 p-2.5 rounded-2xl text-center shadow-sm cursor-pointer hover:border-emerald-400 transition-all active:scale-95 flex flex-col items-center justify-between"
+            >
+              <div className="flex items-center justify-between w-full text-[10px] text-emerald-400 font-bold">
+                <span>عوائد مكتملة</span>
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              </div>
+              <div className="text-xl font-black font-mono text-emerald-400 my-0.5">
+                {completedReturns.length}
+              </div>
+              <div className="text-[9px] text-emerald-200/90 bg-emerald-950/90 px-2 py-0.5 rounded-full font-bold">
+                سُلمت للفرع ✅
+              </div>
+            </div>
+
+            {/* عداد التسويات وسندات التوريد */}
+            <div 
+              onClick={() => { sound.pop(); setShowSettlementsModal(true); }}
+              className="bg-cyan-950/30 border border-cyan-500/40 p-2.5 rounded-2xl text-center shadow-sm cursor-pointer hover:border-cyan-400 transition-all active:scale-95 flex flex-col items-center justify-between"
+            >
+              <div className="flex items-center justify-between w-full text-[10px] text-cyan-400 font-bold">
+                <span>سجل التسويات</span>
+                <Receipt className="w-3 h-3 text-cyan-400" />
+              </div>
+              <div className="text-xl font-black font-mono text-cyan-300 my-0.5">
+                {driverSettlementsData?.settledCount || 0}
+              </div>
+              <div className="text-[9px] text-cyan-200/90 bg-cyan-950/90 px-2 py-0.5 rounded-full font-bold">
+                سندات التوريد ✍️
+              </div>
+            </div>
+
+          </div>
+
           {/* قسم طلباتي والأزرار الفلترة الثلاثية */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-slate-900 dark:text-white">طلباتي</h2>
             </div>
 
-            {/* أزرار الفلترة: جديد + جاري التوصيل + مسترجع + زر الإعدادات/الفلتر */}
+            {/* أزرار الفلترة الميدانية الذكية: جديد + جاري التوصيل + العوائد القادمة + العوائد المكتملة */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                {/* جديد */}
+              <div className="flex items-center gap-1.5 flex-1 overflow-x-auto pb-1 no-scrollbar">
+                {/* جديد للاستلام */}
                 <button
                   type="button"
-                  onClick={() => setOrdersSubTab('new')}
+                  onClick={() => { sound.pop(); setOrdersSubTab('new'); }}
                   className={
-                    'px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
+                    'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
                     (ordersSubTab === 'new'
                       ? 'bg-amber-950 text-amber-300 border border-amber-500/60 font-black shadow-md'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
@@ -962,12 +1138,12 @@ export default function DriverApp({
                   </span>
                 </button>
 
-                {/* جاري التوصيل */}
+                {/* في السيارة */}
                 <button
                   type="button"
-                  onClick={() => setOrdersSubTab('in_transit')}
+                  onClick={() => { sound.pop(); setOrdersSubTab('in_transit'); }}
                   className={
-                    'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
+                    'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
                     (ordersSubTab === 'in_transit'
                       ? 'bg-cyan-950 text-[#00d2d3] border border-cyan-500/60 font-black shadow-md'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
@@ -980,69 +1156,116 @@ export default function DriverApp({
                   </span>
                 </button>
 
-                {/* مسترجع */}
+                {/* العوائد القادمة */}
                 <button
                   type="button"
-                  onClick={() => setOrdersSubTab('returned')}
+                  onClick={() => { sound.pop(); setOrdersSubTab('incoming_returns'); }}
                   className={
-                    'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ' +
-                    (ordersSubTab === 'returned'
-                      ? 'bg-[#1c2438] text-white font-black'
+                    'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
+                    (ordersSubTab === 'incoming_returns'
+                      ? 'bg-purple-950 text-purple-300 border border-purple-500/60 font-black shadow-md'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                     )
                   }
                 >
-                  مسترجع
+                  <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
+                  <span>العوائد القادمة</span>
+                  <span className={'font-mono text-[10px] px-1.5 py-0.2 rounded-full font-black ' + (incomingReturns.length > 0 ? 'bg-purple-500 text-white animate-pulse' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300')}>
+                    {incomingReturns.length}
+                  </span>
+                </button>
+
+                {/* العوائد المكتملة */}
+                <button
+                  type="button"
+                  onClick={() => { sound.pop(); setOrdersSubTab('completed_returns'); }}
+                  className={
+                    'shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ' +
+                    (ordersSubTab === 'completed_returns'
+                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/60 font-black shadow-md'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    )
+                  }
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>العوائد المكتملة</span>
+                  <span className="font-mono text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded-full font-black">
+                    {completedReturns.length}
+                  </span>
                 </button>
               </div>
 
-              {/* زر الفلتر الأيسر */}
+              {/* زر التسويات وسندات التوريد السريع */}
               <button
                 type="button"
-                onClick={() => alert('فلترة الشحنات حسب الفرع أو نوع الدفع')}
-                className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-2xs cursor-pointer"
+                onClick={() => { sound.pop(); setShowSettlementsModal(true); }}
+                className="shrink-0 px-2.5 py-2 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer hover:bg-slate-800 transition-colors"
+                title="سجل التسويات وسندات التوريد"
               >
-                <Sliders className="w-4 h-4" />
+                <Receipt className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">التسويات</span>
               </button>
             </div>
 
             {/* محتوى الشحنات بحسب التبويب */}
             <div className="pt-4">
+              
+              {/* تبويب: جديد للاستلام - فارغ */}
               {ordersSubTab === 'new' && newOrders.length === 0 && (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-24 h-24 bg-amber-50/50 dark:bg-amber-950/20 border-2 border-amber-200 dark:border-amber-900 rounded-3xl flex items-center justify-center shadow-inner">
                     <span className="text-5xl">📦</span>
                   </div>
                   <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
-                    لا يوجد طلبات مسندة بعد
+                    لا يوجد طلبات جديدة مسندة حالياً
                   </h3>
                 </div>
               )}
 
+              {/* تبويب: في السيارة - فارغ */}
               {ordersSubTab === 'in_transit' && inTransitOrders.length === 0 && (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-24 h-24 bg-cyan-50/50 dark:bg-cyan-950/20 border-2 border-cyan-200 dark:border-cyan-900 rounded-3xl flex items-center justify-center shadow-inner">
                     <span className="text-5xl">🚚</span>
                   </div>
                   <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
-                    لا توجد طلبات جاري توصيلها حالياً
+                    لا توجد طلبات جاري توصيلها حالياً بالسيارة
                   </h3>
                 </div>
               )}
 
-              {ordersSubTab === 'returned' && returnedOrders.length === 0 && (
+              {/* تبويب: العوائد القادمة - فارغ */}
+              {ordersSubTab === 'incoming_returns' && incomingReturns.length === 0 && (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-center shadow-inner">
-                    <span className="text-5xl">↩️</span>
+                  <div className="w-24 h-24 bg-purple-50/50 dark:bg-purple-950/20 border-2 border-purple-200 dark:border-purple-900 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">🔄</span>
                   </div>
                   <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
-                    لا توجد طلبات مسترجعة
+                    لا توجد عوائد قادمة بعهدتك حالياً
                   </h3>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    أي شحنة استرجاع يسندها المتجر أو يطلب العميل إعادتها ستظهر هنا فوراً.
+                  </p>
                 </div>
               )}
 
-              {/* عرض قائمة الطلبات الفعلية إن وجدت */}
-              {((ordersSubTab === 'new' ? newOrders : ordersSubTab === 'in_transit' ? inTransitOrders : returnedOrders)).map(order => (
+              {/* تبويب: العوائد المكتملة - فارغ */}
+              {ordersSubTab === 'completed_returns' && completedReturns.length === 0 && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-24 h-24 bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-200 dark:border-emerald-900 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">✅</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    لا توجد عوائد مكتملة مسجلة
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    الشحنات المرتجعة التي تقوم بتسليمها لمستودع الفرع ستُحفظ وتوثق هنا.
+                  </p>
+                </div>
+              )}
+
+              {/* 1. عرض طلبات التوصيل (جديد أو في السيارة) */}
+              {(ordersSubTab === 'new' || ordersSubTab === 'in_transit') && (ordersSubTab === 'new' ? newOrders : inTransitOrders).map(order => (
                 <div key={order.id} className="bg-white dark:bg-[#111726] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 mb-3">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg text-slate-800 dark:text-slate-200">
@@ -1083,7 +1306,7 @@ export default function DriverApp({
                         <span>اتصال</span>
                       </a>
                     </div>
-                  ) : ordersSubTab === 'in_transit' ? (
+                  ) : (
                     (() => {
                       const distKm = (driverLiveCoords && order.customerCoords) 
                         ? calculateDistanceKm(driverLiveCoords, order.customerCoords) 
@@ -1172,25 +1395,174 @@ export default function DriverApp({
                         </div>
                       );
                     })()
-                  ) : (
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-rose-500 font-bold">
-                      <span>حالة الشحنة: مرتجعة للمتجر</span>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (onUpdateOrderStatus) {
-                            await onUpdateOrderStatus(order.id, 'returned', null, { returnStatus: 'returned_to_branch' });
-                            alert('تم تسليم الشحنة المرتجعة للفرع');
-                          }
-                        }}
-                        className="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-lg text-[11px]"
-                      >
-                        تسليم للمستودع
-                      </button>
-                    </div>
                   )}
                 </div>
               ))}
+
+              {/* 2. عرض العوائد القادمة (Incoming Returns) */}
+              {ordersSubTab === 'incoming_returns' && incomingReturns.map(order => {
+                const isPickedUp = order.returnStatus === 'return_picked_up' || order.returnStatus === 'in_return';
+                const orderBranch = branches.find(b => b.id === order.branchId) || { name: 'المستودع الرئيسي', coords: [26.4380, 50.1110] };
+                return (
+                  <div key={order.id} className="bg-white dark:bg-[#111726] border border-purple-500/40 dark:border-purple-900/50 rounded-2xl p-4 shadow-md space-y-3 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800">
+                          #{order.id}
+                        </span>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                          isPickedUp 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow'
+                            : 'bg-amber-500 text-slate-950 shadow'
+                        }`}>
+                          {isPickedUp ? '🚚 بالسيارة قيد الإرجاع للفرع' : '⏳ بانتظار استلام العائد من العميل'}
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-sm text-purple-600 dark:text-purple-400">
+                        {order.totalAmount} ﷼
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{order.customerName}</span>
+                      </div>
+                      <div className="text-slate-500 text-[11px] flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{order.customerAddress || 'الدمام'}</span>
+                      </div>
+                    </div>
+
+                    {/* سبب الإرجاع المسجل */}
+                    <div className="p-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/50 text-[11px] space-y-1">
+                      <div className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-500" />
+                        <span>سبب طلب الاسترجاع:</span>
+                      </div>
+                      <div className="text-slate-700 dark:text-slate-300">
+                        {order.returnReason || order.exceptionReason || order.notes || 'طلب استرجاع من العميل'}
+                      </div>
+                    </div>
+
+                    {/* أزرار التواصل والملاحة للعميل */}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <a
+                        href={`tel:${order.customerPhone || ''}`}
+                        className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                        title="اتصال بالعميل"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>اتصال</span>
+                      </a>
+                      <a
+                        href={getDriverWhatsAppUrl(order.customerPhone, order.customerName, order.id, order.customerAddress)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                        title="واتساب"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>واتساب</span>
+                      </a>
+                      <a
+                        href={order.customerCoords ? getGoogleNavUrl(order.customerCoords[0], order.customerCoords[1]) : `https://maps.google.com/?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-cyan-50 text-slate-700 dark:text-slate-300 hover:text-cyan-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                        title="ملاحة للعميل"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-cyan-500" />
+                        <span>خرائط</span>
+                      </a>
+                    </div>
+
+                    {/* زر الإجراء الأساسي للعائد */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      {!isPickedUp ? (
+                        <button
+                          type="button"
+                          onClick={() => handlePickupReturnFromCustomer(order)}
+                          className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span>استلام العائد من العميل 📦↩️</span>
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-[11px] text-purple-300 bg-purple-950/60 p-2.5 rounded-xl border border-purple-800/60 flex items-center justify-between">
+                            <span className="flex items-center gap-1 font-bold">
+                              <Store className="w-3.5 h-3.5 text-purple-400" />
+                              <span>المستودع المستلم: {orderBranch.name}</span>
+                            </span>
+                            <a 
+                              href={orderBranch.coords ? getGoogleNavUrl(orderBranch.coords[0], orderBranch.coords[1]) : '#'}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] font-black text-cyan-400 hover:underline flex items-center gap-0.5"
+                            >
+                              <span>ملاحة للفرع 🧭</span>
+                            </a>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeliverReturnToBranch(order)}
+                            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>تسليم المرتجع لمستودع الفرع 🏪✅</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 3. عرض العوائد المكتملة (Completed Returns) */}
+              {ordersSubTab === 'completed_returns' && completedReturns.map(order => {
+                const orderBranch = branches.find(b => b.id === order.branchId) || { name: 'فرع إكليل الدمام' };
+                return (
+                  <div key={order.id} className="bg-white dark:bg-[#111726] border border-emerald-500/30 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm space-y-2.5 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                          #{order.id}
+                        </span>
+                        <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>تم الإرجاع للفرع بنجاح</span>
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-sm text-emerald-400">
+                        {order.totalAmount} ﷼
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-1 text-slate-300">
+                      <div className="font-bold text-white flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>العميل: {order.customerName}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                        <span className="flex items-center gap-1">
+                          <Store className="w-3 h-3 text-cyan-400" />
+                          <span>المستودع: {orderBranch.name}</span>
+                        </span>
+                        <span className="font-mono text-slate-400">
+                          {order.returnSettledAt ? new Date(order.returnSettledAt).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' }) : 'مسجل اليوم'}
+                        </span>
+                      </div>
+                      {order.returnReason && (
+                        <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded-xl mt-1">
+                          سبب الإرجاع: {order.returnReason}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
             </div>
 
           </div>
@@ -1750,6 +2122,50 @@ export default function DriverApp({
               المزيد
             </h2>
 
+            {/* بطاقة: سجل التسويات وسندات التوريد */}
+            <button
+              type="button"
+              onClick={() => { sound.pop(); setShowSettlementsModal(true); }}
+              className="w-full bg-white dark:bg-[#111726] border border-cyan-500/40 dark:border-cyan-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-cyan-400 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+              <div className="text-right">
+                <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                  <span>سجل التسويات وسندات التوريد</span>
+                  <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 px-2 py-0.2 rounded-full font-bold">
+                    {driverSettlementsData?.settledCount || 0} سند
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">سندات القبض المعتمدة مع توقيعك ومبالغ الخزينة الموردة</div>
+              </div>
+              <div className="w-8 h-8 rounded-xl border border-cyan-500/40 bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-300">
+                <Receipt className="w-4 h-4" />
+              </div>
+            </button>
+
+            {/* بطاقة: سجل العوائد والمرتجعات */}
+            <button
+              type="button"
+              onClick={() => { sound.pop(); setActiveBottomTab('home'); setOrdersSubTab('incoming_returns'); }}
+              className="w-full bg-white dark:bg-[#111726] border border-purple-500/40 dark:border-purple-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-purple-400 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+              <div className="text-right">
+                <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                  <span>العوائد والمرتجعات</span>
+                  {incomingReturns.length > 0 && (
+                    <span className="font-mono text-[10px] bg-purple-500 text-white px-2 py-0.2 rounded-full font-black animate-pulse">
+                      {incomingReturns.length} قادمة
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">العوائد القادمة ({incomingReturns.length}) • العوائد المكتملة ({completedReturns.length})</div>
+              </div>
+              <div className="w-8 h-8 rounded-xl border border-purple-500/40 bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-600 dark:text-purple-300">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+            </button>
+
             {/* 1. بطاقة: تم التوصيل (قائمة بآخر عشرين طلب تم توصيلهم) */}
             <button
               type="button"
@@ -1991,6 +2407,22 @@ export default function DriverApp({
                   <span className="font-bold font-mono text-[#00d2d3]">حسب تسعيرة المدينة (25 - 40 ﷼)</span>
                 </div>
               </div>
+
+              {/* زر استعراض سندات التسوية من داخل المحفظة */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWalletModal(false);
+                  setShowSettlementsModal(true);
+                }}
+                className="w-full p-3 rounded-xl bg-slate-950 border border-cyan-500/40 text-cyan-300 font-bold flex items-center justify-between hover:bg-slate-900 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-cyan-400" />
+                  <span>عرض سندات التسوية المعتمدة ({driverSettlementsData?.settledCount || 0})</span>
+                </div>
+                <span>←</span>
+              </button>
             </div>
             <button onClick={() => setShowWalletModal(false)} className="w-full py-2.5 bg-[#00d2d3] text-slate-950 rounded-xl text-xs font-black">
               تم الاطلاع
@@ -2554,6 +2986,20 @@ export default function DriverApp({
           }}
         />
       )}
+
+      {/* نافذة سجل التسويات وسندات التوريد الكاملة للمندوب */}
+      <DriverSettlementsModal
+        isOpen={showSettlementsModal}
+        onClose={() => setShowSettlementsModal(false)}
+        driver={currentDriver}
+        settlementsData={driverSettlementsData}
+        branches={branches}
+        onOpenSignModal={(req) => {
+          setShowSettlementsModal(false);
+          setPendingSettlementRequest(req);
+          setShowSettlementSignModal(true);
+        }}
+      />
 
       {/* نافذة اعتماد وتوقيع تسوية وتوريد العهدة النقدية */}
       <DriverSettlementSignModal
