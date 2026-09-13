@@ -551,6 +551,204 @@ export default function SettingsView({ branches, initialSubTab = 'rules' }) {
       {/* =========================================================================
           تبويب 2: أسعار التوصيل والمناطق (DeliveryPricingView)
           ========================================================================= */}
+      {/* استوديو الهوية الصوتية والتنبيهات الميدانية المتقدمة لسَنَد */}
+      {activeSubTab === 'audio' && (
+        <div className="bg-[#0f1523] border border-cyan-900/40 rounded-3xl p-6 shadow-2xl space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Music className="w-5 h-5 text-cyan-400" />
+                <span>استوديو الهوية الصوتية والتنبيهات — سَنَد Sonic Brand Studio</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                هوية صوتية حصرية لمنصة سَنَد تم تطويرها عبر Web Audio API مع دعم التنبيهات الميدانية بالخلفية وشاشة القفل
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveAudioSettings}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black rounded-xl shadow-lg cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <Save className="w-4 h-4" />
+                <span>{audioSaved ? '✓ تم حفظ التفضيلات' : 'حفظ إعدادات الصوت'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* لوحة التحكم الرئيسية بالصوت */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* تفعيل الصوت العام */}
+            <div className="bg-[#090d16] border border-slate-800 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Volume2 className="w-4 h-4 text-cyan-400" />
+                  <span>تفعيل المؤثرات الصوتية:</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={audioEnabled}
+                  onChange={(e) => setAudioEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-cyan-500 rounded cursor-pointer"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">تشغيل نغمات النظام عند إسناد الطلبات، التسليم، وتوريد الخزينة</p>
+            </div>
+
+            {/* المساعد الصوتي الناطق بالعربية */}
+            <div className="bg-[#090d16] border border-slate-800 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Radio className="w-4 h-4 text-emerald-400" />
+                  <span>التنبيه الناطق بالعربية:</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={voiceEnabled}
+                  onChange={(e) => setVoiceEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">نطق صوتي فوري باللغة العربية باسم العميل عند إسناد أي شحنة</p>
+            </div>
+
+            {/* مستوى الصوت العام */}
+            <div className="bg-[#090d16] border border-slate-800 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                <span>مستوى الصوت العام:</span>
+                <span className="font-mono text-cyan-400">{Math.round(volumeLevel * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                value={volumeLevel}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setVolumeLevel(val);
+                  sound.setAudioSettings({ volume: val });
+                }}
+                className="w-full accent-cyan-400 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* استوديو الاستماع ومعاينة نغمات سَنَد الحصرية */}
+          <div>
+            <h4 className="text-sm font-black text-slate-200 mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>استمع وجرّب نغمات وهوية سَنَد الحصرية:</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              
+              {/* نغمة 1: هوية سَنَد الرسمية */}
+              <div className={`bg-[#090d16] border rounded-2xl p-4 flex items-center justify-between transition-all ${
+                playingSoundKey === 'brand' ? 'border-cyan-400 bg-cyan-950/30 shadow-[0_0_20px_rgba(0,210,211,0.2)]' : 'border-slate-800/80 hover:border-slate-700'
+              }`}>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>شعار سَنَد الصوتي (The SANAD Chime)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">لحن نقي دافئ متصاعد مع رنين بلوري يعبر عن هوية سَنَد اللوجستية</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => previewSound('brand')}
+                  className="px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800 text-[#00d2d3] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <Play className={`w-3.5 h-3.5 ${playingSoundKey === 'brand' ? 'animate-spin text-cyan-300' : ''}`} />
+                  <span>{playingSoundKey === 'brand' ? 'جاري العزف...' : 'استماع'}</span>
+                </button>
+              </div>
+
+              {/* نغمة 2: رنين المندوب الميداني */}
+              <div className={`bg-[#090d16] border rounded-2xl p-4 flex items-center justify-between transition-all ${
+                playingSoundKey === 'dispatch' ? 'border-amber-400 bg-amber-950/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-slate-800/80 hover:border-slate-700'
+              }`}>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>رنين تنبيه المندوب أثناء القيادة (Road Siren)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">رنين مسموع وحاد يخترق ضوضاء السيارة ومصمم للعمل في الخلفية</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => previewSound('dispatch')}
+                  className="px-3 py-2 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-800 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <Play className={`w-3.5 h-3.5 ${playingSoundKey === 'dispatch' ? 'animate-bounce text-amber-300' : ''}`} />
+                  <span>{playingSoundKey === 'dispatch' ? 'تنبيه نشط...' : 'استماع'}</span>
+                </button>
+              </div>
+
+              {/* نغمة 3: تأكيد التسليم وإثبات POD */}
+              <div className={`bg-[#090d16] border rounded-2xl p-4 flex items-center justify-between transition-all ${
+                playingSoundKey === 'success' ? 'border-emerald-400 bg-emerald-950/30 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'border-slate-800/80 hover:border-slate-700'
+              }`}>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>نغمة إنجاز وتسليم الشحنة (POD Success)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">وتر فخم يؤكد توثيق إثبات التسليم الرقمي وإيداع عمولة السائق</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => previewSound('success')}
+                  className="px-3 py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <Play className={`w-3.5 h-3.5 ${playingSoundKey === 'success' ? 'animate-ping text-emerald-300' : ''}`} />
+                  <span>{playingSoundKey === 'success' ? 'جاري العزف...' : 'استماع'}</span>
+                </button>
+              </div>
+
+              {/* نغمة 4: توريد الكاش والخزينة */}
+              <div className={`bg-[#090d16] border rounded-2xl p-4 flex items-center justify-between transition-all ${
+                playingSoundKey === 'cash' ? 'border-purple-400 bg-purple-950/30 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'border-slate-800/80 hover:border-slate-700'
+              }`}>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                    <span>نغمة الخزينة وتوريد الكاش (Vault Chime)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">صوت نقرة الخزينة ولمعان العملات لتأكيد السندات المالية والتصفية</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => previewSound('cash')}
+                  className="px-3 py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <Play className={`w-3.5 h-3.5 ${playingSoundKey === 'cash' ? 'animate-pulse text-purple-300' : ''}`} />
+                  <span>{playingSoundKey === 'cash' ? 'جاري العزف...' : 'استماع'}</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* كرت مزايا العمل بالخلفية وشاشة القفل */}
+          <div className="p-4 bg-gradient-to-r from-cyan-950/40 via-[#0a1220] to-emerald-950/40 rounded-2xl border border-cyan-800/50 space-y-3">
+            <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
+              <span>🛡️</span>
+              <span>تقنية التشغيل المستمر بالخلفية وشاشة القفل (Background & Lock-Screen Service)</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              يدعم تطبيق سَنَد الاستمرار في استقبال الطلبات وإصدار الرنين الصوتي والاهتزاز حتى عندما يكون جوال السائق مقفلاً أو أثناء استخدامه لتطبيقات الخرائط (مثل Google Maps و Waze) عبر دمج Service Worker و MediaSession و Screen Wake Lock.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] text-slate-400">
+              <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-emerald-400 font-bold">✓ قفل الشاشة ممنوع أثناء القيادة (Wake Lock)</span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-cyan-400 font-bold">✓ رنين عالي النفاذية مسبق التحميل</span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-purple-400 font-bold">✓ إشعارات نظام فورية عبر Service Worker</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeSubTab === 'pricing' && (
         <DeliveryPricingView branches={branches} />
       )}

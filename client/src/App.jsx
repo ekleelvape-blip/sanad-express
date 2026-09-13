@@ -203,7 +203,7 @@ export default function App() {
       }
     });
     socket.on('order_assigned_to_me', ({ order, driver }) => {
-      sound.playOrderAssigned();
+      sound.triggerBackgroundAlert(order);
       fetchData();
     });
     socket.on('cod_settled', () => fetchData());

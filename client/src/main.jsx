@@ -148,3 +148,18 @@ createRoot(document.getElementById('root')).render(
     <App />
   </ErrorBoundary>
 );
+
+// تسجيل الـ Service Worker لتمكين العمل بالخلفية وإشعارات شاشة القفل
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        window.sanadSwRegistration = registration;
+        console.log('SANAD Service Worker registered successfully:', registration.scope);
+      })
+      .catch((err) => {
+        console.warn('SANAD Service Worker registration error:', err);
+      });
+  });
+}
+

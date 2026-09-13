@@ -8,7 +8,7 @@ import {
   MapPin, Map, Phone, MessageSquare, ExternalLink, Clock, ShieldCheck,
   CheckCircle2, X, ChevronLeft, ChevronRight, Search, RefreshCw, Box,
   DollarSign, Sparkles, Navigation, RotateCcw, AlertTriangle, Key,
-  Eye, EyeOff, Camera, ArrowUpRight, QrCode, Shield, Check, Award, Layers
+  Eye, EyeOff, Camera, ArrowUpRight, QrCode, Shield, Check, Award, Layers, Radio, Smartphone, Volume2
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import {
@@ -193,12 +193,49 @@ export default function DriverApp({
   // حساب المبالغ المتوقعة
   const expectedCashAmount = inTransitOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  // تبديل حالة التوفر (متاح / غير متاح)
+  // حالة العد التنازلي لتجربة تنبيه الخلفية
+  const [testCountdown, setTestCountdown] = useState(null);
+
+  // تبديل حالة التوفر الميداني (متاح / غير متاح) مع إدارة وضع الخلفية وWake Lock
   const toggleAvailability = () => {
     const next = !isAvailable;
     setIsAvailable(next);
     sound.pop();
+    if (next) {
+      sound.enableBackgroundMode(currentDriver.name || 'يونس');
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+    } else {
+      sound.disableBackgroundMode();
+    }
     if (onToggleDriverStatus) onToggleDriverStatus(currentDriver.id);
+  };
+
+  // دالة تجربة التنبيه بالخلفية بعد مهلة تتيح للمندوب قفل الشاشة أو التحويل للخرائط
+  const handleTestBackgroundDispatch = () => {
+    sound.enableBackgroundMode(currentDriver.name || 'يونس');
+    setTestCountdown(4);
+    let rem = 4;
+    const interval = setInterval(() => {
+      rem -= 1;
+      if (rem > 0) {
+        setTestCountdown(rem);
+      } else {
+        clearInterval(interval);
+        setTestCountdown(null);
+        sound.triggerBackgroundAlert(
+          {
+            id: 'TEST-SND-99',
+            customerName: 'تجربة سَنَد بالخلفية',
+            customerAddress: 'الدمام - حي الشاطئ',
+            totalAmount: 165.00
+          },
+          '🔔 سَنَد: تنبيه تجريبي بالخلفية ناجح!',
+          'الصوت والاهتزاز وإشعار شاشة القفل يعملون بكفاءة حتى عند قفل الجوال أو تشغيل الخرائط 🚀'
+        );
+      }
+    }, 1000);
   };
 
   // تأكيد تسليم الشحنة وتوثيق إثبات التسليم الرقمي POD
@@ -261,7 +298,7 @@ export default function DriverApp({
       const targetDriverId = data?.driverId || data?.driver?.id || order?.assignedDriverId;
 
       if (driverMatchId(targetDriverId)) {
-        sound.playDriverAlert();
+        sound.triggerBackgroundAlert(order);
         setNewAssignedAlertOrder(order);
         setSelectedRouteOrderId(order.id);
 
@@ -307,7 +344,7 @@ export default function DriverApp({
       const latest = myOrders[0];
       if (latest && ['assigned', 'ready_for_pickup'].includes(latest.status)) {
         if (!newAssignedAlertOrder) {
-          sound.playDriverAlert();
+          sound.triggerBackgroundAlert(latest);
           setNewAssignedAlertOrder(latest);
           setSelectedRouteOrderId(latest.id);
         }
@@ -510,6 +547,16 @@ export default function DriverApp({
           <div className="flex items-center gap-1 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/60">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
             <span className="text-[10px] text-slate-300">سَنَد رادار</span>
+          </div>
+
+          {/* مؤشر العمل بالخلفية وإبقاء الشاشة مضاءة */}
+          <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-bold transition-all ${
+            isAvailable 
+              ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-300' 
+              : 'bg-slate-800/60 border-slate-700 text-slate-400'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+            <span>{isAvailable ? 'الخلفية والملاحة نشطة ⚡' : 'الخلفية معلقة'}</span>
           </div>
         </div>
 
@@ -1846,6 +1893,51 @@ export default function DriverApp({
                   onChange={(e) => setSoundAlerts(e.target.checked)}
                   className="w-4 h-4 accent-[#00d2d3]"
                 />
+              </div>
+
+              {/* كرت العمل بالخلفية وشاشة القفل للمندوب */}
+              <div className="p-3.5 rounded-2xl bg-cyan-950/30 dark:bg-cyan-950/40 border border-cyan-800/60 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-300">
+                    <Radio className="w-4 h-4 text-cyan-400" />
+                    <span>وضع العمل بالخلفية والملاحة 🛡️</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    isAvailable ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {isAvailable ? 'نشط الآن 🟢' : 'معلق (غير متاح)'}
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-300 space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400">
+                    <span>✓</span>
+                    <span>شاشة الجوال لن تنطفئ تلقائياً أثناء الملاحة (Wake Lock)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-cyan-300">
+                    <span>✓</span>
+                    <span>الصوت والتنبيه يعمل فوق Google Maps و Waze</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-purple-300">
+                    <span>✓</span>
+                    <span>إشعارات شاشة القفل مع اهتزاز مخصص لكل شحنة</span>
+                  </div>
+                </div>
+
+                {/* زر تجربة التنبيه بالخلفية */}
+                <button
+                  type="button"
+                  onClick={handleTestBackgroundDispatch}
+                  disabled={testCountdown !== null}
+                  className="w-full py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-75 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>
+                    {testCountdown !== null 
+                      ? `اقفل شاشتك الآن! التنبيه بعد ${testCountdown} ثوانٍ ⏳` 
+                      : 'تجربة تنبيه شاشة القفل والخلفية (4 ثوانٍ) 🧪'}
+                  </span>
+                </button>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
