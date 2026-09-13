@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Lock, Search, Plus, Eye, UserPlus, Printer, MoreVertical, CheckCircle2, RotateCcw, 
+  Lock, Search, Plus, Eye, UserPlus, CheckSquare, ArrowUpDown, Sliders, Layers, Printer, MoreVertical, CheckCircle2, RotateCcw, 
   XCircle, Bell, ArrowLeft, Filter, X, MapPin, DollarSign, User, Phone, 
   Store, CreditCard, Banknote, ShieldCheck, Check, Sparkles, Edit3, ShoppingBag 
 } from 'lucide-react';
 import OrderDetailsModal from './OrderDetailsModal';
 import WaybillModal from './WaybillModal';
+import { sound } from '../utils/sound';
 import { OFFICIAL_CITIES, FIXED_DELIVERY_RATES, getDeliveryFeeByAddress } from '../utils/geo';
 
 export default function OrdersTableView({ activeTab, onSelectTab, orders = [], drivers = [], branches = [], selectedBranch = "all", onAssignOrder, onCreateOrder, onRefresh, currentUser = null }) {
@@ -27,6 +28,14 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createSuccessMsg, setCreateSuccessMsg] = useState('');
+  
+  // نظام تحديد الطلبات والفرز المتقدم
+  const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'amount_high' | 'amount_low' | 'customer_name'
+  const [batchAssignDriverId, setBatchAssignDriverId] = useState('');
+  const [isBatchAssigning, setIsBatchAssigning] = useState(false);
 
   // حساب رقم الطلب المتسلسل التالي بدقة للعرض المباشر
   const nextSequentialOrderNumber = useMemo(() => {
@@ -61,30 +70,151 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
     orderSource: 'يدوي'
   });
 
-  // تصفية الطلبات: كل تصنيف يخص نفسه بدقة 100%
-  const filteredOrders = orders.filter(o => {
-    const matchBranch = selectedBranch === 'all' || o.branchId === selectedBranch;
-    const isManualOrder = o.orderSource?.includes('يدوي') || (!o.sallaOrderNumber && o.orderSource !== 'سلة (Salla)');
-    const matchSource = sourceFilter === 'all' || (sourceFilter === 'manual' && isManualOrder) || (sourceFilter === 'salla' && !isManualOrder);
+  // استخراج قائمة الأحياء المتوفرة تلقائياً من الشحنات
+  const availableNeighborhoods = useMemo(() => {
+    const set = new Set();
+    orders.forEach(o => {
+      if (o.neighborhood && o.neighborhood.trim()) {
+        set.add(o.neighborhood.trim());
+      } else if (o.customerAddress) {
+        const parts = o.customerAddress.split(/[-–,،]/);
+        if (parts.length > 0 && parts[0].trim()) {
+          set.add(parts[0].trim());
+        }
+      }
+    });
+    return Array.from(set).filter(Boolean).sort();
+  }, [orders]);
 
-    let matchStatus = true;
-    if (statusFilter === 'unassigned') matchStatus = o.status === 'unassigned';
-    else if (statusFilter === 'assigned') matchStatus = o.status === 'assigned';
-    else if (statusFilter === 'in_transit') matchStatus = o.status === 'in_transit' || o.status === 'picked_up';
-    else if (statusFilter === 'delivered') matchStatus = o.status === 'delivered';
-    else if (statusFilter === 'returned') matchStatus = o.status === 'returned';
-    else if (statusFilter === 'cancelled') matchStatus = o.status === 'cancelled' || o.status === 'returned';
+  // إحصائيات سريعة للطلبات غير المسندة
+  const unassignedOrdersList = useMemo(() => {
+    return orders.filter(o => (selectedBranch === 'all' || o.branchId === selectedBranch) && o.status === 'unassigned');
+  }, [orders, selectedBranch]);
 
-    let matchSearch = true;
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      const safeId = String(o?.id || '');
-      const tid = (safeId.startsWith('SND-') ? safeId : ('SND-' + (safeId.replace(/\D/g, '') || '1001'))).toLowerCase();
-      matchSearch = tid.includes(q) || (o?.customerName && String(o.customerName).toLowerCase().includes(q)) || (o?.customerPhone && String(o.customerPhone).includes(q));
+  const unassignedCashTotal = useMemo(() => {
+    return unassignedOrdersList
+      .filter(o => o.paymentMethod === 'cash')
+      .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+  }, [unassignedOrdersList]);
+
+  // إجمالي مبالغ الطلبات المحددة
+  const selectedTotalAmount = useMemo(() => {
+    return orders
+      .filter(o => selectedOrderIds.includes(o.id))
+      .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+  }, [orders, selectedOrderIds]);
+
+  // تصفية وفرز الطلبات مع دعم الأحياء والدفع والترتيب
+  const filteredOrders = useMemo(() => {
+    let list = orders.filter(o => {
+      const matchBranch = selectedBranch === 'all' || o.branchId === selectedBranch;
+      const isManualOrder = o.orderSource?.includes('يدوي') || (!o.sallaOrderNumber && o.orderSource !== 'سلة (Salla)');
+      const matchSource = sourceFilter === 'all' || (sourceFilter === 'manual' && isManualOrder) || (sourceFilter === 'salla' && !isManualOrder);
+
+      let matchStatus = true;
+      if (statusFilter === 'unassigned') matchStatus = o.status === 'unassigned';
+      else if (statusFilter === 'assigned') matchStatus = o.status === 'assigned';
+      else if (statusFilter === 'in_transit') matchStatus = o.status === 'in_transit' || o.status === 'picked_up';
+      else if (statusFilter === 'delivered') matchStatus = o.status === 'delivered';
+      else if (statusFilter === 'returned') matchStatus = o.status === 'returned';
+      else if (statusFilter === 'cancelled') matchStatus = o.status === 'cancelled' || o.status === 'returned';
+
+      // فلتر الحي / المنطقة
+      let matchNeighborhood = true;
+      if (neighborhoodFilter !== 'all') {
+        const addr = (o.neighborhood || o.customerAddress || '').toLowerCase();
+        matchNeighborhood = addr.includes(neighborhoodFilter.toLowerCase());
+      }
+
+      // فلتر وسيلة الدفع
+      let matchPayment = true;
+      if (paymentMethodFilter === 'cash') matchPayment = o.paymentMethod === 'cash';
+      else if (paymentMethodFilter === 'network') matchPayment = o.paymentMethod !== 'cash';
+
+      let matchSearch = true;
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const safeId = String(o?.id || '');
+        const tid = (safeId.startsWith('SND-') ? safeId : ('SND-' + (safeId.replace(/\D/g, '') || '1001'))).toLowerCase();
+        matchSearch = tid.includes(q) || 
+                      (o?.customerName && String(o.customerName).toLowerCase().includes(q)) || 
+                      (o?.customerPhone && String(o.customerPhone).includes(q)) ||
+                      (o?.customerAddress && String(o.customerAddress).toLowerCase().includes(q));
+      }
+
+      return matchBranch && matchStatus && matchSearch && matchSource && matchNeighborhood && matchPayment;
+    });
+
+    // الترتيب والفرز
+    return [...list].sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      if (sortBy === 'oldest') return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (sortBy === 'amount_high') return (Number(b.totalAmount) || 0) - (Number(a.totalAmount) || 0);
+      if (sortBy === 'amount_low') return (Number(a.totalAmount) || 0) - (Number(b.totalAmount) || 0);
+      if (sortBy === 'customer_name') return String(a.customerName || '').localeCompare(String(b.customerName || ''), 'ar');
+      return 0;
+    });
+  }, [orders, selectedBranch, sourceFilter, statusFilter, neighborhoodFilter, paymentMethodFilter, searchQuery, sortBy]);
+
+  // دوال إدارة وتحديد الطلبات المجمعة
+  const isAllSelected = filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id));
+  const isSomeSelected = selectedOrderIds.length > 0 && !isAllSelected;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedOrderIds(prev => prev.filter(id => !filteredOrders.some(o => o.id === id)));
+    } else {
+      const idsToAdd = filteredOrders.map(o => o.id);
+      setSelectedOrderIds(prev => Array.from(new Set([...prev, ...idsToAdd])));
     }
+    sound.pop();
+  };
 
-    return matchBranch && matchStatus && matchSearch && matchSource;
-  });
+  const toggleSelectOrder = (orderId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
+    );
+    sound.pop();
+  };
+
+  const selectAllUnassigned = () => {
+    setStatusFilter('unassigned');
+    const unassignedIds = orders
+      .filter(o => (selectedBranch === 'all' || o.branchId === selectedBranch) && o.status === 'unassigned')
+      .map(o => o.id);
+    setSelectedOrderIds(unassignedIds);
+    sound.pop();
+  };
+
+  const handleBatchAssign = async () => {
+    if (!batchAssignDriverId) {
+      alert('يرجى اختيار المندوب أولاً لإسناد الطلبات المحددة له');
+      return;
+    }
+    if (selectedOrderIds.length === 0) return;
+
+    setIsBatchAssigning(true);
+    const targetDriver = drivers.find(d => d.id === batchAssignDriverId);
+    let successCount = 0;
+    try {
+      for (const orderId of selectedOrderIds) {
+        if (onAssignOrder) {
+          await onAssignOrder(orderId, batchAssignDriverId);
+          successCount++;
+        }
+      }
+      sound.playSuccess();
+      alert(`✅ تم إسناد ${successCount} شحنات بنجاح إلى المندوب: ${targetDriver?.name || 'المحدد'}!`);
+      setSelectedOrderIds([]);
+      setBatchAssignDriverId('');
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('حدث خطأ أثناء إسناد بعض الطلبات');
+    } finally {
+      setIsBatchAssigning(false);
+    }
+  };
 
   // إحصائيات التبويبات
   const countAll = orders.filter(o => selectedBranch === 'all' || o.branchId === selectedBranch).length;
@@ -288,13 +418,130 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
               ملغاة ومسترجعة {countCancelled}
             </button>
           </div>
+
+          {/* شريط الإحصائيات الذكية والفرز المخصص للطلبات غير المسندة */}
+          <div className="bg-[#090d16]/90 border border-cyan-900/40 rounded-2xl p-3.5 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              
+              {/* أدوات الفرز والتصفية */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* فرز الأحياء */}
+                <div className="flex items-center gap-1.5 bg-[#0f1523] border border-cyan-900/50 rounded-xl px-2.5 py-1.5 text-slate-300">
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  <select
+                    value={neighborhoodFilter}
+                    onChange={(e) => setNeighborhoodFilter(e.target.value)}
+                    className="bg-transparent text-xs text-slate-100 outline-none cursor-pointer"
+                  >
+                    <option value="all" className="bg-[#0f1523] text-slate-200">كل الأحياء والمناطق</option>
+                    {availableNeighborhoods.map(n => (
+                      <option key={n} value={n} className="bg-[#0f1523] text-slate-200">{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* فرز طريقة الدفع */}
+                <div className="flex items-center gap-1.5 bg-[#0f1523] border border-cyan-900/50 rounded-xl px-2.5 py-1.5 text-slate-300">
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                  <select
+                    value={paymentMethodFilter}
+                    onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                    className="bg-transparent text-xs text-slate-100 outline-none cursor-pointer"
+                  >
+                    <option value="all" className="bg-[#0f1523] text-slate-200">كل طرق الدفع</option>
+                    <option value="cash" className="bg-[#0f1523] text-slate-200">💵 كاش عند الاستلام</option>
+                    <option value="network" className="bg-[#0f1523] text-slate-200">💳 شبكة مدى / إلكتروني</option>
+                  </select>
+                </div>
+
+                {/* ترتيب بحسب */}
+                <div className="flex items-center gap-1.5 bg-[#0f1523] border border-cyan-900/50 rounded-xl px-2.5 py-1.5 text-slate-300">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-xs text-slate-100 outline-none cursor-pointer"
+                  >
+                    <option value="newest" className="bg-[#0f1523] text-slate-200">الأحدث تاريخاً</option>
+                    <option value="oldest" className="bg-[#0f1523] text-slate-200">الأقدم تاريخاً</option>
+                    <option value="amount_high" className="bg-[#0f1523] text-slate-200">الأعلى قيمة مالية</option>
+                    <option value="amount_low" className="bg-[#0f1523] text-slate-200">الأقل قيمة مالية</option>
+                    <option value="customer_name" className="bg-[#0f1523] text-slate-200">اسم العميل (أ - ي)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* أزرار الإجراء السريع للطلبات غير المسندة وتحديد الكل */}
+              <div className="flex items-center gap-2">
+                {countUnassigned > 0 && (
+                  <button
+                    type="button"
+                    onClick={selectAllUnassigned}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    title="تحديد كل الشحنات غير المسندة دفعة واحدة لإسنادها"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
+                    <span>تحديد غير المسندة ({countUnassigned})</span>
+                  </button>
+                )}
+
+                {selectedOrderIds.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderIds([])}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    إلغاء التحديد ({selectedOrderIds.length})
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className="px-3 py-1.5 rounded-xl bg-[#0f1523] hover:bg-cyan-950/60 border border-cyan-900/60 text-cyan-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>تحديد المعروض ({filteredOrders.length})</span>
+                  </button>
+                )}
+              </div>
+
+            </div>
+
+            {/* شريط ملخص الطلبات غير المسندة إذا كان التبويب نشطاً */}
+            {statusFilter === 'unassigned' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-cyan-900/30 text-xs">
+                <div className="bg-[#0f1523] border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                  <span className="text-slate-400">شحنات جاهزة للتوزيع:</span>
+                  <span className="font-bold font-mono text-amber-400 text-sm">{countUnassigned} طلب</span>
+                </div>
+                <div className="bg-[#0f1523] border border-emerald-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                  <span className="text-slate-400">إجمالي كاش للتحصيل:</span>
+                  <span className="font-bold font-mono text-emerald-400 text-sm">{unassignedCashTotal.toFixed(2)} ﷼</span>
+                </div>
+                <div className="bg-[#0f1523] border border-cyan-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                  <span className="text-slate-400">شحنات مسددة مدى:</span>
+                  <span className="font-bold font-mono text-cyan-400 text-sm">{countUnassigned - unassignedOrdersList.filter(o => o.paymentMethod === 'cash').length} طلب</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* جدول الطلبات */}
         <div className="overflow-x-auto text-xs">
           <table className="w-full text-right border-collapse">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100 font-bold text-[11px]">
+              <tr className="text-slate-400 border-b border-cyan-900/40 font-bold text-[11px] bg-[#0a0e18]/60">
+                <th className="py-3.5 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded text-[#00d2d3] bg-[#090d16] border-slate-700 cursor-pointer accent-[#00d2d3]"
+                    title="تحديد الكل / إلغاء تحديد الكل"
+                  />
+                </th>
                 <th className="py-3.5 px-4">الطلب</th>
                 <th className="py-3.5 px-4">العميل</th>
                 <th className="py-3.5 px-4">الحي</th>
@@ -308,7 +555,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
             <tbody className="divide-y divide-slate-800/60">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-12 text-slate-400">
+                  <td colSpan="9" className="text-center py-12 text-slate-400">
                     لا توجد طلبات في هذا التصنيف حالياً
                   </td>
                 </tr>
@@ -323,9 +570,22 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
                     <tr 
                       key={order.id} 
                       onClick={() => setSelectedOrderForDetails(order)}
-                      className="hover:bg-cyan-950/40 hover:shadow-inner transition-all group cursor-pointer"
+                      className={`transition-all group cursor-pointer ${
+                        selectedOrderIds.includes(order.id) 
+                          ? 'bg-cyan-950/60 border-r-4 border-r-[#00d2d3] shadow-inner' 
+                          : 'hover:bg-cyan-950/30'
+                      }`}
                       title="انقر لعرض تفاصيل الطلب والإجراءات السريعة"
                     >
+                      <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedOrderIds.includes(order.id)}
+                          onChange={(e) => toggleSelectOrder(order.id, e)}
+                          className="w-4 h-4 rounded text-[#00d2d3] bg-[#090d16] border-slate-700 cursor-pointer accent-[#00d2d3]"
+                          title="تحديد هذا الطلب"
+                        />
+                      </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button
@@ -426,6 +686,66 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
           </table>
         </div>
       </div>
+
+      {/* شريط الإجراءات المجمعة العائم عند تحديد طلبات */}
+      {selectedOrderIds.length > 0 && (
+        <div className="fixed bottom-6 inset-x-4 max-w-3xl mx-auto z-[5000] animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-md border-2 border-[#00d2d3] rounded-2xl p-4 shadow-[0_10px_35px_rgba(0,210,211,0.35)] text-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 flex items-center justify-center font-bold text-xs font-mono">
+                {selectedOrderIds.length}
+              </span>
+              <div>
+                <div className="font-black text-xs text-white">
+                  تم تحديد {selectedOrderIds.length} شحنات
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  إجمالي مبالغ الطلبات المحددة: <strong className="text-emerald-400 font-mono">{selectedTotalAmount.toFixed(2)} ﷼</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* اختيار المندوب للإسناد المجمّع */}
+              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1">
+                <User className="w-3.5 h-3.5 text-cyan-400" />
+                <select
+                  value={batchAssignDriverId}
+                  onChange={(e) => setBatchAssignDriverId(e.target.value)}
+                  className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer py-1 font-bold"
+                >
+                  <option value="" className="bg-slate-900 text-slate-300">اختر المندوب للإسناد...</option>
+                  {drivers.map(d => (
+                    <option key={d.id} value={d.id} className="bg-slate-900 text-slate-200">
+                      {d.name} ({d.vehicle || 'مندوب'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBatchAssign}
+                disabled={!batchAssignDriverId || isBatchAssigning}
+                className="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 disabled:opacity-50 text-slate-950 font-black text-xs rounded-xl shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>{isBatchAssigning ? 'جاري الإسناد...' : 'إسناد للمندوب'}</span>
+              </button>
+
+              {/* إلغاء التحديد */}
+              <button
+                type="button"
+                onClick={() => setSelectedOrderIds([])}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                title="إلغاء التحديد"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedOrderForDetails && (
         <OrderDetailsModal
