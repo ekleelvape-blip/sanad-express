@@ -1316,7 +1316,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف وتصفير خزينة - ${lastDisbursementReceipt.receiptNumber}`)}
+                    onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف نقدية - ${lastDisbursementReceipt.receiptNumber}`)}
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#00d2d3] to-cyan-500 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-950/50 cursor-pointer transition-all active:scale-95"
                   >
                     <Printer className="w-4 h-4 stroke-[2.5]" />
@@ -1345,10 +1345,10 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                     <span className="text-8xl sm:text-9xl font-black tracking-widest uppercase">SANAD</span>
                   </div>
 
-                  {/* 1. الترويسة الرسمية المعتمدة (Company Letterhead) */}
+                  {/* 1. الترويسة الرسمية المعتمدة */}
                   <div className="border-b-2 border-slate-900 pb-3">
                     <div className="flex items-start justify-between gap-4">
-                      {/* اليمين: شعار الشركة وبياناتها النظامية */}
+                      {/* اليمين: شعار سند للخدمات اللوجستية وبياناتها */}
                       <div className="flex items-center gap-3">
                         <img 
                           src={SANAD_OFFICIAL_ENTITY.logoUrl} 
@@ -1356,11 +1356,14 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                           className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-300 shadow-sm"
                         />
                         <div>
-                          <h2 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
-                            {SANAD_OFFICIAL_ENTITY.nameAr}
-                          </h2>
-                          <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
-                            {SANAD_OFFICIAL_ENTITY.nameEn}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-lg">🏛️</span>
+                            <h2 className="text-base sm:text-lg font-black text-slate-950 leading-tight">
+                              سند للخدمات اللوجستية
+                            </h2>
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-700 font-sans tracking-wide">
+                            SANAD LOGISTICS CO.
                           </div>
                           <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
                             <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
@@ -1383,8 +1386,8 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                             </span>
                           </div>
                           <div className="text-[9.5px] text-slate-600">
-                            <div>التاريخ الميلادي: <strong className="font-mono text-slate-900">{docDates.gregorian}</strong></div>
-                            <div>التاريخ الهجري: <strong className="font-mono text-slate-900">{docDates.hijri}</strong></div>
+                            <div>التاريخ: <strong className="font-mono text-slate-900">{docDates.hijri}</strong></div>
+                            <div>الموافق: <strong className="font-mono text-slate-900">{docDates.gregorian}</strong></div>
                             <div>الوقت: <strong className="font-mono text-slate-900">{docDates.time}</strong></div>
                           </div>
                         </div>
@@ -1394,12 +1397,12 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
 
                     {/* العنوان البارز للسند */}
                     <div className="mt-3 pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                      <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm font-black text-xs sm:text-sm tracking-wide">
-                        سند صرف نقدية وتصفير عهدة خزينة (PETTY CASH DISBURSEMENT)
+                      <div className="bg-slate-900 text-white px-5 py-1.5 rounded-lg shadow-sm font-black text-xs sm:text-sm tracking-wide">
+                        سند صرف نقدية (DISBURSEMENT VOUCHER)
                       </div>
                       <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <span>✓</span>
-                        <span>معتمد ومسجل محاسبياً باليومية العامة</span>
+                        <span>معتمد ومسجل محاسبياً باليومية العامة للسند</span>
                       </div>
                     </div>
                   </div>
@@ -1407,36 +1410,44 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                   {/* 2. جدول أطراف المعاملة المالية والتفاصيل */}
                   <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
                     <div className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-800 bg-slate-50 border-b border-slate-800">
-                      <div className="p-2.5">
-                        <span className="text-slate-500 text-[10px] block font-semibold">المسلّم (أمين ومسؤول الخزينة):</span>
-                        <span className="font-bold text-slate-950 text-xs sm:text-sm">{lastDisbursementReceipt.officerName || 'مشرف العمليات بالفرع'}</span>
-                        <span className="text-[9.5px] text-slate-500 block">الصفة: أمين العهدة النقدية المركزية</span>
+                      <div className="p-3">
+                        <span className="text-slate-500 text-[10.5px] block font-semibold">الطرف المسلّم:</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="font-black text-slate-950 text-sm">محاسب سند</span>
+                          <span className="text-xs text-slate-600 font-bold">({lastDisbursementReceipt.officerName || 'أمين الخزينة'})</span>
+                        </div>
+                        <span className="text-[9.5px] text-slate-500 block mt-0.5">الصفة: المسؤول المالي وأمين الخزينة المركزية</span>
                       </div>
-                      <div className="p-2.5 bg-cyan-50/40">
-                        <span className="text-slate-500 text-[10px] block font-semibold">المستلم المعتمد / الجهة المودع إليها:</span>
-                        <span className="font-bold text-slate-950 text-xs sm:text-sm">
+
+                      <div className="p-3 bg-cyan-50/40">
+                        <span className="text-slate-500 text-[10.5px] block font-semibold">الطرف المستلم:</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="font-black text-slate-950 text-sm">
+                            {lastDisbursementReceipt.recipientType === 'bank_deposit'
+                              ? `المحاسب المالي / البنك (${lastDisbursementReceipt.recipientName || 'مصرف الراجحي'})`
+                              : `المحاسب المالي / البنك (${lastDisbursementReceipt.recipientName || 'أ. محمد القحطاني'})`}
+                          </span>
+                        </div>
+                        <span className="text-[9.5px] text-slate-500 block mt-0.5">
                           {lastDisbursementReceipt.recipientType === 'bank_deposit' 
-                            ? `إيداع بنكي: ${lastDisbursementReceipt.recipientName || 'مصرف الراجحي'}` 
-                            : `المحاسب المالي: ${lastDisbursementReceipt.recipientName || 'أ. محمد القحطاني'}`}
-                        </span>
-                        <span className="text-[9.5px] text-slate-500 block">
-                          {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'نوع التسليم: إيداع بنكي مباشر بحساب الشركة' : 'نوع التسليم: تسليم عهدة نقدية للمحاسبة'}
+                            ? 'الصفة: حساب الشركة البنكي المعتمد (إيداع مباشر)' 
+                            : 'الصفة: الإدارة المالية والحسابات العامة'}
                         </span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-800 bg-white text-[11px]">
-                      <div className="p-2">
-                        <span className="text-slate-500 text-[9.5px] block">الرقم المرجعي / الإيداع:</span>
-                        <strong className="font-mono text-slate-900 text-xs">{lastDisbursementReceipt.referenceNumber || 'DEP-ONLINE'}</strong>
-                      </div>
-                      <div className="p-2">
-                        <span className="text-slate-500 text-[9.5px] block">طريقة الصرف:</span>
+                      <div className="p-2.5">
+                        <span className="text-slate-500 text-[9.5px] block">طريقة التسليم:</span>
                         <strong className="text-slate-900 text-xs">
-                          {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'إيداع بالحساب البنكي' : 'استلام نقدي كاش (يداً بيد)'}
+                          {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'إيداع بنكي مباشر' : 'تسليم نقدي (كاش يداً بيد)'}
                         </strong>
                       </div>
-                      <div className="p-2">
+                      <div className="p-2.5">
+                        <span className="text-slate-500 text-[9.5px] block">رقم المرجع:</span>
+                        <strong className="font-mono text-slate-900 text-xs">{lastDisbursementReceipt.referenceNumber || 'DEP-ONLINE'}</strong>
+                      </div>
+                      <div className="p-2.5">
                         <span className="text-slate-500 text-[9.5px] block">الفرع والمركز:</span>
                         <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الرياض</strong>
                       </div>
@@ -1447,87 +1458,101 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                   <div className="bg-slate-50 border-2 border-slate-900 p-3 sm:p-4 rounded-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300 pb-3">
                       <div>
-                        <span className="text-[11px] text-slate-600 font-bold block">المبلغ المصروف المعتمد كتابة ورقماً:</span>
-                        <div className="text-xs sm:text-sm font-black text-slate-950 mt-0.5">
-                          {tafqeetArabic(lastDisbursementReceipt.amount)}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-700 font-bold">[ المبلغ المعتمد ]:</span>
+                          <span className="font-mono font-black text-lg sm:text-xl text-slate-950">
+                            {Number(lastDisbursementReceipt.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س SAR
+                          </span>
                         </div>
-                        <div className="text-[10px] font-serif italic text-slate-600 mt-0.5" dir="ltr">
-                          {tafqeetEnglish(lastDisbursementReceipt.amount)}
+                        <div className="text-xs sm:text-sm font-black text-slate-950 mt-1">
+                          التفقيط العربي : {tafqeetArabic(lastDisbursementReceipt.amount)}
+                        </div>
+                        <div className="text-[11px] font-serif italic text-slate-600 mt-0.5" dir="ltr">
+                          التفقيط الإنجليزي: {tafqeetEnglish(lastDisbursementReceipt.amount)}
                         </div>
                       </div>
 
-                      <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-center shrink-0 border border-slate-700 shadow-md">
-                        <span className="text-[9.5px] text-slate-300 block">المبلغ بالأرقام</span>
-                        <span className="font-mono font-black text-lg sm:text-xl tracking-wider text-[#00d2d3]">
+                      <div className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-center shrink-0 border border-slate-700 shadow-md">
+                        <span className="text-[9.5px] text-slate-300 block">صافي المبلغ بالأرقام</span>
+                        <span className="font-mono font-black text-xl tracking-wider text-[#00d2d3]">
                           {Number(lastDisbursementReceipt.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <span className="text-xs font-bold text-slate-200 mr-1">ر.س SAR</span>
+                        <span className="text-xs font-bold text-slate-200 mr-1.5">﷼ SAR</span>
                       </div>
                     </div>
 
-                    {/* حركة تصفير الرصيد بالخزينة */}
-                    <div className="grid grid-cols-3 gap-2 pt-2.5 text-center text-xs">
-                      <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 text-[9.5px] block">الرصيد الدفتري السابق:</span>
-                        <strong className="font-mono text-slate-900">{Number(lastDisbursementReceipt.prevBalance || 0).toLocaleString()} ر.س</strong>
+                    {/* حركة تصفير الخزينة */}
+                    <div className="pt-2.5">
+                      <div className="text-xs text-slate-700 font-bold mb-1">
+                        حركة تصفير الخزينة:
                       </div>
-                      <div className="p-1.5 bg-red-50 rounded-lg border border-red-200">
-                        <span className="text-red-700 text-[9.5px] block font-bold">المبلغ المخصوم (الصرف):</span>
-                        <strong className="font-mono text-red-700 font-bold">-{Number(lastDisbursementReceipt.amount || 0).toLocaleString()} ر.س</strong>
-                      </div>
-                      <div className="p-1.5 bg-emerald-50 rounded-lg border border-emerald-300">
-                        <span className="text-emerald-800 text-[9.5px] block font-bold">رصيد الخزينة بعد الصرف:</span>
-                        <strong className="font-mono text-emerald-800 font-black">
-                          {Number(lastDisbursementReceipt.newBalance || 0).toFixed(2)} ر.س (مصفّر بالكامل)
-                        </strong>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                          <span className="text-slate-500 text-[9.5px] block">الرصيد السابق:</span>
+                          <strong className="font-mono text-slate-900 text-sm">{Number(lastDisbursementReceipt.prevBalance || 0).toLocaleString()} ﷼</strong>
+                        </div>
+                        <div className="p-2 bg-red-50 rounded-lg border border-red-200">
+                          <span className="text-red-700 text-[9.5px] block font-bold">المصروف:</span>
+                          <strong className="font-mono text-red-700 text-sm font-bold">-{Number(lastDisbursementReceipt.amount || 0).toLocaleString()} ﷼</strong>
+                        </div>
+                        <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-300">
+                          <span className="text-emerald-800 text-[9.5px] block font-bold">الرصيد الحالي:</span>
+                          <strong className="font-mono text-emerald-800 text-sm font-black">
+                            {Number(lastDisbursementReceipt.newBalance || 0).toFixed(2)} ﷼ (مصفّر بالكامل)
+                          </strong>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 4. البيان والتوضيح المحاسبي */}
                   <div className="p-2.5 bg-white border border-slate-300 rounded-xl text-xs space-y-0.5">
-                    <div className="text-slate-500 font-bold text-[10.5px]">البيان والغرض من الصرف:</div>
+                    <div className="text-slate-500 font-bold text-[10.5px]">البيان / الغرض من الصرف:</div>
                     <div className="text-slate-900 font-semibold leading-relaxed text-[11px]">
-                      {lastDisbursementReceipt.notes || 'تسليم وتوريد رصيد كاش المتجر المحصل من الشحنات وإيداعه بحساب الشركة/المحاسب المالي وتصفير العهدة.'}
+                      {lastDisbursementReceipt.notes || 'تسليم نقدية وتصفير عهدة كاش المتجر للمحاسبة / إيداع بنكي وتصفير رصيد الخزينة بالكامل.'}
                     </div>
                   </div>
 
                   {/* 5. التواقيع والاعتمادات الرسمية الرباعية والختم المعتمد */}
                   <div className="pt-2">
                     <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-300 pb-1 mb-3">
-                      اعتمادات وتواقيع أطراف العملية المحاسبية:
+                      اعتمادات وتواقيع أطراف السند الرسمية:
                     </div>
 
                     <div className="grid grid-cols-4 gap-2 text-center text-xs relative">
                       
                       {/* توقيع 1: المسلّم */}
-                      <div className="space-y-3">
-                        <span className="font-bold text-slate-700 block text-[10px]">المسلّم (أمين الخزينة)</span>
-                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
-                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.officerName || 'مشرف الفرع'}</div>
+                      <div className="space-y-2">
+                        <span className="font-bold text-slate-800 block text-[11px]">توقيع المسلّم</span>
+                        <span className="text-[10px] text-slate-500 block font-semibold">(محاسب سند)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-2"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.officerName || 'محاسب سند'}</div>
                       </div>
 
                       {/* توقيع 2: المستلم */}
-                      <div className="space-y-3">
-                        <span className="font-bold text-slate-700 block text-[10px]">المستلم (المحاسب/البنك)</span>
-                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                      <div className="space-y-2">
+                        <span className="font-bold text-slate-800 block text-[11px]">توقيع المستلم</span>
+                        <span className="text-[10px] text-slate-500 block font-semibold">(المحاسب المالي)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-2"></div>
                         <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.recipientName || 'المحاسب المالي'}</div>
                       </div>
 
                       {/* توقيع 3: المراجع الداخلي */}
-                      <div className="space-y-3">
-                        <span className="font-bold text-slate-700 block text-[10px]">التدقيق والرقابة المالية</span>
-                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
-                        <div className="text-[9.5px] text-slate-600 font-semibold">قسم المراجعة والتدقيق</div>
+                      <div className="space-y-2">
+                        <span className="font-bold text-slate-800 block text-[11px]">المراجعة والتدقيق</span>
+                        <span className="text-[10px] text-slate-500 block font-semibold">(المراجع الداخلي)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-2"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">قسم التدقيق الداخلي</div>
                       </div>
 
-                      {/* توقيع 4: اعتماد المدير المالي مع الختم المعتمد فوقه */}
+                      {/* توقيع 4: الاعتماد المالي والختم */}
                       <div className="space-y-1 relative">
-                        <span className="font-bold text-slate-900 block text-[10px]">الاعتماد المالي والختم</span>
-                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-1"></div>
-                        <div className="text-[9.5px] text-slate-700 font-bold">المدير المالي العام</div>
+                        <span className="font-bold text-slate-900 block text-[11px]">الاعتماد المالي والختم</span>
+                        <span className="text-[10px] text-slate-600 block font-semibold">(المدير)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-2"></div>
+                        <div className="text-[9.5px] text-slate-700 font-bold">المدير العام المعتمد</div>
                         
-                        {/* الختم الرسمي الأزرق المعتمد */}
+                        {/* 🔵 الختم الرسمي الأزرق */}
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
                           <OfficialStamp department="الخزينة المركزية" statusText="معتمد ومصفّر" size={95} />
                         </div>
@@ -1538,8 +1563,8 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
 
                   {/* تذييل الوثيقة */}
                   <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
-                    <div>تم الإصدار والتوثيق آلياً عبر منظومة سَنَد اللوجستية المركزية - SANAD CLOUD FINANCIAL SYSTEM</div>
-                    <div>وثيقة صرف رسمية معتمدة</div>
+                    <div>تم الإصدار والتوثيق آلياً عبر منظومة سَنَد اللوجستية - سند صرف نقدية معتمد</div>
+                    <div>وثيقة مالية رسمية</div>
                   </div>
 
                 </div>
@@ -1549,7 +1574,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
               <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 print:hidden shrink-0">
                 <button
                   type="button"
-                  onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف وتصفير خزينة - ${lastDisbursementReceipt.receiptNumber}`)}
+                  onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف نقدية - ${lastDisbursementReceipt.receiptNumber}`)}
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
                 >
                   <Printer className="w-4 h-4" />

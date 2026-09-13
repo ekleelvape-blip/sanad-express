@@ -3,8 +3,8 @@
 import React from 'react';
 
 export const SANAD_OFFICIAL_ENTITY = {
-  nameAr: 'شركة سند إكسبريس للخدمات اللوجستية',
-  nameEn: 'SANAD EXPRESS LOGISTICS CO.',
+  nameAr: 'سند للخدمات اللوجستية',
+  nameEn: 'SANAD LOGISTICS CO.',
   legalType: 'شركة ذات مسؤولية محدودة - رأس المال المدفوع: 500,000 ريال سعودي',
   crNumber: '1010789456',              // السجل التجاري
   vatNumber: '310245678900003',        // الرقم الضريبي بهيئة الزكاة والضريبة والجمارك
@@ -202,13 +202,13 @@ export function OfficialStamp({
 
         <text fill="currentColor" fontSize="10.5" fontWeight="900" letterSpacing="0.8" fontFamily="Cairo, Tajawal, sans-serif">
           <textPath href="#topCircle" startOffset="50%" textAnchor="middle">
-            ★ شركة سند إكسبريس اللوجستية ★
+            ★ سند للخدمات اللوجستية ★
           </textPath>
         </text>
 
         <text fill="currentColor" fontSize="8" fontWeight="800" letterSpacing="1.2" fontFamily="Arial, sans-serif">
           <textPath href="#bottomCircle" startOffset="50%" textAnchor="middle">
-            SANAD EXPRESS LOGISTICS
+            SANAD LOGISTICS CO.
           </textPath>
         </text>
 
