@@ -698,7 +698,7 @@ export default function ReportsCenter({
       {/* التبويب 3: فواتير الجمعة التلقائية للمناديب */}
       {/* ========================================================================= */}
       {activeTab === 'friday_invoices' && (
-        <FridayInvoicesHub drivers={drivers} branches={branches} />
+        <FridayInvoicesHub drivers={drivers} branches={branches} orders={orders} />
       )}
 
       {/* ========================================================================= */}

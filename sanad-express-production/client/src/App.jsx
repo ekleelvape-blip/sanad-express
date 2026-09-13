@@ -558,7 +558,7 @@ export default function App() {
             />
           )}
 
-          {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods'].includes(activeTab) && (
+          {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods', 'friday_invoices'].includes(activeTab) && (
             <ReportsCenter
               activeTab={activeTab}
               onSelectTab={handleTabChange}
