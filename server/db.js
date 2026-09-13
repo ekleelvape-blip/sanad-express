@@ -16,7 +16,8 @@ class DatabaseAdapter {
 
     try { fs.mkdirSync(this.dataDir, { recursive: true }); } catch (e) {}
 
-    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    const defaultSupabaseUrl = 'postgresql://postgres.yapmktghdyihxyzhaang:Sanad2026%21DB@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres';
+    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || defaultSupabaseUrl;
     if (dbUrl) {
       try {
         this.pool = new Pool({
