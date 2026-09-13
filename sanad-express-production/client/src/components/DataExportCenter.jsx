@@ -934,14 +934,8 @@ export default function DataExportCenter({
                       <div className="font-mono text-xs font-bold text-slate-700 tracking-wider">
                         {SANAD_OFFICIAL_ENTITY.nameEn}
                       </div>
-                      <div className="text-[10px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
-                        <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
-                        <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
-                        <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
-                      </div>
-                      <div className="text-[9px] text-slate-500 mt-0.5">
-                        {SANAD_OFFICIAL_ENTITY.nationalAddress}
-                      </div>
+                      
+                      
                     </div>
                   </div>
 

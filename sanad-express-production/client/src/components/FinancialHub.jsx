@@ -1365,14 +1365,8 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                           <div className="text-[11px] font-bold text-slate-700 font-sans tracking-wide">
                             SANAD LOGISTICS CO.
                           </div>
-                          <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
-                            <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
-                            <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
-                            <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
-                          </div>
-                          <div className="text-[9px] text-slate-500 mt-0.5">
-                            {SANAD_OFFICIAL_ENTITY.nationalAddress}
-                          </div>
+                          
+                          
                         </div>
                       </div>
 
@@ -1658,11 +1652,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                           <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
                             {SANAD_OFFICIAL_ENTITY.nameEn}
                           </div>
-                          <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
-                            <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
-                            <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
-                            <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
-                          </div>
+                          
                         </div>
                       </div>
 
