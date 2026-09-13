@@ -129,10 +129,10 @@ export default function App() {
     return 'all';
   });
   const DEFAULT_BRANCHES = [
-    { id: 'branch-iklil-dammam', name: 'فرع إكليل الكيف - الدمام حي طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة (شارع الإمام الشافعي)', coords: [26.3583, 50.0501], phone: '0538041826' },
+    { id: 'branch-iklil-dammam', name: 'فرع إكليل الكيف - الدمام حي طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' },
     { id: 'branch-iklil-jubail', name: 'فرع إكليل فيب - الجبيل البلد', brand: 'إكليل فيب', city: 'الجبيل', district: 'الجبيل البلد - طريق الملك فيصل الغربي', coords: [26.9836, 49.6465], phone: '0535139959' },
-    { id: 'branch-vape-sharq', name: 'متجر إكليل الكيف - فرع طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0559876543' },
-    { id: 'branch-iklil-main', name: 'محل إكليل الكيف - الدمام حي طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة (شارع الأربعين)', coords: [26.3583, 50.0501], phone: '0538041826' }
+    { id: 'branch-vape-sharq', name: 'متجر فيب الشرق', brand: 'فيب الشرق', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0559876543' },
+    { id: 'branch-iklil-main', name: 'متجر إكليل فيب', brand: 'إكليل فيب', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' }
   ];
 
   const [searchQuery, setSearchQuery] = useState('');

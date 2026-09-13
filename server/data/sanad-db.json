@@ -15,7 +15,7 @@
       "name": "فرع إكليل الكيف - الدمام حي طيبة",
       "brand": "إكليل الكيف",
       "city": "الدمام",
-      "district": "الدمام - حي طيبة (شارع الإمام الشافعي)",
+      "district": "الدمام - حي طيبة",
       "coords": [
         26.3583,
         50.0501
@@ -44,8 +44,8 @@
     },
     {
       "id": "branch-vape-sharq",
-      "name": "متجر إكليل الكيف - فرع طيبة",
-      "brand": "إكليل الكيف",
+      "name": "متجر فيب الشرق",
+      "brand": "فيب الشرق",
       "city": "الدمام",
       "district": "الدمام - حي طيبة",
       "coords": [
@@ -60,10 +60,10 @@
     },
     {
       "id": "branch-iklil-main",
-      "name": "محل إكليل الكيف - الدمام حي طيبة",
-      "brand": "إكليل الكيف",
+      "name": "متجر إكليل فيب",
+      "brand": "إكليل فيب",
       "city": "الدمام",
-      "district": "الدمام - حي طيبة (شارع الأربعين)",
+      "district": "الدمام - حي طيبة",
       "coords": [
         26.3583,
         50.0501
@@ -492,6 +492,7 @@
       "orderNumber": "1023",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
+      "codSettledAt": "2026-09-13T19:23:41.947Z",
       "customerName": "0",
       "scanVerified": true,
       "customerPhone": "0",
@@ -506,8 +507,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 30,
       "scannedAtDelivery": "2026-09-13T19:15:26.199Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.947Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1022",
@@ -529,6 +529,7 @@
       "orderNumber": "1022",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 175,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "فحص الحفظ السحابي في Supabase",
       "scanVerified": true,
       "customerPhone": "0551122334",
@@ -543,8 +544,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 35,
       "scannedAtDelivery": "2026-09-13T18:45:10.438Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1021",
@@ -566,6 +566,7 @@
       "orderNumber": "1021",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "تجربة الحفظ",
       "scanVerified": true,
       "customerPhone": "0509998877",
@@ -580,8 +581,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
       "scannedAtDelivery": "2026-09-13T18:45:19.485Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1020",
@@ -603,6 +603,7 @@
       "orderNumber": "1020",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "تجربة الحفظ",
       "scanVerified": true,
       "customerPhone": "0509998877",
@@ -617,8 +618,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
       "scannedAtDelivery": "2026-09-13T18:45:26.659Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1001",
@@ -725,6 +725,7 @@
       "orderNumber": "1002",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 280,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "فهد الدوسري",
       "scanVerified": true,
       "customerPhone": "0561122334",
@@ -738,8 +739,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 40,
       "scannedAtDelivery": "2026-09-13T18:45:32.367Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1003",
@@ -771,6 +771,7 @@
       "orderNumber": "1003",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 340,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "ريان القحطاني",
       "scanVerified": true,
       "customerPhone": "0553311224",
@@ -784,8 +785,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
       "scannedAtDelivery": "2026-09-13T18:45:37.728Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1004",
@@ -847,6 +847,7 @@
       "orderNumber": "1005",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 310,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "نواف الشمري",
       "scanVerified": true,
       "customerPhone": "0547788112",
@@ -860,8 +861,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
       "scannedAtDelivery": "2026-09-13T18:45:50.231Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1006",
@@ -883,6 +883,7 @@
       "orderNumber": "1006",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 350,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "سلطان العمري",
       "scanVerified": true,
       "customerPhone": "0522222222",
@@ -896,8 +897,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
       "scannedAtDelivery": "2026-09-13T18:45:56.531Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1007",
@@ -919,6 +919,7 @@
       "orderNumber": "1007",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 420,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "تركي الحربي",
       "scanVerified": true,
       "customerPhone": "0500000000",
@@ -932,8 +933,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 35,
       "scannedAtDelivery": "2026-09-13T18:46:02.659Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1008",
@@ -990,6 +990,7 @@
       "orderNumber": "1009",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 260,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "بدر الخالدي",
       "scanVerified": true,
       "customerPhone": "0566667788",
@@ -1003,8 +1004,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 40,
       "scannedAtDelivery": "2026-09-13T19:03:08.453Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1010",
@@ -1025,6 +1025,7 @@
       "orderNumber": "1010",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 1000,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "سعد المنصور",
       "customerPhone": "0522233111",
       "paymentMethod": "cash",
@@ -1036,8 +1037,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 30,
       "scannedAtDelivery": "2026-09-13T18:45:13.575Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1011",
@@ -1059,6 +1059,7 @@
       "orderNumber": "1011",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 310,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "إبراهيم الصالح",
       "scanVerified": true,
       "customerPhone": "0502252222",
@@ -1072,8 +1073,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 35,
       "scannedAtDelivery": "2026-09-13T19:03:37.081Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1012",
@@ -1095,6 +1095,7 @@
       "orderNumber": "1012",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 450,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
       "customerName": "عادل العيسى",
       "scanVerified": true,
       "customerPhone": "0543322119",
@@ -1108,8 +1109,7 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 30,
       "scannedAtDelivery": "2026-09-13T19:03:50.201Z",
-      "scanDeliveryVerified": true,
-      "codSettledAt": "2026-09-13T19:23:41.948Z"
+      "scanDeliveryVerified": true
     },
     {
       "id": "SND-1013",
@@ -2456,27 +2456,29 @@
     "transactions": [
       {
         "id": "TX-DISB-589120",
-        "receiptNumber": "VCH-608575",
         "type": "disbursement",
-        "recipientType": "accountant",
-        "recipientName": "أ. علي الهاشم (المحاسب المالي المعتمد)",
-        "officerName": "مشرف الخزينة والعمليات",
-        "referenceNumber": "DEP-178964",
-        "branchId": "branch-iklil-dammam",
-        "amount": 4345,
-        "prevBalance": 4345,
-        "newBalance": 0,
         "notes": "تسليم وتوريد نقدية الخزينة المتراكمة للمحاسب المالي وتصفير رصيد الخزينة بالكامل",
-        "timestamp": "2026-09-13T19:26:29.120Z"
+        "amount": 4345,
+        "branchId": "branch-iklil-dammam",
+        "timestamp": "2026-09-13T19:26:29.120Z",
+        "newBalance": 0,
+        "officerName": "مشرف الخزينة والعمليات",
+        "prevBalance": 4345,
+        "receiptNumber": "VCH-608575",
+        "recipientName": "أ. علي الهاشم (المحاسب المالي المعتمد)",
+        "recipientType": "accountant",
+        "referenceNumber": "DEP-178964"
       },
       {
         "id": "TXN-1001",
-        "receiptNumber": "REC-1001",
-        "driverId": "drv-1",
-        "driverName": "يونس",
-        "branchId": "branch-iklil-dammam",
+        "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - يونس",
         "amount": 4345,
+        "branchId": "branch-iklil-dammam",
+        "driverId": "drv-1",
+        "timestamp": "2026-09-13T19:23:41.948Z",
+        "driverName": "يونس",
         "orderCount": 13,
+        "receiptNumber": "REC-1001",
         "settledOrderIds": [
           "SND-1023",
           "SND-1022",
@@ -2491,9 +2493,7 @@
           "SND-1010",
           "SND-1011",
           "SND-1012"
-        ],
-        "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - يونس",
-        "timestamp": "2026-09-13T19:23:41.948Z"
+        ]
       },
       {
         "id": "TX-DISB-999021",
