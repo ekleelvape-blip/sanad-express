@@ -211,8 +211,8 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
 
   const cleanPhone = (order.customerPhone || '0550973690').replace(/[^0-9]/g, '');
   const saPhone = cleanPhone.startsWith('966') ? cleanPhone : ('966' + cleanPhone.replace(/^0/, ''));
-  const nationalAddress = order.nationalAddress || 'EHDC3792';
   const warehouseName = order.warehouse || (branch ? branch.name : 'إكليل الكيف - فرع الدمام');
+  const warehousePhone = order.warehousePhone || (branch?.phone ? ('+966' + String(branch.phone).replace(/^0/, '')) : '+966539409522');
   const getCityDeliveryFee = () => {
     if (order.deliveryFee && Number(order.deliveryFee) > 0 && order.deliveryFee !== 17.39 && order.deliveryFee !== 20) {
       return Number(order.deliveryFee);
