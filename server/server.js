@@ -32,6 +32,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { startTunnel, getTunnelInfo, getLocalIp } = require('./tunnelManager');
 
 // ===== أمان: JWT + تشفير كلمات المرور =====
 const jwt = require('jsonwebtoken');
@@ -1092,6 +1093,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+});
+
+// جلب معلومات الشبكة وروابط تطبيق المندوب السحابي والمحلي
+app.get('/api/network-info', (req, res) => {
+  res.json(getTunnelInfo(PORT));
 });
 
 // جلب الفروع
@@ -3157,7 +3163,12 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Driver Mobile link: http://192.168.1.232:${PORT}/driver`);
-  console.log('Sanad Platform Server running on port ' + PORT);
-  console.log('App available at: http://localhost:' + PORT);
+  const localIp = getLocalIp();
+  console.log('------------------------------------------------------------');
+  console.log('🚀 منصة سَنَد إكسبريس اللوجستية قيد التشغيل');
+  console.log(`💻 لوحة التحكم (الكمبيوتر): http://localhost:${PORT}`);
+  console.log(`📡 شبكة الواي فاي المحلية: http://${localIp}:${PORT}`);
+  console.log(`📱 رابط المندوب المحلي: http://${localIp}:${PORT}/driver`);
+  console.log('------------------------------------------------------------');
+  startTunnel(PORT);
 });

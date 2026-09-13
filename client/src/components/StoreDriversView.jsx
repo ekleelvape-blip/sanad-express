@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DriverProfileView from './DriverProfileView';
 import AddDriverForm from './AddDriverForm';
+import { getDriverAppUrl, fetchNetworkInfo } from '../utils/driverLink';
 import { Search, SlidersHorizontal, MoreVertical, Plus, Share2, Trash2, Phone, Check, ChevronRight, Home, Users, UserCheck, Key, Lock, Eye, EyeOff, Copy, Send } from 'lucide-react';
 
 export default function StoreDriversView({ drivers, orders = [], branches = [], onRefresh, onSwitchToTracking, onOpenDriverApp }) {
@@ -23,6 +24,14 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
     branchId: 'branch-iklil-dammam',
     walletBalance: 0
   });
+
+  const [networkInfo, setNetworkInfo] = useState(null);
+
+  useEffect(() => {
+    fetchNetworkInfo().then(info => {
+      if (info) setNetworkInfo(info);
+    });
+  }, []);
 
   const togglePasswordVisibility = (id) => {
     setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
@@ -335,7 +344,7 @@ export default function StoreDriversView({ drivers, orders = [], branches = [], 
                           {visiblePasswords[driver.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                         <a
-                          href={'https://wa.me/966' + (driver.phone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '') + '?text=' + encodeURIComponent('مرحباً بك يا ' + driver.name + ' في سَنَد.\nبيانات دخولك لتطبيق المندوب الميداني:\nرابط التطبيق: ' + (typeof window !== 'undefined' ? window.location.origin + '/driver' : '') + '\nاسم المستخدم: ' + driver.phone + '\nكلمة المرور: ' + (driver.password || '123456'))}
+                          href={'https://wa.me/966' + (driver.phone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '') + '?text=' + encodeURIComponent('مرحباً بك يا ' + driver.name + ' في سَنَد.\nبيانات دخولك لتطبيق المندوب الميداني:\nرابط التطبيق: ' + getDriverAppUrl(networkInfo) + '\nاسم المستخدم: ' + driver.phone + '\nكلمة المرور: ' + (driver.password || '123456'))}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1 rounded-lg bg-emerald-950/60 border border-emerald-800/60 hover:bg-emerald-900/60 text-emerald-400 hover:text-emerald-300"

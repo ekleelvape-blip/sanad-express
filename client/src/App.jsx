@@ -18,7 +18,9 @@ import SettingsView from './components/SettingsView';
 import DeliveryPricingView from './components/DeliveryPricingView';
 import SupportView from './components/SupportView';
 import AdminDashboard from './components/AdminDashboard';
-import { Lock, Menu, Search, Store, Bell, RefreshCw, Smartphone, Package, CheckCircle2, UserCheck } from 'lucide-react';
+import DriverLinkModal from './components/DriverLinkModal';
+import { getDriverAppUrl, fetchNetworkInfo } from './utils/driverLink';
+import { Lock, Menu, Search, Store, Bell, RefreshCw, Smartphone, Package, CheckCircle2, UserCheck, QrCode } from 'lucide-react';
 import { sound } from './utils/sound';
 
 export const socket = io();
@@ -147,6 +149,9 @@ export default function App() {
     }
   });
 
+  const [networkInfo, setNetworkInfo] = useState(null);
+  const [showDriverModal, setShowDriverModal] = useState(false);
+
   const handleDriverChange = (id) => {
     setCurrentDriverId(id);
     try {
@@ -175,6 +180,9 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
+    fetchNetworkInfo().then(info => {
+      if (info) setNetworkInfo(info);
+    });
 
     if (currentDriverId) {
       socket.emit('join_driver_room', currentDriverId);
@@ -456,26 +464,28 @@ export default function App() {
             </button>
 
             
-            {/* زر ورابط المندوب المستقل المباشر */}
-            <div className="flex items-center gap-1.5 bg-cyan-950/60 border border-cyan-800/60 px-3 py-1.5 rounded-xl shadow-sm">
+            {/* زر ورابط المندوب المستقل المباشر مع دعم الـ QR والجوال */}
+            <div className="flex items-center gap-1.5 bg-cyan-950/70 border border-cyan-800/80 px-3 py-1.5 rounded-xl shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#00d2d3] animate-pulse"></span>
-              <span className="text-[11px] text-slate-300 font-bold">رابط المندوب:</span>
-              <a
-                href="/driver"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-mono font-bold text-[#00d2d3] hover:underline"
+              <span className="text-[11px] text-slate-300 font-bold">تطبيق المندوب:</span>
+              <button
+                type="button"
+                onClick={() => setShowDriverModal(true)}
+                className="text-[11px] font-mono font-bold text-[#00d2d3] hover:underline flex items-center gap-1 cursor-pointer"
+                title="عرض رابط وتطبيق المندوب للجوال والـ QR"
               >
-                /driver
-              </a>
+                <span>/driver</span>
+                <QrCode className="w-3.5 h-3.5 text-cyan-400" />
+              </button>
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard?.writeText(window.location.origin + '/driver');
-                  alert('تم نسخ رابط المندوب المباشر بنجاح! يمكنك إرساله للمناديب على الواتساب:\n' + window.location.origin + '/driver');
+                  const url = getDriverAppUrl(networkInfo);
+                  navigator.clipboard?.writeText(url);
+                  alert('تم نسخ رابط المندوب للجوال بنجاح! يمكنك إرساله للمناديب على الواتساب:\n' + url);
                 }}
                 className="p-1 text-slate-400 hover:text-[#00d2d3] transition-colors cursor-pointer"
-                title="نسخ رابط المندوب للمشاركة"
+                title="نسخ رابط المندوب للجوال"
               >
                 📋
               </button>
@@ -622,6 +632,12 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <DriverLinkModal
+        isOpen={showDriverModal}
+        onClose={() => setShowDriverModal(false)}
+        networkInfo={networkInfo}
+      />
     </div>
   );
 }

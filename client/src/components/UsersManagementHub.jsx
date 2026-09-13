@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DriverProfileView from './DriverProfileView';
+import { getDriverAppUrl, fetchNetworkInfo } from '../utils/driverLink';
 import {
   Users, Shield, Package, Star, MapPin, Plus, Check, Search, Phone,
   Mail, Award, Clock, DollarSign, Sparkles, CheckCircle2, ChevronRight,
@@ -42,6 +43,13 @@ export default function UsersManagementHub({
   const [showAddManagerModal, setShowAddManagerModal] = useState(false);
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
+  const [networkInfo, setNetworkInfo] = useState(null);
+
+  useEffect(() => {
+    fetchNetworkInfo().then(info => {
+      if (info) setNetworkInfo(info);
+    });
+  }, []);
   const [selectedDriverForProfile, setSelectedDriverForProfile] = useState(null);
 
   // إظهار كلمات المرور للمناديب
@@ -857,7 +865,7 @@ export default function UsersManagementHub({
                           </button>
                           <a
                             href={`https://wa.me/966${(d.phone || '').replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '')}?text=${encodeURIComponent(
-                              `مرحباً بك يا ${d.name} في منصة سَنَد.\nبيانات دخولك لتطبيق المندوب الميداني:\nرابط التطبيق: ${typeof window !== 'undefined' ? window.location.origin + '/driver' : ''}\nاسم المستخدم: ${d.phone}\nكلمة المرور: ${d.password || '123456'}`
+                              `مرحباً بك يا ${d.name} في منصة سَنَد.\nبيانات دخولك لتطبيق المندوب الميداني:\nرابط التطبيق: ${getDriverAppUrl(networkInfo)}\nاسم المستخدم: ${d.phone}\nكلمة المرور: ${d.password || '123456'}`
                             )}`}
                             target="_blank"
                             rel="noreferrer"
