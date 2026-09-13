@@ -86,7 +86,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
   const [recipientType, setRecipientType] = useState('accountant'); // 'accountant' | 'bank_deposit' | 'general_manager'
-  const [recipientName, setRecipientName] = useState('أ. محمد القحطاني (المحاسب المالي المعتمد)');
+  const [recipientName, setRecipientName] = useState('أ. علي الهاشم (المحاسب المالي المعتمد)');
   const [officerName, setOfficerName] = useState('مشرف الخزينة والعمليات');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [transferNotes, setTransferNotes] = useState('');
@@ -1158,7 +1158,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                     type="button"
                     onClick={() => {
                       setRecipientType('accountant');
-                      setRecipientName('أ. محمد القحطاني (المحاسب المالي المعتمد)');
+                      setRecipientName('أ. علي الهاشم (المحاسب المالي المعتمد)');
                     }}
                     className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                       recipientType === 'accountant'
@@ -1417,9 +1417,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                         <span className="text-slate-500 text-[10.5px] block font-semibold">الطرف المستلم:</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="font-black text-slate-950 text-sm">
-                            {lastDisbursementReceipt.recipientType === 'bank_deposit'
-                              ? `المحاسب المالي / البنك (${lastDisbursementReceipt.recipientName || 'مصرف الراجحي'})`
-                              : `المحاسب المالي / البنك (${lastDisbursementReceipt.recipientName || 'أ. محمد القحطاني'})`}
+                            المحاسب المالي / البنك ({lastDisbursementReceipt.recipientName || 'أ. علي الهاشم (المحاسب المالي المعتمد)'})
                           </span>
                         </div>
                         <span className="text-[9.5px] text-slate-500 block mt-0.5">
@@ -1528,7 +1526,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                         <span className="font-bold text-slate-800 block text-[11px]">توقيع المستلم</span>
                         <span className="text-[10px] text-slate-500 block font-semibold">(المحاسب المالي)</span>
                         <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-2"></div>
-                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.recipientName || 'المحاسب المالي'}</div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.recipientName || 'أ. علي الهاشم (المحاسب المالي المعتمد)'}</div>
                       </div>
 
                       {/* توقيع 3: المراجع الداخلي */}
