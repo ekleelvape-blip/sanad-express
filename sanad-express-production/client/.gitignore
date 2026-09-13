@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist allowed for prebuilt container
 dist-ssr
 *.local
 

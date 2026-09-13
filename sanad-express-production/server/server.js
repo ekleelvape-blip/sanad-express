@@ -2599,28 +2599,52 @@ const candidateDistPaths = [
   path.resolve(process.cwd(), 'client/dist'),
   path.resolve(__dirname, 'client/dist'),
   path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), 'sanad-express-production/client/dist'),
   path.resolve(__dirname, 'public'),
-  path.resolve(process.cwd(), 'dist')
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(__dirname, '../dist')
 ];
 
-let distPath = candidateDistPaths.find(p => fs.existsSync(p));
+let distPath = candidateDistPaths.find(p => fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html')));
 console.log('سند SANAD — مسار واجهة العميل المعتمد:', distPath || 'غير متوفر (وضع التطوير)');
 
-if (distPath) {
-  app.use(express.static(distPath, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    } else {
+// 1. خدمة صريحة لجميع ملفات assets في أي من المسارات المحتملة مع تحديد نوع المحتوى بدقة لمنع الشاشة البيضاء
+app.use('/assets', (req, res, next) => {
+  const reqFile = req.path.replace(/^\//, '');
+  for (const p of candidateDistPaths) {
+    const filePath = path.join(p, 'assets', reqFile);
+    if (fs.existsSync(filePath)) {
+      if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+      else if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.sendFile(filePath);
     }
   }
-}));
+  // إذا لم يتم العثور على الملف، لا نرجع index.html أبداً حتى لا يعطل محرك الجافاسكريبت!
+  return res.status(404).send('Asset not found');
+});
+
+// 2. خدمة باقي الملفات الثابتة (أيقونات، صور، إلخ)
+if (distPath) {
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
 }
 
 const serveAppIndex = (req, res) => {
+  // حماية: إذا كان الطلب لملف ثابت (.js, .css, .png, etc.) ولا يوجد، نعيد 404 بدلاً من index.html لمنع الشاشة البيضاء!
+  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+    return res.status(404).send('File Not Found');
+  }
+
   if (distPath) {
     const indexFile = path.join(distPath, 'index.html');
     if (fs.existsSync(indexFile)) {
@@ -2658,7 +2682,7 @@ app.get(['/', '/driver', '/track', '/admin'], serveAppIndex);
 
 // موجه SPA العام لجميع المسارات غير التابعة للـ API
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io') && !req.path.startsWith('/assets')) {
     return serveAppIndex(req, res);
   }
   next();
