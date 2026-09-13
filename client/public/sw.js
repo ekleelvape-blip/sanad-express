@@ -3,10 +3,8 @@
 // SANAD Express Service Worker - Background Operations & Lock-Screen Notifications
 // =========================================================================
 
-const CACHE_NAME = 'sanad-cache-v2';
+const CACHE_NAME = 'sanad-cache-v6';
 const PRECACHE_ASSETS = [
-  '/',
-  '/driver',
   '/manifest.json',
   '/sanad-express-logo.jpg',
   '/sanad-alert.wav',
@@ -131,7 +129,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // كاش ثم شبكة للملفات الثابتة والصوتية
+  // 1. طلبات التنقل والـ HTML دائماً شبكة أولاً لجلب التحديثات فوراً بدون كاش قديم
+  if (
+    event.request.mode === 'navigate' || 
+    event.request.destination === 'document' || 
+    event.request.url.endsWith('/') || 
+    event.request.url.includes('/driver') ||
+    event.request.url.includes('index.html')
+  ) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('/')))
+    );
+    return;
+  }
+
+  // 2. كاش ثم شبكة للملفات الثابتة والصوتية
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

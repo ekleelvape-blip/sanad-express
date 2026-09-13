@@ -3008,11 +3008,31 @@ app.use('/assets', (req, res, next) => {
   return res.status(404).send('Asset not found');
 });
 
+// تقديم sw.js دائماً برؤوس عدم التخزين المؤقت (no-cache) لضمان وصول التحديثات فوراً لكافة الأجهزة والمتصفحات
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  for (const p of candidateDistPaths) {
+    const swPath = path.join(p, 'sw.js');
+    if (fs.existsSync(swPath)) {
+      const stream = fs.createReadStream(swPath);
+      return stream.pipe(res);
+    }
+  }
+  const fallbackSw = path.join(__dirname, '../client/public/sw.js');
+  if (fs.existsSync(fallbackSw)) {
+    return fs.createReadStream(fallbackSw).pipe(res);
+  }
+  res.status(404).send('SW not found');
+});
+
 // 2. خدمة باقي الملفات الثابتة (أيقونات، صور، إلخ)
 if (distPath) {
   app.use(express.static(distPath, {
     setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.html')) {
+      if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('.json')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');

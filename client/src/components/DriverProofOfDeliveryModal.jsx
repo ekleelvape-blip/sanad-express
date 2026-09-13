@@ -451,7 +451,7 @@ export default function DriverProofOfDeliveryModal({
             ) : (
               <>
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>تأكيد التسليم بنجاح وإيداع العمولة بالرصيد ✅ (+{commissionAmount} ﷼)</span>
+                <span>تأكيد التسليم بنجاح وإيداع العمولة بالرصيد ✅ (+{commissionAmount} ريال)</span>
               </>
             )}
           </button>

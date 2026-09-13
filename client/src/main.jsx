@@ -149,13 +149,25 @@ createRoot(document.getElementById('root')).render(
   </ErrorBoundary>
 );
 
-// تسجيل الـ Service Worker لتمكين العمل بالخلفية وإشعارات شاشة القفل
+// تسجيل الـ Service Worker لتمكين العمل بالخلفية وتحديث الكاش تلقائياً
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then((registration) => {
         window.sanadSwRegistration = registration;
-        console.log('SANAD Service Worker registered successfully:', registration.scope);
+        // فحص التحديث فوراً
+        registration.update().catch(() => {});
+        registration.onupdatefound = () => {
+          const installingWorker = registration.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('🔄 تم تحديث واجهة سَنَد، جاري التحميل التلقائي...');
+                window.location.reload();
+              }
+            };
+          }
+        };
       })
       .catch((err) => {
         console.warn('SANAD Service Worker registration error:', err);
