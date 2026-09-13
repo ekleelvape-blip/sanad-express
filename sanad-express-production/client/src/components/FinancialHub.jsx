@@ -1443,7 +1443,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                       </div>
                       <div className="p-2.5">
                         <span className="text-slate-500 text-[9.5px] block">الفرع والمركز:</span>
-                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الرياض</strong>
+                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الدمام حي طيبة</strong>
                       </div>
                     </div>
                   </div>
@@ -1710,7 +1710,7 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                       </div>
                       <div className="p-2">
                         <span className="text-slate-500 text-[9.5px] block">الفرع والمركز:</span>
-                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الرياض</strong>
+                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الدمام حي طيبة</strong>
                       </div>
                     </div>
                   </div>

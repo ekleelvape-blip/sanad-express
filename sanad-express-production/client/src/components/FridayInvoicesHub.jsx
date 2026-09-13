@@ -500,7 +500,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
 
                 <div>
                   <div className="text-slate-500 text-[10.5px] font-semibold">الفرع ومركز العمليات:</div>
-                  <div className="font-bold text-sm text-slate-900">{selectedInvoice.branchName || 'المركز الرئيسي - الرياض'}</div>
+                  <div className="font-bold text-sm text-slate-900">{selectedInvoice.branchName || 'المركز اللوجستي الرئيسي - الدمام حي طيبة'}</div>
                   <div className="text-slate-700 text-[11px] mt-0.5">
                     الدورة المحاسبية: <strong className="text-slate-950">أسبوعية (7 أيام)</strong>
                   </div>
