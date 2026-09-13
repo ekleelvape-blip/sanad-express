@@ -1807,6 +1807,50 @@ app.post('/api/settlements/cod', (req, res) => {
   });
 });
 
+// توريد وتسليم كاش المتجر للمحاسب المالي / البنك وتصفير الخزينة
+app.post('/api/store-vault/transfer-to-accountant', (req, res) => {
+  const { amount, recipientType, recipientName, referenceNumber, notes, branchId, officerName } = req.body;
+  const transferAmount = Number(amount) !== undefined && Number(amount) > 0 
+    ? Number(amount) 
+    : storeReceivedCashWallet.totalBalance;
+
+  if (transferAmount <= 0) {
+    return res.status(400).json({ error: 'المبلغ المراد تسليمه غير صالح أو أن رصيد الخزينة صفر بالفعل' });
+  }
+
+  const prevBalance = storeReceivedCashWallet.totalBalance;
+  const newBalance = Math.max(0, prevBalance - transferAmount);
+  storeReceivedCashWallet.totalBalance = newBalance;
+
+  const transaction = {
+    id: 'TX-DISB-' + Date.now().toString().slice(-6),
+    receiptNumber: 'VCH-' + Math.floor(100000 + Math.random() * 900000),
+    type: 'disbursement', // سند صرف وتسليم نقدية للمحاسبة
+    recipientType: recipientType || 'accountant',
+    recipientName: recipientName || 'المحاسب المالي (محمد القحطاني)',
+    officerName: officerName || 'مشرف الفرع',
+    referenceNumber: referenceNumber || ('DEP-' + Date.now().toString().slice(-6)),
+    branchId: branchId || 'branch-iklil-dammam',
+    amount: transferAmount,
+    prevBalance,
+    newBalance,
+    notes: notes || `تسليم وتوريد كاش المتجر للمحاسب المالي وتصفير الخزينة بمبلغ ${transferAmount.toLocaleString()} ﷼`,
+    timestamp: new Date().toISOString()
+  };
+
+  storeReceivedCashWallet.transactions.unshift(transaction);
+  scheduleSave();
+
+  io.emit('store_vault_disbursed', { transaction, storeReceivedCashWallet });
+
+  res.json({
+    success: true,
+    message: `تم بنجاح تسليم ${transferAmount.toLocaleString()} ر.س للمحاسب المالي، ورصيد الخزينة الجديد: ${newBalance.toLocaleString()} ر.س`,
+    transaction,
+    storeReceivedCashWallet
+  });
+});
+
 // جلب بيانات محفظة الكاش المستلم والمالية
 app.get('/api/financials', (req, res) => {
   const { branchId } = req.query;
@@ -2749,7 +2793,8 @@ const PERSISTED = {
   get managers() { return managers; },
   get equipment() { return equipment; },
   get ratings() { return ratings; },
-  get zones() { return zones; }
+  get zones() { return zones; },
+  get storeReceivedCashWallet() { return storeReceivedCashWallet; }
 };
 
 // التحميل عند الإقلاع (إذا الملف موجود يستعيد البيانات، وإلا يستخدم البيانات الأولية)
@@ -2762,13 +2807,17 @@ if (fs.existsSync(DATA_FILE)) {
         PERSISTED[key].push(...loaded[key]);
       }
     }
+    if (loaded.storeReceivedCashWallet) {
+      storeReceivedCashWallet.totalBalance = Number(loaded.storeReceivedCashWallet.totalBalance) || 0;
+      storeReceivedCashWallet.transactions = loaded.storeReceivedCashWallet.transactions || [];
+    }
     // ضمان بقاء رسوم التوصيل وفق تسعيرة سند المعتمدة
     orders.forEach(o => {
       if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
         o.deliveryFee = getCityDeliveryFee(o.customerAddress);
       }
     });
-    console.log('✅ تم استعادة البيانات من:', DATA_FILE, '| طلبات:', orders.length, '| مناديب:', drivers.length);
+    console.log('✅ تم استعادة البيانات من:', DATA_FILE, '| طلبات:', orders.length, '| مناديب:', drivers.length, '| كاش الخزينة:', storeReceivedCashWallet.totalBalance);
   } catch (e) {
     console.error('⚠️ تعذّر قراءة ملف البيانات، سيتم استخدام البيانات الأولية:', e.message);
   }
