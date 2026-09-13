@@ -8,6 +8,15 @@ import {
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import FridayInvoicesHub from './FridayInvoicesHub';
+import { 
+  SANAD_OFFICIAL_ENTITY, 
+  tafqeetArabic, 
+  tafqeetEnglish, 
+  getOfficialFormattedDates, 
+  OfficialStamp, 
+  OfficialZatcaQr, 
+  printOfficialDocument 
+} from '../utils/officialDocs';
 
 // دالة تحويل الأرقام إلى نصوص بالريال السعودي لسند الصرف الرسمي
 function tafqeetSaudiRiyal(n) {
@@ -1288,207 +1297,504 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
         </div>
       )}
 
-      {/* 6. نافذة سند الصرف والتسليم للمحاسب المالي (Printable A4 Voucher) */}
-      {lastDisbursementReceipt && (
-        <div className="fixed inset-0 z-[3000] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl w-full max-w-xl p-6 shadow-2xl relative animate-in zoom-in-95 max-h-[95vh] overflow-y-auto">
-            
-            {/* أزرار رأس النافذة للطباعة والإغلاق */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4 print:hidden">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
-                <span>تم صرف وتسليم النقدية وتصفير الخزينة بنجاح!</span>
+      {/* 6. نافذة سند الصرف والتسليم للمحاسب المالي (Official Saudi Corporate A4 Voucher) */}
+      {lastDisbursementReceipt && (() => {
+        const docDates = getOfficialFormattedDates(lastDisbursementReceipt.timestamp);
+        return (
+          <div className="fixed inset-0 z-[3500] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto font-['Cairo','Tajawal',sans-serif]">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-4xl shadow-2xl my-auto p-4 sm:p-6 space-y-4 max-h-[96vh] flex flex-col">
+              
+              {/* شريط الإجراءات العلوي للطباعة والإغلاق */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 print:hidden shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="text-emerald-400 font-bold text-xs sm:text-sm">
+                    تم قيد السند وتصفير الخزينة محاسبياً بنجاح ✓
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف وتصفير خزينة - ${lastDisbursementReceipt.receiptNumber}`)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#00d2d3] to-cyan-500 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-950/50 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Printer className="w-4 h-4 stroke-[2.5]" />
+                    <span>طباعة السند الرسمي مقاس A4 📄</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLastDisbursementReceipt(null)}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* جسم السند الرسمي القابل للطباعة والمعاينة (A4 White Sheet) */}
+              <div className="overflow-y-auto pr-1">
+                <div 
+                  id="official-disbursement-doc"
+                  className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-lg border-2 border-slate-900 space-y-4 text-right relative overflow-hidden font-['Cairo','Tajawal',sans-serif]"
+                  dir="rtl"
+                >
+                  {/* علامة مائية باهتة لسند في الخلفية */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                    <span className="text-8xl sm:text-9xl font-black tracking-widest uppercase">SANAD</span>
+                  </div>
+
+                  {/* 1. الترويسة الرسمية المعتمدة (Company Letterhead) */}
+                  <div className="border-b-2 border-slate-900 pb-3">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* اليمين: شعار الشركة وبياناتها النظامية */}
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={SANAD_OFFICIAL_ENTITY.logoUrl} 
+                          alt="شعار سَنَد" 
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-300 shadow-sm"
+                        />
+                        <div>
+                          <h2 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                            {SANAD_OFFICIAL_ENTITY.nameAr}
+                          </h2>
+                          <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
+                            {SANAD_OFFICIAL_ENTITY.nameEn}
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                            <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
+                            <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
+                            <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
+                          </div>
+                          <div className="text-[9px] text-slate-500 mt-0.5">
+                            {SANAD_OFFICIAL_ENTITY.nationalAddress}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* اليسار: رقم السند والتاريخ ورمز التحقق QR */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="text-left space-y-1">
+                          <div className="inline-block border border-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                            <span className="text-[9.5px] text-slate-600 block">رقم السند:</span>
+                            <span className="font-mono font-black text-xs text-slate-950">
+                              {lastDisbursementReceipt.receiptNumber}
+                            </span>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600">
+                            <div>التاريخ الميلادي: <strong className="font-mono text-slate-900">{docDates.gregorian}</strong></div>
+                            <div>التاريخ الهجري: <strong className="font-mono text-slate-900">{docDates.hijri}</strong></div>
+                            <div>الوقت: <strong className="font-mono text-slate-900">{docDates.time}</strong></div>
+                          </div>
+                        </div>
+                        <OfficialZatcaQr size={64} />
+                      </div>
+                    </div>
+
+                    {/* العنوان البارز للسند */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                      <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm font-black text-xs sm:text-sm tracking-wide">
+                        سند صرف نقدية وتصفير عهدة خزينة (PETTY CASH DISBURSEMENT)
+                      </div>
+                      <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span>✓</span>
+                        <span>معتمد ومسجل محاسبياً باليومية العامة</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. جدول أطراف المعاملة المالية والتفاصيل */}
+                  <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
+                    <div className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-800 bg-slate-50 border-b border-slate-800">
+                      <div className="p-2.5">
+                        <span className="text-slate-500 text-[10px] block font-semibold">المسلّم (أمين ومسؤول الخزينة):</span>
+                        <span className="font-bold text-slate-950 text-xs sm:text-sm">{lastDisbursementReceipt.officerName || 'مشرف العمليات بالفرع'}</span>
+                        <span className="text-[9.5px] text-slate-500 block">الصفة: أمين العهدة النقدية المركزية</span>
+                      </div>
+                      <div className="p-2.5 bg-cyan-50/40">
+                        <span className="text-slate-500 text-[10px] block font-semibold">المستلم المعتمد / الجهة المودع إليها:</span>
+                        <span className="font-bold text-slate-950 text-xs sm:text-sm">
+                          {lastDisbursementReceipt.recipientType === 'bank_deposit' 
+                            ? `إيداع بنكي: ${lastDisbursementReceipt.recipientName || 'مصرف الراجحي'}` 
+                            : `المحاسب المالي: ${lastDisbursementReceipt.recipientName || 'أ. محمد القحطاني'}`}
+                        </span>
+                        <span className="text-[9.5px] text-slate-500 block">
+                          {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'نوع التسليم: إيداع بنكي مباشر بحساب الشركة' : 'نوع التسليم: تسليم عهدة نقدية للمحاسبة'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-800 bg-white text-[11px]">
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">الرقم المرجعي / الإيداع:</span>
+                        <strong className="font-mono text-slate-900 text-xs">{lastDisbursementReceipt.referenceNumber || 'DEP-ONLINE'}</strong>
+                      </div>
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">طريقة الصرف:</span>
+                        <strong className="text-slate-900 text-xs">
+                          {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'إيداع بالحساب البنكي' : 'استلام نقدي كاش (يداً بيد)'}
+                        </strong>
+                      </div>
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">الفرع والمركز:</span>
+                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الرياض</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. صندوق المبلغ المحرر بنظام الشيكات المصرفية الرسمية */}
+                  <div className="bg-slate-50 border-2 border-slate-900 p-3 sm:p-4 rounded-xl relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300 pb-3">
+                      <div>
+                        <span className="text-[11px] text-slate-600 font-bold block">المبلغ المصروف المعتمد كتابة ورقماً:</span>
+                        <div className="text-xs sm:text-sm font-black text-slate-950 mt-0.5">
+                          {tafqeetArabic(lastDisbursementReceipt.amount)}
+                        </div>
+                        <div className="text-[10px] font-serif italic text-slate-600 mt-0.5" dir="ltr">
+                          {tafqeetEnglish(lastDisbursementReceipt.amount)}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-center shrink-0 border border-slate-700 shadow-md">
+                        <span className="text-[9.5px] text-slate-300 block">المبلغ بالأرقام</span>
+                        <span className="font-mono font-black text-lg sm:text-xl tracking-wider text-[#00d2d3]">
+                          {Number(lastDisbursementReceipt.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-xs font-bold text-slate-200 mr-1">ر.س SAR</span>
+                      </div>
+                    </div>
+
+                    {/* حركة تصفير الرصيد بالخزينة */}
+                    <div className="grid grid-cols-3 gap-2 pt-2.5 text-center text-xs">
+                      <div className="p-1.5 bg-white rounded-lg border border-slate-200">
+                        <span className="text-slate-500 text-[9.5px] block">الرصيد الدفتري السابق:</span>
+                        <strong className="font-mono text-slate-900">{Number(lastDisbursementReceipt.prevBalance || 0).toLocaleString()} ر.س</strong>
+                      </div>
+                      <div className="p-1.5 bg-red-50 rounded-lg border border-red-200">
+                        <span className="text-red-700 text-[9.5px] block font-bold">المبلغ المخصوم (الصرف):</span>
+                        <strong className="font-mono text-red-700 font-bold">-{Number(lastDisbursementReceipt.amount || 0).toLocaleString()} ر.س</strong>
+                      </div>
+                      <div className="p-1.5 bg-emerald-50 rounded-lg border border-emerald-300">
+                        <span className="text-emerald-800 text-[9.5px] block font-bold">رصيد الخزينة بعد الصرف:</span>
+                        <strong className="font-mono text-emerald-800 font-black">
+                          {Number(lastDisbursementReceipt.newBalance || 0).toFixed(2)} ر.س (مصفّر بالكامل)
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. البيان والتوضيح المحاسبي */}
+                  <div className="p-2.5 bg-white border border-slate-300 rounded-xl text-xs space-y-0.5">
+                    <div className="text-slate-500 font-bold text-[10.5px]">البيان والغرض من الصرف:</div>
+                    <div className="text-slate-900 font-semibold leading-relaxed text-[11px]">
+                      {lastDisbursementReceipt.notes || 'تسليم وتوريد رصيد كاش المتجر المحصل من الشحنات وإيداعه بحساب الشركة/المحاسب المالي وتصفير العهدة.'}
+                    </div>
+                  </div>
+
+                  {/* 5. التواقيع والاعتمادات الرسمية الرباعية والختم المعتمد */}
+                  <div className="pt-2">
+                    <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-300 pb-1 mb-3">
+                      اعتمادات وتواقيع أطراف العملية المحاسبية:
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 text-center text-xs relative">
+                      
+                      {/* توقيع 1: المسلّم */}
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">المسلّم (أمين الخزينة)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.officerName || 'مشرف الفرع'}</div>
+                      </div>
+
+                      {/* توقيع 2: المستلم */}
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">المستلم (المحاسب/البنك)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastDisbursementReceipt.recipientName || 'المحاسب المالي'}</div>
+                      </div>
+
+                      {/* توقيع 3: المراجع الداخلي */}
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">التدقيق والرقابة المالية</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">قسم المراجعة والتدقيق</div>
+                      </div>
+
+                      {/* توقيع 4: اعتماد المدير المالي مع الختم المعتمد فوقه */}
+                      <div className="space-y-1 relative">
+                        <span className="font-bold text-slate-900 block text-[10px]">الاعتماد المالي والختم</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-1"></div>
+                        <div className="text-[9.5px] text-slate-700 font-bold">المدير المالي العام</div>
+                        
+                        {/* الختم الرسمي الأزرق المعتمد */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                          <OfficialStamp department="الخزينة المركزية" statusText="معتمد ومصفّر" size={95} />
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* تذييل الوثيقة */}
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+                    <div>تم الإصدار والتوثيق آلياً عبر منظومة سَنَد اللوجستية المركزية - SANAD CLOUD FINANCIAL SYSTEM</div>
+                    <div>وثيقة صرف رسمية معتمدة</div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* أزرار الإغلاق السفلية */}
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 print:hidden shrink-0">
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer transition-all"
+                  onClick={() => printOfficialDocument('official-disbursement-doc', `سند صرف وتصفير خزينة - ${lastDisbursementReceipt.receiptNumber}`)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>طباعة السند (A4)</span>
+                  <Printer className="w-4 h-4" />
+                  <span>طباعة أو حفظ PDF</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setLastDisbursementReceipt(null)}
-                  className="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer"
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition-all cursor-pointer"
                 >
-                  ✕
+                  إغلاق السند والعودة للمركز المالي
                 </button>
               </div>
-            </div>
 
-            {/* جسم السند الرسمي القابل للطباعة */}
-            <div className="bg-slate-950 border-2 border-slate-800 p-6 rounded-2xl space-y-4 text-xs relative overflow-hidden">
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 7. سند القبض بعد تسوية المندوب (Official Saudi Corporate A4 Receipt Voucher) */}
+      {lastReceipt && (() => {
+        const docDates = getOfficialFormattedDates(lastReceipt.timestamp);
+        return (
+          <div className="fixed inset-0 z-[3500] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto font-['Cairo','Tajawal',sans-serif]">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl my-auto p-4 sm:p-6 space-y-4 max-h-[96vh] flex flex-col">
               
-              {/* ترويسة السند الرسمية */}
-              <div className="flex items-start justify-between border-b-2 border-slate-800 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🏛️</span>
-                    <span className="text-base font-black text-white">سند إكسبريس SANAD EXPRESS</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
-                    منظومة الإدارة اللوجستية والخزينة المالية المركزية
-                  </div>
-                </div>
-
-                <div className="text-left">
-                  <div className="px-3 py-1 bg-purple-950/80 border border-purple-800 text-purple-300 font-mono font-black rounded-lg text-sm">
-                    {lastDisbursementReceipt.receiptNumber}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1 font-mono">
-                    {new Date(lastDisbursementReceipt.timestamp).toLocaleDateString('ar-SA')}
-                  </div>
-                </div>
-              </div>
-
-              {/* عنوان السند */}
-              <div className="text-center py-2 bg-slate-900 rounded-xl border border-slate-800">
-                <h4 className="text-sm font-black text-emerald-400">
-                  سند صرف وتسليم نقدية للمحاسبة / إيداع بنكي
-                </h4>
-                <p className="text-[10px] text-slate-400">
-                  Disbursement & Vault Zero-Out Voucher
-                </p>
-              </div>
-
-              {/* جدول البيانات المحاسبية */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 text-[10px] block">المسلّم (مسؤول الخزينة):</span>
-                  <span className="font-bold text-white text-xs">{lastDisbursementReceipt.officerName || 'مشرف الفرع'}</span>
-                </div>
-
-                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 text-[10px] block">المستلم المعتمد:</span>
-                  <span className="font-bold text-cyan-300 text-xs">{lastDisbursementReceipt.recipientName || 'المحاسب المالي'}</span>
-                </div>
-
-                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 text-[10px] block">نوع العملية:</span>
-                  <span className="font-bold text-purple-300 text-xs">
-                    {lastDisbursementReceipt.recipientType === 'bank_deposit' ? 'إيداع بنكي رسمي' : 'تسليم عهدة للمحاسب المالي'}
+              {/* شريط الإجراءات العلوي للطباعة والإغلاق */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 print:hidden shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="text-emerald-400 font-bold text-xs sm:text-sm">
+                    تم توريد النقدية وتصفير محفظة المندوب وإصدار السند بنجاح ✓
                   </span>
                 </div>
 
-                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 text-[10px] block">الرقم المرجعي / الإيداع:</span>
-                  <span className="font-mono font-bold text-amber-400 text-xs">{lastDisbursementReceipt.referenceNumber || 'DEP-N/A'}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => printOfficialDocument('official-receipt-doc', `سند قبض وتوريد - ${lastReceipt.receiptNumber || 'SANAD'}`)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#00d2d3] to-cyan-500 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-950/50 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Printer className="w-4 h-4 stroke-[2.5]" />
+                    <span>طباعة السند الرسمي مقاس A4 📄</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLastReceipt(null)}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
-              {/* صندوق المبلغ المسلم كتابة ورقماً */}
-              <div className="bg-emerald-950/40 border-2 border-emerald-500/50 p-4 rounded-2xl text-center space-y-1">
-                <div className="text-xs text-emerald-300 font-bold">المبلغ المسلّم والمعتمد:</div>
-                <div className="text-3xl font-black font-mono text-emerald-400">
-                  {Number(lastDisbursementReceipt.amount).toLocaleString()} <span className="text-sm font-normal text-slate-300">ريال سعودي</span>
-                </div>
-                <div className="text-xs text-slate-300 font-medium pt-1">
-                  {tafqeetSaudiRiyal(lastDisbursementReceipt.amount)}
+              {/* جسم سند القبض الرسمي (A4 White Sheet) */}
+              <div className="overflow-y-auto pr-1">
+                <div 
+                  id="official-receipt-doc"
+                  className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-lg border-2 border-slate-900 space-y-4 text-right relative overflow-hidden font-['Cairo','Tajawal',sans-serif]"
+                  dir="rtl"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                    <span className="text-8xl font-black tracking-widest uppercase">SANAD</span>
+                  </div>
+
+                  {/* 1. الترويسة الرسمية */}
+                  <div className="border-b-2 border-slate-900 pb-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={SANAD_OFFICIAL_ENTITY.logoUrl} 
+                          alt="شعار سَنَد" 
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-300 shadow-sm"
+                        />
+                        <div>
+                          <h2 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                            {SANAD_OFFICIAL_ENTITY.nameAr}
+                          </h2>
+                          <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
+                            {SANAD_OFFICIAL_ENTITY.nameEn}
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                            <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
+                            <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
+                            <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <div className="text-left space-y-1">
+                          <div className="inline-block border border-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                            <span className="text-[9.5px] text-slate-600 block">رقم السند:</span>
+                            <span className="font-mono font-black text-xs text-slate-950">
+                              {lastReceipt.receiptNumber || `RCT-${Date.now().toString().slice(-6)}`}
+                            </span>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600">
+                            <div>التاريخ الميلادي: <strong className="font-mono text-slate-900">{docDates.gregorian}</strong></div>
+                            <div>التاريخ الهجري: <strong className="font-mono text-slate-900">{docDates.hijri}</strong></div>
+                          </div>
+                        </div>
+                        <OfficialZatcaQr size={64} />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between">
+                      <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm font-black text-xs sm:text-sm tracking-wide">
+                        سند قبض وتوريد نقدية - تحصيل طلبات (OFFICIAL CASH RECEIPT VOUCHER)
+                      </div>
+                      <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span>✓</span>
+                        <span>تم الإيداع الفوري في محفظة كاش المتجر</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. بيانات المندوب والتحصيل */}
+                  <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
+                    <div className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-800 bg-slate-50 border-b border-slate-800">
+                      <div className="p-2.5">
+                        <span className="text-slate-500 text-[10px] block font-semibold">المورّد / المسلّم:</span>
+                        <span className="font-bold text-slate-950 text-xs sm:text-sm">الكابتن: {lastReceipt.driverName}</span>
+                        <span className="text-[9.5px] text-slate-500 block">الصفة: مندوب توصيل ميداني معتمد</span>
+                      </div>
+                      <div className="p-2.5 bg-emerald-50/40">
+                        <span className="text-slate-500 text-[10px] block font-semibold">المستلم (الخزينة المركزية):</span>
+                        <span className="font-bold text-slate-950 text-xs sm:text-sm">مشرف وأمين خزينة الفرع</span>
+                        <span className="text-[9.5px] text-slate-500 block">محفظة الإيداع: كاش المتجر المستلم</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-800 bg-white text-[11px]">
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">نوع التحصيل:</span>
+                        <strong className="text-slate-900 text-xs">دفع عند الاستلام (COD)</strong>
+                      </div>
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">حالة محفظة المندوب:</span>
+                        <strong className="text-emerald-700 text-xs font-bold">تم التصفير بالكامل ✓</strong>
+                      </div>
+                      <div className="p-2">
+                        <span className="text-slate-500 text-[9.5px] block">الفرع والمركز:</span>
+                        <strong className="text-slate-900 text-xs">المركز اللوجستي الرئيسي - الرياض</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. صندوق المبلغ المقبوض */}
+                  <div className="bg-slate-50 border-2 border-slate-900 p-3 sm:p-4 rounded-xl relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] text-slate-600 font-bold block">المبلغ المقبوض والمودع بالخزينة كتابة ورقماً:</span>
+                        <div className="text-xs sm:text-sm font-black text-slate-950 mt-0.5">
+                          {tafqeetArabic(lastReceipt.amount)}
+                        </div>
+                        <div className="text-[10px] font-serif italic text-slate-600 mt-0.5" dir="ltr">
+                          {tafqeetEnglish(lastReceipt.amount)}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-center shrink-0 border border-slate-700 shadow-md">
+                        <span className="text-[9.5px] text-slate-300 block">المبلغ المقبوض</span>
+                        <span className="font-mono font-black text-lg sm:text-xl tracking-wider text-emerald-400">
+                          {Number(lastReceipt.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-xs font-bold text-slate-200 mr-1">ر.س SAR</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. البيان */}
+                  <div className="p-2.5 bg-white border border-slate-300 rounded-xl text-xs space-y-0.5">
+                    <div className="text-slate-500 font-bold text-[10.5px]">البيان والتسوية:</div>
+                    <div className="text-slate-900 font-semibold text-[11px]">
+                      {lastReceipt.notes || `استلام وتوريد مبالغ شحنات الدفع عند الاستلام المسلمة وتصفير محفظة المندوب (${lastReceipt.driverName}) وإيداعها بخزينة المتجر.`}
+                    </div>
+                  </div>
+
+                  {/* 5. التواقيع والختم المعتمد */}
+                  <div className="pt-2">
+                    <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-300 pb-1 mb-3">
+                      اعتمادات وتواقيع أطراف العملية:
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 text-center text-xs relative">
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">المورّد (المندوب)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">{lastReceipt.driverName}</div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">المستلم (أمين الخزينة)</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">مشرف الخزينة والعمليات</div>
+                      </div>
+
+                      <div className="space-y-1 relative">
+                        <span className="font-bold text-slate-900 block text-[10px]">الاعتماد والختم الرسمي</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-1"></div>
+                        <div className="text-[9.5px] text-slate-700 font-bold">الخزينة المركزية</div>
+                        
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                          <OfficialStamp department="الخزينة المركزية" statusText="مقبوض ومقيد" size={95} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* تذييل */}
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+                    <div>تم التوثيق آلياً عبر منظومة سَنَد اللوجستية المركزية - سند قبض رسمي معتمد</div>
+                    <div>وثيقة قبض رسمية معتمدة</div>
+                  </div>
+
                 </div>
               </div>
 
-              {/* أثر العملية على رصيد الخزينة */}
-              <div className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 text-[11px]">
-                <div>
-                  <span className="text-slate-400">رصيد الخزينة قبل العملية: </span>
-                  <span className="font-mono text-slate-200">{Number(lastDisbursementReceipt.prevBalance || 0).toLocaleString()} ﷼</span>
-                </div>
-                <div>
-                  <span className="text-slate-400">الرصيد المتبقي بالخزينة: </span>
-                  <span className="font-mono font-bold text-emerald-400">
-                    {Number(lastDisbursementReceipt.newBalance || 0).toLocaleString()} ﷼ (مصفّر بالكامل)
-                  </span>
-                </div>
-              </div>
+              {/* الأزرار السفلية */}
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 print:hidden shrink-0">
+                <button
+                  type="button"
+                  onClick={() => printOfficialDocument('official-receipt-doc', `سند قبض وتوريد - ${lastReceipt.receiptNumber || 'SANAD'}`)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>طباعة أو حفظ PDF</span>
+                </button>
 
-              <div className="p-2.5 bg-slate-900/40 rounded-xl text-slate-400 text-[11px]">
-                <strong className="text-slate-300">البيان: </strong>
-                <span>{lastDisbursementReceipt.notes}</span>
-              </div>
-
-              {/* التواقيع الرسمية */}
-              <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-800 text-center">
-                <div className="space-y-6">
-                  <span className="text-[11px] text-slate-400 block font-bold">توقيع المسلّم (أمين الخزينة)</span>
-                  <div className="border-b border-dashed border-slate-700 w-32 mx-auto"></div>
-                  <span className="text-[10px] text-slate-500 block">{lastDisbursementReceipt.officerName}</span>
-                </div>
-
-                <div className="space-y-6">
-                  <span className="text-[11px] text-slate-400 block font-bold">توقيع المستلم (المحاسب المالي)</span>
-                  <div className="border-b border-dashed border-slate-700 w-32 mx-auto"></div>
-                  <span className="text-[10px] text-slate-500 block">{lastDisbursementReceipt.recipientName}</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setLastReceipt(null)}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition-all cursor-pointer"
+                >
+                  إغلاق السند والعودة للمركز المالي
+                </button>
               </div>
 
             </div>
-
-            {/* زر الإغلاق السفلي */}
-            <div className="mt-4 flex items-center justify-end gap-3 print:hidden">
-              <button
-                type="button"
-                onClick={() => setLastDisbursementReceipt(null)}
-                className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition-all cursor-pointer"
-              >
-                إغلاق السند والعودة للمركز المالي
-              </button>
-            </div>
-
           </div>
-        </div>
-      )}
-
-      {/* 7. سند القبض بعد تسوية المندوب */}
-      {lastReceipt && (
-        <div className="fixed inset-0 z-[3000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl w-full max-w-sm p-6 shadow-2xl relative text-center animate-in zoom-in-95">
-            <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-              ✅
-            </div>
-            <h3 className="text-base font-bold text-white mb-1">تمت التسوية بنجاح!</h3>
-            <p className="text-xs text-slate-400 mb-4">تم تصفير المبلغ من محفظة المندوب وإيداعه بمحفظة كاش المتجر</p>
-
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-right text-xs space-y-2.5 mb-5">
-              <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">رقم السند:</span>
-                <span className="font-mono font-bold text-purple-400">{lastReceipt.receiptNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">المندوب:</span>
-                <span className="font-bold text-slate-200">{lastReceipt.driverName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">المبلغ المودع بالخزينة:</span>
-                <span className="font-mono font-black text-emerald-400 text-sm">{Number(lastReceipt.amount).toLocaleString()} ر.س</span>
-              </div>
-              <div className="flex justify-between text-[11px] text-slate-500">
-                <span>التوقيت:</span>
-                <span>{new Date(lastReceipt.timestamp).toLocaleString('ar-SA')}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>طباعة</span>
-              </button>
-              <button
-                onClick={() => setLastReceipt(null)}
-                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition-all cursor-pointer"
-              >
-                إغلاق السند
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 8. نافذة تسوية طلبات الدفع عند الاستلام للمندوب */}
       {settleDriver && (

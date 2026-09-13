@@ -5,6 +5,15 @@ import {
   Search, ArrowDownRight, ArrowUpRight, QrCode, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { sound } from '../utils/sound';
+import { 
+  SANAD_OFFICIAL_ENTITY, 
+  tafqeetArabic, 
+  tafqeetEnglish, 
+  getOfficialFormattedDates, 
+  OfficialStamp, 
+  OfficialZatcaQr, 
+  printOfficialDocument 
+} from '../utils/officialDocs';
 
 export default function FridayInvoicesHub({ drivers = [], branches = [], orders = [], onClose }) {
   const [invoices, setInvoices] = useState([]);
@@ -122,52 +131,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
   };
 
   const handlePrintInvoice = () => {
-    const printElement = document.getElementById('friday-invoice-print');
-    if (!printElement) {
-      window.print();
-      return;
-    }
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const invoiceHtml = printElement.outerHTML;
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
-      <head>
-        <meta charset="utf-8">
-        <title>فاتورة تسوية سند A4 - ${selectedInvoice?.invoiceNumber || ''}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-        <style>
-          @page { size: A4 portrait; margin: 8mm; }
-          * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          html, body { width: 210mm; background: #ffffff !important; color: #0f172a !important; margin: 0; padding: 0; }
-          #friday-invoice-print { width: 194mm !important; max-width: 194mm !important; margin: 0 auto !important; padding: 6mm !important; background: #ffffff !important; color: #0f172a !important; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #cbd5e1; }
-        </style>
-      </head>
-      <body>${invoiceHtml}</body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(() => {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-      }, 1500);
-    }, 400);
+    printOfficialDocument('friday-invoice-print', `فاتورة ضريبية مبسطة - ${selectedInvoice?.invoiceNumber || 'سند'}`);
   };
 
   const filteredInvoices = useMemo(() => {
@@ -461,92 +425,181 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
               </button>
             </div>
 
-            {/* محتوى الفاتورة الرسمية المعتمدة */}
-            <div id="friday-invoice-print" className="pt-4 space-y-5 text-right">
+            {/* محتوى الفاتورة الرسمية المعتمدة (Official Saudi Simplified Tax Invoice) */}
+            <div id="friday-invoice-print" className="p-6 sm:p-8 bg-white text-slate-900 rounded-2xl border-2 border-slate-900 space-y-4 text-right font-['Cairo','Tajawal',sans-serif] relative overflow-hidden">
               
-              {/* ترويسة الفاتورة */}
-              <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4">
-                <div className="flex items-center gap-3">
-                  <img src="/sanad-express-logo.jpg?v=3" alt="سَنَد" className="w-14 h-14 rounded-2xl object-cover border border-slate-300 shadow-sm" />
-                  <div>
-                    <h1 className="font-black text-2xl text-slate-900">سند SANAD</h1>
-                    <p className="text-xs text-slate-500">المنظومة اللوجستية المتطورة لإدارة وتوزيع الشحنات</p>
+              {/* علامة مائية باهتة */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                <span className="text-8xl font-black tracking-widest uppercase">SANAD TAX</span>
+              </div>
+
+              {/* 1. الترويسة الرسمية المعتمدة */}
+              <div className="border-b-2 border-slate-900 pb-3">
+                <div className="flex items-start justify-between gap-4">
+                  {/* اليمين: شعار الشركة وبياناتها الضريبية والقانونية */}
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={SANAD_OFFICIAL_ENTITY.logoUrl} 
+                      alt="سَنَد" 
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-300 shadow-sm" 
+                    />
+                    <div>
+                      <h2 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                        {SANAD_OFFICIAL_ENTITY.nameAr}
+                      </h2>
+                      <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
+                        {SANAD_OFFICIAL_ENTITY.nameEn}
+                      </div>
+                      <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                        <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
+                        <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
+                        <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
+                      </div>
+                      <div className="text-[9px] text-slate-500 mt-0.5">
+                        {SANAD_OFFICIAL_ENTITY.nationalAddress}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* اليسار: رقم الفاتورة والتواريخ ورمز ZATCA QR */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="text-left space-y-1">
+                      <div className="inline-block border border-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        <span className="text-[9.5px] text-slate-600 block">رقم الفاتورة الضريبية:</span>
+                        <span className="font-mono font-black text-xs text-slate-950">
+                          {selectedInvoice.invoiceNumber}
+                        </span>
+                      </div>
+                      <div className="text-[9.5px] text-slate-600">
+                        <div>تاريخ الإصدار: <strong className="font-mono text-slate-900">{selectedInvoice.periodEndDate || selectedInvoice.fridayDate}</strong></div>
+                        <div>طبيعة المستند: <strong className="text-slate-900">فاتورة دورية معتمدة</strong></div>
+                      </div>
+                    </div>
+                    <OfficialZatcaQr size={64} />
                   </div>
                 </div>
 
-                <div className="text-left font-mono">
-                  <div className="font-black text-sm text-slate-900">فاتورة تسوية دورية (7 أيام)</div>
-                  <div className="text-xs font-bold text-purple-700 mt-0.5">{selectedInvoice.invoiceNumber}</div>
-                  <div className="text-[10px] text-slate-500">
-                    تاريخ الإصدار: {selectedInvoice.periodEndDate || selectedInvoice.fridayDate}
+                {/* شريط عنوان الفاتورة الضريبية */}
+                <div className="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between">
+                  <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg font-black text-xs sm:text-sm tracking-wide">
+                    فاتورة ضريبية مبسطة - مسير تسوية مستحقات دورية (SIMPLIFIED TAX INVOICE)
+                  </div>
+                  <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <span>✓</span>
+                    <span>معتمدة بنظام الفوترة الإلكترونية ZATCA</span>
                   </div>
                 </div>
               </div>
 
-              {/* بيانات المندوب والفرع وفترة الـ 7 أيام */}
-              <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs">
+              {/* 2. بيانات المندوب والفرع والدورة المحاسبية */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs">
                 <div>
-                  <div className="text-slate-500 text-[11px]">اسم المندوب الميداني:</div>
-                  <div className="font-black text-sm text-slate-900">{selectedInvoice.driverName}</div>
-                  <div className="text-slate-600 font-mono mt-0.5">الهوية الوطنية: {selectedInvoice.driverNationalId}</div>
-                  <div className="text-slate-600 font-mono">الجوال: {selectedInvoice.driverPhone}</div>
+                  <div className="text-slate-500 text-[10.5px] font-semibold">المستفيد (المندوب الميداني):</div>
+                  <div className="font-black text-sm text-slate-950">{selectedInvoice.driverName}</div>
+                  <div className="text-slate-700 font-mono text-[11px] mt-0.5">
+                    الهوية الوطنية: <strong className="text-slate-950">{selectedInvoice.driverNationalId}</strong>
+                  </div>
+                  <div className="text-slate-700 font-mono text-[11px]">
+                    الجوال: <strong className="text-slate-950">{selectedInvoice.driverPhone}</strong>
+                  </div>
                 </div>
 
                 <div>
-                  <div className="text-slate-500 text-[11px]">الفرع المسجل:</div>
-                  <div className="font-bold text-sm text-slate-900">{selectedInvoice.branchName}</div>
-                  <div className="text-slate-600 mt-0.5">
-                    فترة الدورة المحاسبية: <span className="font-bold text-slate-800">7 أيام كاملة</span>
+                  <div className="text-slate-500 text-[10.5px] font-semibold">الفرع ومركز العمليات:</div>
+                  <div className="font-bold text-sm text-slate-900">{selectedInvoice.branchName || 'المركز الرئيسي - الرياض'}</div>
+                  <div className="text-slate-700 text-[11px] mt-0.5">
+                    الدورة المحاسبية: <strong className="text-slate-950">أسبوعية (7 أيام)</strong>
                   </div>
-                  <div className="text-[11px] text-slate-500 font-mono">
-                    من {selectedInvoice.periodStartDate} إلى {selectedInvoice.periodEndDate}
+                  <div className="text-[10.5px] text-slate-600 font-mono">
+                    الفترة: من {selectedInvoice.periodStartDate} إلى {selectedInvoice.periodEndDate}
                   </div>
                 </div>
               </div>
 
-              {/* جدول البنود والعمولات */}
-              <table className="w-full text-right text-xs border border-slate-200 rounded-xl overflow-hidden">
-                <thead className="bg-slate-100 text-slate-700 font-bold">
-                  <tr>
-                    <th className="p-2.5">البند المحاسبي</th>
-                    <th className="p-2.5 text-center">الكمية</th>
-                    <th className="p-2.5 text-center">السعر المعتمد</th>
-                    <th className="p-2.5 text-left">المبلغ الإجمالي</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 font-mono">
-                  <tr>
-                    <td className="p-2.5 font-sans font-bold">عمولات توصيل الشحنات المكتملة</td>
-                    <td className="p-2.5 text-center">{selectedInvoice.orderCount} شحنة</td>
-                    <td className="p-2.5 text-center">20.00 ﷼</td>
-                    <td className="p-2.5 text-left font-bold text-emerald-700">+{Number(selectedInvoice.totalCommissions || 0).toFixed(2)} ﷼</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2.5 font-sans font-bold text-amber-900">كاش الدفع عند الاستلام (COD المحصل)</td>
-                    <td className="p-2.5 text-center">-</td>
-                    <td className="p-2.5 text-center">-</td>
-                    <td className="p-2.5 text-left font-bold text-amber-700">-{Number(selectedInvoice.totalCodCollected || 0).toFixed(2)} ﷼</td>
-                  </tr>
-                </tbody>
-                <tfoot className="bg-slate-50 font-bold border-t-2 border-slate-300">
-                  <tr>
-                    <td colSpan={3} className="p-3 font-sans text-sm">صافي مستحقات التسوية للمندوب:</td>
-                    <td className="p-3 text-left font-mono text-base font-black text-slate-950">
-                      {Number(selectedInvoice.netSettlement || 0).toFixed(2)} ﷼
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              {/* 3. جدول البنود المحاسبية والتسوية */}
+              <div className="border border-slate-800 rounded-xl overflow-hidden">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                    <tr>
+                      <th className="p-2.5 border-l border-slate-300">البند المحاسبي والخدمة</th>
+                      <th className="p-2.5 text-center border-l border-slate-300">الكمية / الشحنات</th>
+                      <th className="p-2.5 text-center border-l border-slate-300">سعر الوحدة</th>
+                      <th className="p-2.5 text-left">المبلغ الإجمالي</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 font-mono text-xs">
+                    <tr>
+                      <td className="p-2.5 font-sans font-bold border-l border-slate-200">
+                        عمولات توصيل الشحنات المكتملة بنجاح
+                      </td>
+                      <td className="p-2.5 text-center border-l border-slate-200">{selectedInvoice.orderCount} شحنة</td>
+                      <td className="p-2.5 text-center border-l border-slate-200">20.00 ر.س</td>
+                      <td className="p-2.5 text-left font-bold text-emerald-700">
+                        +{Number(selectedInvoice.totalCommissions || 0).toFixed(2)} ر.س
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-sans font-bold text-amber-900 border-l border-slate-200">
+                        كاش الدفع عند الاستلام (COD المستلم من العملاء)
+                      </td>
+                      <td className="p-2.5 text-center border-l border-slate-200">-</td>
+                      <td className="p-2.5 text-center border-l border-slate-200">-</td>
+                      <td className="p-2.5 text-left font-bold text-amber-700">
+                        -{Number(selectedInvoice.totalCodCollected || 0).toFixed(2)} ر.س
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-900">
+                    <tr>
+                      <td colSpan={3} className="p-3 font-sans text-sm text-slate-950 font-black">
+                        صافي مستحقات التسوية للمندوب (Net Payout):
+                        <div className="text-xs font-normal text-slate-600 mt-0.5">
+                          {tafqeetArabic(selectedInvoice.netSettlement)}
+                        </div>
+                      </td>
+                      <td className="p-3 text-left font-mono text-base font-black text-slate-950">
+                        {Number(selectedInvoice.netSettlement || 0).toFixed(2)} ر.س
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 
-              {/* ختم واعتماد سَنَد اللوجستية */}
-              <div className="pt-4 flex items-center justify-between text-xs text-slate-500 border-t border-slate-200">
-                <div>
-                  <div className="font-bold text-slate-700">منظومة سَنَد SANAD اللوجستية المعتمدة</div>
-                  <div className="text-[10px]">تم الإصدار آلياً بموجب دورة الفوترة الأسبوعية التلقائية</div>
+              {/* 4. اعتمادات وتواقيع أطراف الفاتورة والختم المعتمد */}
+              <div className="pt-2">
+                <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-300 pb-1 mb-3">
+                  الاعتمادات والمصادقة النظامية:
                 </div>
-                <div className="w-20 h-20 rounded-full border-2 border-dashed border-cyan-600 flex items-center justify-center text-center p-1 text-[9px] font-black text-cyan-800 rotate-[-12deg]">
-                  معتمد وموثق<br/>SANAD EXPRESS<br/>2026
+
+                <div className="grid grid-cols-3 gap-3 text-center text-xs relative">
+                  <div className="space-y-3">
+                    <span className="font-bold text-slate-700 block text-[10px]">المحاسب المالي المختص</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                    <div className="text-[9.5px] text-slate-600 font-semibold">إدارة الحسابات العامة</div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="font-bold text-slate-700 block text-[10px]">مشرف العمليات الميدانية</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                    <div className="text-[9.5px] text-slate-600 font-semibold">إدارة الأسطول والنقل</div>
+                  </div>
+
+                  <div className="space-y-1 relative">
+                    <span className="font-bold text-slate-900 block text-[10px]">اعتماد الإدارة والختم الرسمي</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-1"></div>
+                    <div className="text-[9.5px] text-slate-700 font-bold">المدير المالي المعتمد</div>
+                    
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                      <OfficialStamp department="الإدارة المالية" statusText="معتمد ومفوتر" size={95} />
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* تذييل الفاتورة */}
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+                <div>تم الإصدار بموجب نظام الفوترة الإلكترونية المعتمد - شركة سند إكسبريس اللوجستية</div>
+                <div>فاتورة ضريبية رسمية</div>
               </div>
 
             </div>
@@ -554,7 +607,6 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
           </div>
         </div>
       )}
-
     </div>
   );
 }

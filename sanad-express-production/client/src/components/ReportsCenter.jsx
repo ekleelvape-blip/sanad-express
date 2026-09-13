@@ -36,6 +36,7 @@ export default function ReportsCenter({
   // فلاتر تحصيلات COD
   const [codSearchQuery, setCodSearchQuery] = useState('');
   const [selectedDriverForModal, setSelectedDriverForModal] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // فلاتر مستحقات السائقين
   const [duesSearchQuery, setDuesSearchQuery] = useState('');
@@ -208,7 +209,7 @@ export default function ReportsCenter({
 
   // دالة الطباعة الاحترافية A4
   const handlePrintA4Report = () => {
-    window.print();
+    setShowReportModal(true);
   };
 
   return (
@@ -966,6 +967,295 @@ export default function ReportsCenter({
           </div>
         </div>
       )}
+
+      {/* نافذة التقرير الإداري والمحاسبي الرسمي المعتمد مقاس A4 */}
+      {showReportModal && (() => {
+        const reportDates = getOfficialFormattedDates();
+        const activeTabInfo = tabs.find(t => t.id === activeTab) || tabs[0];
+        
+        return (
+          <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto font-['Cairo','Tajawal',sans-serif]">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-4xl shadow-2xl my-auto p-4 sm:p-6 space-y-4 max-h-[96vh] flex flex-col">
+              
+              {/* شريط الإجراءات العلوي للطباعة والإغلاق */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 print:hidden shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></div>
+                  <span className="text-white font-bold text-xs sm:text-sm">
+                    معاينة الوثيقة الرسمية الصادرة من الإدارة (A4)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => printOfficialDocument('official-report-sheet', `تقرير رسمي - ${activeTabInfo.title}`)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#00d2d3] to-cyan-500 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-950/50 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Printer className="w-4 h-4 stroke-[2.5]" />
+                    <span>طباعة التقرير مقاس A4 📄</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* جسم التقرير الرسمي المعتمد مقاس A4 */}
+              <div className="overflow-y-auto pr-1">
+                <div 
+                  id="official-report-sheet"
+                  className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-lg border-2 border-slate-900 space-y-4 text-right relative overflow-hidden font-['Cairo','Tajawal',sans-serif]"
+                  dir="rtl"
+                >
+                  {/* علامة مائية باهتة */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                    <span className="text-8xl sm:text-9xl font-black tracking-widest uppercase">SANAD AUDIT</span>
+                  </div>
+
+                  {/* 1. الترويسة الرسمية */}
+                  <div className="border-b-2 border-slate-900 pb-3">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* اليمين: شعار الشركة وبياناتها */}
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={SANAD_OFFICIAL_ENTITY.logoUrl} 
+                          alt="شعار سَنَد" 
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-300 shadow-sm"
+                        />
+                        <div>
+                          <h2 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                            {SANAD_OFFICIAL_ENTITY.nameAr}
+                          </h2>
+                          <div className="text-[10.5px] font-bold text-slate-700 font-sans tracking-wide">
+                            {SANAD_OFFICIAL_ENTITY.nameEn}
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                            <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
+                            <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
+                            <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
+                          </div>
+                          <div className="text-[9px] text-slate-500 mt-0.5">
+                            {SANAD_OFFICIAL_ENTITY.nationalAddress}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* اليسار: رقم التقرير والتواريخ ورمز ZATCA QR */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="text-left space-y-1">
+                          <div className="inline-block border border-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                            <span className="text-[9.5px] text-slate-600 block">رقم التقرير:</span>
+                            <span className="font-mono font-black text-xs text-slate-950">
+                              REP-2026-{Date.now().toString().slice(-6)}
+                            </span>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600">
+                            <div>التاريخ الميلادي: <strong className="font-mono text-slate-900">{reportDates.gregorian}</strong></div>
+                            <div>التاريخ الهجري: <strong className="font-mono text-slate-900">{reportDates.hijri}</strong></div>
+                            <div>الوقت: <strong className="font-mono text-slate-900">{reportDates.time}</strong></div>
+                          </div>
+                        </div>
+                        <OfficialZatcaQr size={64} />
+                      </div>
+                    </div>
+
+                    {/* عنوان التقرير البارز */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                      <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm font-black text-xs sm:text-sm tracking-wide">
+                        {activeTab === 'performance' && 'تقرير تقييم الأداء الميداني ومؤشرات إنجاز الأسطول (FLEET KPI REPORT)'}
+                        {activeTab === 'cod_settlements' && 'تقرير تدقيق ومطابقة تحصيلات الدفع عند الاستلام (COD SETTLEMENT AUDIT)'}
+                        {activeTab === 'neighborhoods' && 'تقرير التوزيع الجغرافي وكثافة الشحنات بالأحياء (GEO DENSITY AUDIT)'}
+                        {activeTab === 'reports' && 'تقرير الرقابة التشغيلية وإدارة البلاغات والتعثر (OPERATIONS & INCIDENTS AUDIT)'}
+                      </div>
+                      <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span>✓</span>
+                        <span>تقرير إداري معتمد رسمياً ومقيد بالسجلات</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. بطاقات المؤشرات الملخصة للتقرير */}
+                  <div className="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 border border-slate-300 rounded-xl text-center text-xs">
+                    <div className="p-2 bg-white rounded-lg border border-slate-200">
+                      <span className="text-slate-500 text-[10px] block">إجمالي الشحنات:</span>
+                      <strong className="font-mono text-slate-950 text-sm">{perfStats.totalAssigned} شحنة</strong>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-slate-200">
+                      <span className="text-slate-500 text-[10px] block">الشحنات المسلمة:</span>
+                      <strong className="font-mono text-emerald-700 text-sm font-black">{perfStats.totalDelivered} شحنة</strong>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-slate-200">
+                      <span className="text-slate-500 text-[10px] block">نسبة الإنجاز العامة:</span>
+                      <strong className="font-mono text-cyan-700 text-sm font-black">{perfStats.overallSuccess}%</strong>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-slate-200">
+                      <span className="text-slate-500 text-[10px] block">متوسط زمن التوصيل:</span>
+                      <strong className="font-mono text-purple-700 text-sm font-black">{perfStats.avgDeliveryTime} دقيقة</strong>
+                    </div>
+                  </div>
+
+                  {/* 3. جدول البيانات التفصيلي للتقرير */}
+                  <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
+                    {activeTab === 'performance' && (
+                      <table className="w-full text-right">
+                        <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                          <tr>
+                            <th className="p-2.5 border-l border-slate-300">الكود</th>
+                            <th className="p-2.5 border-l border-slate-300">اسم المندوب</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">المسند</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">المسلّم</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">المرتجع</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">نسبة النجاح</th>
+                            <th className="p-2.5 text-center">التقييم</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 font-mono">
+                          {filteredPerformance.map((d, idx) => (
+                            <tr key={d.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="p-2 font-bold border-l border-slate-200 text-purple-800">{d.code}</td>
+                              <td className="p-2 font-sans font-bold border-l border-slate-200 text-slate-900">{d.name}</td>
+                              <td className="p-2 text-center border-l border-slate-200">{d.totalOrders}</td>
+                              <td className="p-2 text-center border-l border-slate-200 font-bold text-emerald-700">{d.deliveredCount}</td>
+                              <td className="p-2 text-center border-l border-slate-200 text-rose-700">{d.returnedCount}</td>
+                              <td className="p-2 text-center border-l border-slate-200 font-bold text-cyan-800">{d.successPct}%</td>
+                              <td className="p-2 text-center font-sans font-bold text-amber-700">{d.tier}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {activeTab === 'cod_settlements' && (
+                      <table className="w-full text-right">
+                        <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                          <tr>
+                            <th className="p-2.5 border-l border-slate-300">الكود</th>
+                            <th className="p-2.5 border-l border-slate-300">اسم المندوب</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">قيد المراجعة</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">جاري التوصيل</th>
+                            <th className="p-2.5 text-left border-l border-slate-300">المبلغ المطلوب توريده</th>
+                            <th className="p-2.5 text-center">حالة التصفية</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 font-mono">
+                          {displayCodList.map((row, idx) => (
+                            <tr key={row.driverId} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="p-2 font-bold border-l border-slate-200 text-purple-800">{row.code}</td>
+                              <td className="p-2 font-sans font-bold border-l border-slate-200 text-slate-900">{row.driverName}</td>
+                              <td className="p-2 text-center border-l border-slate-200">{row.underReview.count} شحنة</td>
+                              <td className="p-2 text-center border-l border-slate-200">{row.inTransit.count} شحنة</td>
+                              <td className="p-2 text-left font-bold border-l border-slate-200 text-slate-950">
+                                {Math.abs(row.finalBalance).toFixed(2)} ر.س
+                              </td>
+                              <td className="p-2 text-center font-sans">
+                                {row.finalBalance === 0 ? (
+                                  <span className="text-emerald-700 font-bold">مصفّى بالكامل ✓</span>
+                                ) : (
+                                  <span className="text-amber-700 font-bold">مطلوب التوريد</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {activeTab === 'neighborhoods' && (
+                      <table className="w-full text-right">
+                        <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                          <tr>
+                            <th className="p-2.5 text-center border-l border-slate-300">الترتيب</th>
+                            <th className="p-2.5 border-l border-slate-300">اسم الحي والمنطقة</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">المدينة</th>
+                            <th className="p-2.5 text-center border-l border-slate-300">عدد الشحنات</th>
+                            <th className="p-2.5 text-center">نسبة الكثافة من الإجمالي</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 font-mono">
+                          {filteredNeighborhoods.map((n, idx) => (
+                            <tr key={n.rank} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="p-2 text-center font-bold border-l border-slate-200 text-slate-700">#{n.rank}</td>
+                              <td className="p-2 font-sans font-bold border-l border-slate-200 text-slate-900">{n.name}</td>
+                              <td className="p-2 text-center font-sans border-l border-slate-200">{n.city}</td>
+                              <td className="p-2 text-center font-bold border-l border-slate-200 text-cyan-800">{n.count} طلب</td>
+                              <td className="p-2 text-center font-bold text-emerald-700">{n.pct}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* 4. اعتمادات وتواقيع التقرير والختم المعتمد */}
+                  <div className="pt-2">
+                    <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-300 pb-1 mb-3">
+                      اعتمادات ومصادقة التقرير الرسمي:
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 text-center text-xs relative">
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">إعداد واستخراج البيانات</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">مسؤول الرقابة والتقارير</div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <span className="font-bold text-slate-700 block text-[10px]">المراجعة والتدقيق الميداني</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        <div className="text-[9.5px] text-slate-600 font-semibold">مدير العمليات اللوجستية</div>
+                      </div>
+
+                      <div className="space-y-1 relative">
+                        <span className="font-bold text-slate-900 block text-[10px]">الاعتماد والختم الرسمي</span>
+                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto pt-1"></div>
+                        <div className="text-[9.5px] text-slate-700 font-bold">المدير العام المعتمد</div>
+                        
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                          <OfficialStamp department="مركز التقارير والرقابة" statusText="معتمد ومطابق" size={95} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* تذييل */}
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+                    <div>تم استخراج وتوثيق التقرير آلياً عبر منظومة سَنَد اللوجستية المعتمدة</div>
+                    <div>وثيقة إدارية رسمية</div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* الأزرار السفلية */}
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 print:hidden shrink-0">
+                <button
+                  type="button"
+                  onClick={() => printOfficialDocument('official-report-sheet', `تقرير رسمي - ${activeTabInfo.title}`)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>طباعة فورية أو حفظ PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition-all cursor-pointer"
+                >
+                  إغلاق المعاينة والعودة للتقارير
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

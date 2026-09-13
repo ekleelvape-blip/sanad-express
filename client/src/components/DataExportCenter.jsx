@@ -8,6 +8,13 @@ import {
   TrendingUp, ArrowUpRight
 } from 'lucide-react';
 import { sound } from '../utils/sound';
+import { 
+  SANAD_OFFICIAL_ENTITY, 
+  getOfficialFormattedDates, 
+  OfficialStamp, 
+  OfficialZatcaQr, 
+  printOfficialDocument 
+} from '../utils/officialDocs';
 
 export default function DataExportCenter({ 
   activeTab, 
@@ -210,7 +217,7 @@ export default function DataExportCenter({
   };
 
   const handlePrintPdf = () => {
-    window.print();
+    printOfficialDocument('official-sanad-doc', 'وثيقة رسمية معتمدة - سند إكسبريس');
   };
 
   // بيانات مفلترة فورية حسب البحث
@@ -911,30 +918,61 @@ export default function DataExportCenter({
             {/* ورقة الوثيقة الرسمية الصادرة من سَنَد بمقاس A4 */}
             <div className="p-8 sm:p-12 overflow-y-auto space-y-6 text-slate-900" id="official-sanad-doc">
               
-              {/* الترويسة الرسمية */}
-              <div className="border-b-2 border-slate-900 pb-5 flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <img
-                    src="/sanad-express-logo.jpg?v=3"
-                    alt="شعار سَنَد"
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-900 shadow-md"
-                  />
-                  <div>
-                    <h1 className="text-xl font-black text-slate-950">سَنَد إكسبريس للخدمات اللوجستية</h1>
-                    <div className="font-mono text-xs font-bold text-slate-600 tracking-wider">SANAD LOGISTICS & EXPRESS DELIVERY</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">ترخيص الهيئة العامة للنقل - المملكة العربية السعودية</div>
+              {/* الترويسة الرسمية المعتمدة */}
+              <div className="border-b-2 border-slate-900 pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <img
+                      src={SANAD_OFFICIAL_ENTITY.logoUrl}
+                      alt="شعار سَنَد"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-900 shadow-md"
+                    />
+                    <div>
+                      <h2 className="text-base font-black text-slate-950 leading-tight">
+                        {SANAD_OFFICIAL_ENTITY.nameAr}
+                      </h2>
+                      <div className="font-mono text-xs font-bold text-slate-700 tracking-wider">
+                        {SANAD_OFFICIAL_ENTITY.nameEn}
+                      </div>
+                      <div className="text-[10px] text-slate-600 mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                        <span>س.ت: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.crNumber}</strong></span>
+                        <span>الرقم الضريبي: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.vatNumber}</strong></span>
+                        <span>ترخيص النقل: <strong className="font-mono text-slate-900">{SANAD_OFFICIAL_ENTITY.transportLicense}</strong></span>
+                      </div>
+                      <div className="text-[9px] text-slate-500 mt-0.5">
+                        {SANAD_OFFICIAL_ENTITY.nationalAddress}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <div className="text-left font-mono text-xs space-y-1">
+                      <div className="inline-block border border-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        <span className="text-[9.5px] text-slate-600 block">رقم الوثيقة:</span>
+                        <strong className="text-slate-900 font-bold">DOC-{Date.now().toString().slice(-6)}</strong>
+                      </div>
+                      <div className="text-[9.5px] text-slate-600">
+                        <div>تاريخ الإصدار: <strong className="text-slate-900 font-bold">{new Date().toLocaleDateString('ar-SA')}</strong></div>
+                        <div>طبيعة التقرير: <strong className="text-slate-900 font-bold">
+                          {currentTab === 'export_driver_orders' && 'مسير شحنات الأسطول'}
+                          {currentTab === 'export_warehouse_orders' && 'سجل المستودع'}
+                          {currentTab === 'export_inventory' && 'جرد المخزون'}
+                          {currentTab === 'export_reports' && 'سجل البلاغات'}
+                        </strong></div>
+                      </div>
+                    </div>
+                    <OfficialZatcaQr size={64} />
                   </div>
                 </div>
 
-                <div className="text-left font-mono text-xs space-y-1">
-                  <div><span className="text-slate-500">رقم الوثيقة: </span><strong className="text-slate-900 font-bold">DOC-{Date.now().toString().slice(-6)}</strong></div>
-                  <div><span className="text-slate-500">تاريخ الإصدار: </span><strong className="text-slate-900 font-bold">{new Date().toLocaleDateString('ar-SA')}</strong></div>
-                  <div><span className="text-slate-500">نوع التقرير: </span><strong className="text-slate-900 font-bold">
-                    {currentTab === 'export_driver_orders' && 'مسير شحنات الأسطول'}
-                    {currentTab === 'export_warehouse_orders' && 'سجل عمليات المستودع'}
-                    {currentTab === 'export_inventory' && 'جرد المخزون اللوجستي'}
-                    {currentTab === 'export_reports' && 'سجل البلاغات والتعثر'}
-                  </strong></div>
+                <div className="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between">
+                  <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm font-black text-xs tracking-wide">
+                    تقرير تدقيق ورصد العمليات اللوجستية والميدانية (OPERATIONS AUDIT)
+                  </div>
+                  <div className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <span>✓</span>
+                    <span>معتمد رسمياً وموثق بالنظام السحابي</span>
+                  </div>
                 </div>
               </div>
 
@@ -1023,14 +1061,38 @@ export default function DataExportCenter({
               </div>
 
               {/* تذييل الوثيقة الرسمية والأختام */}
-              <div className="pt-8 border-t border-slate-300 flex items-center justify-between text-xs text-slate-600">
-                <div>
-                  <div>مسؤول العمليات اللوجستية: <strong>فريق إدارة العمليات سَنَد</strong></div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">تم استخراج هذا التقرير آلياً عبر منصة سَنَد الذكية</div>
+              <div className="pt-4 border-t border-slate-300 space-y-4">
+                <div className="text-[10.5px] font-bold text-slate-700 border-b border-slate-200 pb-1">
+                  الاعتمادات والمصادقة الإدارية الرسمية:
                 </div>
 
-                <div className="w-28 h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-[10px] font-bold">
-                  ختم الاعتماد الرسمي
+                <div className="grid grid-cols-3 gap-3 text-center text-xs relative">
+                  <div className="space-y-3">
+                    <span className="font-bold text-slate-700 block text-[10px]">مسؤول استخراج وتصدير البيانات</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-28 mx-auto"></div>
+                    <div className="text-[9.5px] text-slate-600 font-semibold">فريق إدارة العمليات سَنَد</div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="font-bold text-slate-700 block text-[10px]">المراجعة والتدقيق الميداني</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-28 mx-auto"></div>
+                    <div className="text-[9.5px] text-slate-600 font-semibold">مدير المستودعات والنقل</div>
+                  </div>
+
+                  <div className="space-y-1 relative">
+                    <span className="font-bold text-slate-900 block text-[10px]">الاعتماد والختم الرسمي</span>
+                    <div className="border-b-2 border-dotted border-slate-400 w-28 mx-auto pt-1"></div>
+                    <div className="text-[9.5px] text-slate-700 font-bold">المدير العام المعتمد</div>
+                    
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                      <OfficialStamp department="إدارة العمليات والبيانات" statusText="مصدق ومطابق" size={95} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+                  <div>تم استخراج هذا التقرير آلياً عبر منصة سَنَد الذكية للخدمات اللوجستية</div>
+                  <div>وثيقة رسمية معتمدة</div>
                 </div>
               </div>
 
