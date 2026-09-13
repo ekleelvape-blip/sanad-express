@@ -154,6 +154,9 @@ export default function Sidebar({
                 onClick={() => {
                   if (hasChildren) {
                     toggleSubMenu(item.menuKey);
+                    if (!isSubOpen && item.children && item.children.length > 0) {
+                      onSelectTab(item.children[0].key);
+                    }
                   } else {
                     onSelectTab(item.key);
                   }
