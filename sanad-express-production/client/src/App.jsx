@@ -352,20 +352,11 @@ export default function App() {
               <div className="text-[10px] text-[#00d2d3] font-mono">LIVE CUSTOMER TRACKING PORTAL</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => navigateTo('admin', '/admin')}
-            className="text-xs text-slate-400 hover:text-slate-200 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 font-bold"
-          >
-            لوحة الإدارة
-          </button>
         </header>
         <main className="max-w-4xl w-full mx-auto p-4 md:p-6">
           <TrackingPortal 
             defaultTrackingNumber={trackingInitialNum} 
             initialTrackingNumber={trackingInitialNum} 
-            onBack={() => navigateTo('admin', '/admin')} 
-            onClose={() => navigateTo('admin', '/admin')} 
           />
         </main>
       </div>

@@ -155,20 +155,6 @@ export default function TrackingPortal({
   return (
     <div className="space-y-6 max-w-4xl mx-auto font-['Tajawal','Cairo',sans-serif] select-none pb-12" dir="rtl">
       
-      {/* زر العودة للوحة الإدارة إذا كان متاحاً */}
-      {(onClose || onBack) && (
-        <div className="flex items-center justify-between pb-2">
-          <button
-            type="button"
-            onClick={onClose || onBack}
-            className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700/80 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-          >
-            <ChevronRight className="w-4 h-4" />
-            <span>العودة للوحة الرئيسية</span>
-          </button>
-        </div>
-      )}
-
       {/* قسم الترويسة والبحث المركزي */}
       <div className="text-center space-y-3 py-4">
         <div className="flex flex-col items-center mb-1">
