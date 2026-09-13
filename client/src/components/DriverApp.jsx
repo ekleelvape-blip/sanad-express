@@ -22,6 +22,23 @@ import {
 } from '../utils/geo';
 import DriverWallet from './DriverWallet';
 import DeliveryExceptionModal from './DeliveryExceptionModal';
+import DriverProofOfDeliveryModal from './DriverProofOfDeliveryModal';
+
+
+// دالة مساعدة لإنشاء رابط محادثة واتساب مباشر مع العميل
+const getDriverWhatsAppUrl = (phone, customerName, orderId, address) => {
+  if (!phone) return '#';
+  let clean = String(phone).replace(/\D/g, '');
+  if (clean.startsWith('05')) {
+    clean = '966' + clean.substring(1);
+  } else if (clean.startsWith('5')) {
+    clean = '966' + clean;
+  } else if (!clean.startsWith('966') && clean.length === 9) {
+    clean = '966' + clean;
+  }
+  const msg = `مرحباً أستاذ/ة ${customerName || 'الكريم'}، معك مندوب منصة سَنَد للخدمات اللوجستية بخصوص شحنتك رقم #${orderId || ''}. أنا بالطريق إليك للعنوان: ${address || 'موقعك المسجل'}. يرجى التكرم بتأكيد تواجدك 🚗📦`;
+  return `https://wa.me/${clean}?text=${encodeURIComponent(msg)}`;
+};
 
 export default function DriverApp({
   drivers = [],
@@ -117,6 +134,7 @@ export default function DriverApp({
   
   // تأكيد التسليم والتعثر
   const [deliveryConfirmOrder, setDeliveryConfirmOrder] = useState(null);
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('');
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('cash');
   const [exceptionOrder, setExceptionOrder] = useState(null);
 
@@ -183,17 +201,25 @@ export default function DriverApp({
     if (onToggleDriverStatus) onToggleDriverStatus(currentDriver.id);
   };
 
-  // تسليم الطلب
-  const handleConfirmDelivery = async () => {
+  // تأكيد تسليم الشحنة وتوثيق إثبات التسليم الرقمي POD
+  const handleConfirmDelivery = async (podData) => {
     if (!deliveryConfirmOrder) return;
     try {
+      const pMethod = podData?.paymentMethod || confirmPaymentMethod;
       if (onUpdateOrderStatus) {
-        await onUpdateOrderStatus(deliveryConfirmOrder.id, 'delivered', confirmPaymentMethod);
+        await onUpdateOrderStatus(deliveryConfirmOrder.id, 'delivered', pMethod, {
+          podData,
+          deliveredAt: new Date().toISOString(),
+          proofType: podData?.podTab,
+          receivedCash: podData?.receivedCash,
+          changeDue: podData?.changeDue
+        });
       }
       sound.playSuccess();
+      const currentOrderSaved = deliveryConfirmOrder;
       setDeliveryConfirmOrder(null);
       if (onRefresh) onRefresh();
-      alert('✅ تم تأكيد تسليم الشحنة بنجاح وإيداع عمولة التوصيل في محفظتك!');
+      alert(`✅ تم تأكيد تسليم الشحنة #${currentOrderSaved.id} وتوثيق إثبات التسليم الرقمي بنجاح!`);
     } catch (err) {
       alert('حدث خطأ أثناء تأكيد التسليم');
     }
@@ -466,6 +492,46 @@ export default function DriverApp({
 
   return (
     <div className="w-full max-w-md mx-auto min-h-screen bg-[#f4f6f8] dark:bg-[#0a0e18] text-slate-800 dark:text-slate-100 flex flex-col font-['Tajawal','IBM_Plex_Sans_Arabic',sans-serif] select-none relative pb-28" dir="rtl">
+
+      {/* ========================================================================= */}
+      {/* شريط المؤشرات الحيوية والميدانية الفورية (Driver Live Telemetry Bar) */}
+      {/* ========================================================================= */}
+      <div className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3.5 py-2 flex items-center justify-between text-[11px] text-slate-300 select-none sticky top-0 z-40 shadow-sm">
+        <div className="flex items-center gap-2">
+          {/* مؤشر GPS */}
+          <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700/60">
+            <span className={`w-2 h-2 rounded-full ${driverLiveCoords ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+            <span className="font-mono text-[10px] text-slate-200">
+              {driverLiveCoords ? 'GPS نشط (دقة عالية)' : 'جاري التقاط GPS...'}
+            </span>
+          </div>
+
+          {/* مؤشر الرادار المباشر */}
+          <div className="flex items-center gap-1 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+            <span className="text-[10px] text-slate-300">سَنَد رادار</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* رصيد عهدة الكاش السريع باليد */}
+          <div className="flex items-center gap-1 bg-emerald-950/50 border border-emerald-800/80 px-2.5 py-0.5 rounded-full text-emerald-300 font-mono text-[11px] font-black">
+            <span>💵</span>
+            <span>{(Number(currentDriver.cashOnHand) || 0).toFixed(2)} ﷼</span>
+          </div>
+
+          {/* زر القفل السريع لحماية البيانات */}
+          <button
+            type="button"
+            onClick={handleLockSession}
+            className="text-slate-400 hover:text-cyan-300 p-1 transition-colors cursor-pointer"
+            title="قفل فوري للجلسة"
+          >
+            <Lock className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
       
       {/* 🔔 الإشعار العائم الفوري لوصول طلب جديد مسند */}
       {newAssignedAlertOrder && (
@@ -832,43 +898,94 @@ export default function DriverApp({
                       </a>
                     </div>
                   ) : ordersSubTab === 'in_transit' ? (
-                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <div className="grid grid-cols-2 gap-2">
-                        <a
-                          href={`tel:${order.customerPhone || ''}`}
-                          className="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:text-[#00d2d3]"
-                        >
-                          <Phone className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>اتصال بالعميل</span>
-                        </a>
-                        <a
-                          href={order.customerCoords ? `https://maps.google.com/?q=${order.customerCoords[0]},${order.customerCoords[1]}` : `https://maps.google.com/?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:text-[#00d2d3]"
-                        >
-                          <Navigation className="w-3.5 h-3.5 text-cyan-500" />
-                          <span>خرائط جوجل</span>
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setScanModalConfig({ order, mode: 'delivery' })}
-                          className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black rounded-xl text-xs cursor-pointer transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95"
-                        >
-                          <ScanLine className="w-4 h-4" />
-                          <span>مسح وتسليم للعميل 🤝📷</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setExceptionOrder(order)}
-                          className="px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-bold cursor-pointer"
-                        >
-                          تعثر التسليم
-                        </button>
-                      </div>
-                    </div>
+                    (() => {
+                      const distKm = (driverLiveCoords && order.customerCoords) 
+                        ? calculateDistanceKm(driverLiveCoords, order.customerCoords) 
+                        : null;
+                      const etaMins = distKm ? calculateDrivingMins(distKm) : null;
+                      return (
+                        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          {distKm !== null && (
+                            <div className="flex items-center justify-between text-[11px] font-mono text-cyan-700 dark:text-cyan-300 bg-cyan-50/70 dark:bg-cyan-950/40 px-2.5 py-1 rounded-xl border border-cyan-200 dark:border-cyan-900/60">
+                              <span className="flex items-center gap-1">
+                                <Navigation className="w-3 h-3 text-cyan-500" />
+                                <span>المسافة: <strong>{distKm.toFixed(1)} كم</strong></span>
+                              </span>
+                              <span>زمن الوصول المتوقع: <strong>~{etaMins} دقيقة</strong></span>
+                            </div>
+                          )}
+
+                          {/* شبكة الإجراءات السريعة: اتصال، واتساب، خرائط جوجل، Waze */}
+                          <div className="grid grid-cols-4 gap-1.5">
+                            <a
+                              href={`tel:${order.customerPhone || ''}`}
+                              className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                              title="اتصال هاتفي بالعميل"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>اتصال</span>
+                            </a>
+                            <a
+                              href={getDriverWhatsAppUrl(order.customerPhone, order.customerName, order.id, order.customerAddress)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                              title="محادثة واتساب مجهزة"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>واتساب</span>
+                            </a>
+                            <a
+                              href={order.customerCoords ? getGoogleNavUrl(order.customerCoords[0], order.customerCoords[1]) : `https://maps.google.com/?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-cyan-50 text-slate-700 dark:text-slate-300 hover:text-cyan-600 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                              title="خرائط Google"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-cyan-500" />
+                              <span>خرائط</span>
+                            </a>
+                            <a
+                              href={order.customerCoords ? getWazeNavUrl(order.customerCoords[0], order.customerCoords[1]) : `https://waze.com/ul?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 text-slate-700 dark:text-slate-300 hover:text-indigo-600 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                              title="ملاحة Waze"
+                            >
+                              <Navigation className="w-3.5 h-3.5 text-indigo-500" />
+                              <span>Waze</span>
+                            </a>
+                          </div>
+
+                          {/* أزرار التسليم وإثبات التسليم POD */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDeliveryConfirmOrder(order)}
+                              className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs cursor-pointer transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>تسليم وإثبات التسليم (POD) ✍️📷</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setScanModalConfig({ order, mode: 'delivery' })}
+                              className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl cursor-pointer border border-slate-200 dark:border-slate-700"
+                              title="مسح باركود الشحنة بالكاميرا"
+                            >
+                              <ScanLine className="w-4 h-4 text-cyan-500" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExceptionOrder(order)}
+                              className="px-2.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-bold cursor-pointer"
+                            >
+                              تعثر التسليم
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()
                   ) : (
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-rose-500 font-bold">
                       <span>حالة الشحنة: مرتجعة للمتجر</span>
@@ -1193,22 +1310,43 @@ export default function DriverApp({
       })()}
 
       {/* ========================================================================= */}
-      {/* التبويب 4: المخزون (INVENTORY) */}
+      {/* التبويب 4: المخزون والمانفست الميداني (INVENTORY & MANIFEST) */}
       {/* ========================================================================= */}
       {activeBottomTab === 'inventory' && (
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between pt-1">
-            <h1 className="text-base font-black text-slate-900 dark:text-white">
-              المخزون والعهدة الميدانية
-            </h1>
-            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/50 text-[#00d2d3] border border-cyan-300 dark:border-cyan-800">
-              {inTransitOrders.length} شحنات بالسيارة
+            <div>
+              <h1 className="text-base font-black text-slate-900 dark:text-white">
+                مانفست ومخزون المركبة
+              </h1>
+              <p className="text-[11px] text-slate-500">جرد ومتابعة الشحنات المحمولة بالسيارة</p>
+            </div>
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 text-[#00d2d3] border border-cyan-300 dark:border-cyan-800">
+              {inTransitOrders.length} شحنة بالسيارة
             </span>
           </div>
 
+          {/* إحصائيات سريعة للعهدة بالمركبة */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
+              <div className="text-[11px] text-slate-500">مجموع مبالغ الكاش للتحصيل:</div>
+              <div className="text-base font-black font-mono text-emerald-600 mt-1">
+                {inTransitOrders.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0).toFixed(2)} ﷼
+              </div>
+            </div>
+            <div className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
+              <div className="text-[11px] text-slate-500">شحنات شبكة مدى / مسددة:</div>
+              <div className="text-base font-black font-mono text-cyan-500 mt-1">
+                {inTransitOrders.filter(o => o.paymentMethod !== 'cash').length} شحنات
+              </div>
+            </div>
+          </div>
+
+          {/* بطاقة بيانات العهدة والعتاد */}
           <div className="bg-white dark:bg-[#111726] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="font-bold text-xs text-slate-700 dark:text-slate-300">
-              بيانات العهدة في سيارتك ({currentDriver.vehicle || 'كامري 2023'}):
+            <div className="font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span>عتاد المركبة المسجل ({currentDriver.vehicle || 'كامري 2023'}):</span>
+              <span className="text-[10px] text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">جاهز ومعتمد</span>
             </div>
             
             <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -1225,6 +1363,101 @@ export default function DriverApp({
                 <span className="font-bold font-mono text-emerald-600">{currentDriver.cashOnHand || '327.74'} ﷼</span>
               </div>
             </div>
+          </div>
+
+          {/* محرك البحث في مانفست الشحنات المحمولة */}
+          <div className="relative">
+            <input
+              type="text"
+              value={inventorySearchQuery}
+              onChange={(e) => setInventorySearchQuery(e.target.value)}
+              placeholder="ابحث في شحنات السيارة (رقم الشحنة، العميل، الحي)..."
+              className="w-full bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl py-2.5 pr-10 pl-4 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-cyan-400 shadow-xs"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
+            {inventorySearchQuery && (
+              <button
+                type="button"
+                onClick={() => setInventorySearchQuery('')}
+                className="absolute left-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs p-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* قائمة شحنات المانفست بالسيارة */}
+          <div className="space-y-2.5">
+            {(() => {
+              const filtered = inTransitOrders.filter(o => {
+                if (!inventorySearchQuery.trim()) return true;
+                const q = inventorySearchQuery.toLowerCase();
+                return (
+                  String(o.id).toLowerCase().includes(q) ||
+                  (o.customerName && o.customerName.toLowerCase().includes(q)) ||
+                  (o.customerPhone && o.customerPhone.includes(q)) ||
+                  (o.customerAddress && o.customerAddress.toLowerCase().includes(q))
+                );
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center text-xs text-slate-400">
+                    {inTransitOrders.length === 0 ? 'لا توجد شحنات محملة بالسيارة حالياً' : 'لا توجد نتائج مطابقة لبحثك'}
+                  </div>
+                );
+              }
+
+              return filtered.map(order => (
+                <div key={order.id} className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                        #{order.id}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${order.paymentMethod === 'cash' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'}`}>
+                        {order.paymentMethod === 'cash' ? '💵 كاش' : '💳 مدى'}
+                      </span>
+                    </div>
+                    <span className="font-mono font-black text-sm text-[#00d2d3]">
+                      {order.totalAmount} ﷼
+                    </span>
+                  </div>
+
+                  <div className="text-xs space-y-0.5">
+                    <div className="font-bold text-slate-800 dark:text-slate-100">{order.customerName}</div>
+                    <div className="text-slate-400 text-[11px] truncate">{order.customerAddress || 'المنطقة الشرقية'}</div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryConfirmOrder(order)}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>إثبات وتسليم (POD)</span>
+                    </button>
+                    <a
+                      href={`tel:${order.customerPhone || ''}`}
+                      className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:text-emerald-600 cursor-pointer"
+                      title="اتصال"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={getDriverWhatsAppUrl(order.customerPhone, order.customerName, order.id, order.customerAddress)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:text-emerald-600 cursor-pointer"
+                      title="واتساب"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}
@@ -2056,66 +2289,13 @@ export default function DriverApp({
         </div>
       )}
 
-      {/* نافذة تأكيد تسليم الشحنة للعميل */}
-      {deliveryConfirmOrder && (
-        <div className="fixed inset-0 z-[6000] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111726] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-right">
-            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                <span>تأكيد تسليم الشحنة ({deliveryConfirmOrder.id})</span>
-              </h3>
-              <button onClick={() => setDeliveryConfirmOrder(null)} className="text-slate-400 p-1">✕</button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-1">
-                <div>العميل: <strong className="text-slate-900 dark:text-white">{deliveryConfirmOrder.customerName}</strong></div>
-                <div>المبلغ المطلوب تحصيله: <strong className="text-emerald-600 text-sm font-mono">{deliveryConfirmOrder.totalAmount} ﷼</strong></div>
-              </div>
-
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1.5">طريقة الدفع المستلمة:</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmPaymentMethod('cash')}
-                    className={'p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 cursor-pointer ' + 
-                      (confirmPaymentMethod === 'cash' ? 'bg-cyan-50 border-[#00d2d3] text-cyan-800' : 'bg-white dark:bg-slate-800 text-slate-600')}
-                  >
-                    <span>💵 كاش باليد</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmPaymentMethod('mada')}
-                    className={'p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 cursor-pointer ' + 
-                      (confirmPaymentMethod === 'mada' ? 'bg-cyan-50 border-[#00d2d3] text-cyan-800' : 'bg-white dark:bg-slate-800 text-slate-600')}
-                  >
-                    <span>💳 شبكة مدى</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 space-y-2">
-              <button
-                type="button"
-                onClick={handleConfirmDelivery}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-md"
-              >
-                تأكيد التسليم بنجاح وإيداع 20 ﷼ بالرصيد ✅
-              </button>
-              <button
-                type="button"
-                onClick={() => setDeliveryConfirmOrder(null)}
-                className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl text-xs"
-              >
-                تراجع
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* نافذة إثبات التسليم الرقمية الذكية (Proof of Delivery POD) */}
+      <DriverProofOfDeliveryModal
+        isOpen={Boolean(deliveryConfirmOrder)}
+        order={deliveryConfirmOrder}
+        onClose={() => setDeliveryConfirmOrder(null)}
+        onConfirmDelivery={handleConfirmDelivery}
+      />
 
       {/* نافذة تسجيل تعثر التسليم */}
       {exceptionOrder && (
