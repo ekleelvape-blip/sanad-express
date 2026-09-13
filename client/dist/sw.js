@@ -3,7 +3,7 @@
 // SANAD Express Service Worker - Background Operations & Lock-Screen Notifications
 // =========================================================================
 
-const CACHE_NAME = 'sanad-cache-v8';
+const CACHE_NAME = 'sanad-cache-v9';
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/sanad-express-logo.jpg',

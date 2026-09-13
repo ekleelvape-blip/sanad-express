@@ -129,10 +129,10 @@ export default function App() {
     return 'all';
   });
   const DEFAULT_BRANCHES = [
-    { id: 'branch-iklil-dammam', name: 'فرع إكليل الكيف - الدمام حي طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' },
-    { id: 'branch-iklil-jubail', name: 'فرع إكليل فيب - الجبيل البلد', brand: 'إكليل فيب', city: 'الجبيل', district: 'الجبيل البلد - طريق الملك فيصل الغربي', coords: [26.9836, 49.6465], phone: '0535139959' },
-    { id: 'branch-vape-sharq', name: 'متجر فيب الشرق', brand: 'فيب الشرق', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0559876543' },
-    { id: 'branch-iklil-main', name: 'متجر إكليل فيب', brand: 'إكليل فيب', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' }
+    { id: 'branch-iklil-dammam', code: 'KAYF', orderPrefix: 'SND-KAYF', invoicePrefix: 'INV-KAYF', receiptPrefix: 'REC-KAYF', name: 'فرع إكليل الكيف - الدمام حي طيبة', brand: 'إكليل الكيف', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' },
+    { id: 'branch-iklil-jubail', code: 'JBL', orderPrefix: 'SND-JBL', invoicePrefix: 'INV-JBL', receiptPrefix: 'REC-JBL', name: 'فرع إكليل فيب - الجبيل البلد', brand: 'إكليل فيب', city: 'الجبيل', district: 'الجبيل البلد - طريق الملك فيصل الغربي', coords: [26.9836, 49.6465], phone: '0535139959' },
+    { id: 'branch-vape-sharq', code: 'SHQ', orderPrefix: 'SND-SHQ', invoicePrefix: 'INV-SHQ', receiptPrefix: 'REC-SHQ', name: 'متجر فيب الشرق', brand: 'فيب الشرق', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0559876543' },
+    { id: 'branch-iklil-main', code: 'IKL', orderPrefix: 'SND-IKL', invoicePrefix: 'INV-IKL', receiptPrefix: 'REC-IKL', name: 'متجر إكليل فيب', brand: 'إكليل فيب', city: 'الدمام', district: 'الدمام - حي طيبة', coords: [26.3583, 50.0501], phone: '0538041826' }
   ];
 
   const [searchQuery, setSearchQuery] = useState('');

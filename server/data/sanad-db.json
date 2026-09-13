@@ -12,67 +12,83 @@
   "branches": [
     {
       "id": "branch-iklil-dammam",
-      "name": "فرع إكليل الكيف - الدمام حي طيبة",
-      "brand": "إكليل الكيف",
       "city": "الدمام",
-      "district": "الدمام - حي طيبة",
+      "name": "فرع إكليل الكيف - الدمام حي طيبة",
+      "role": "branch",
+      "brand": "إكليل الكيف",
+      "phone": "0538041826",
       "coords": [
         26.3583,
         50.0501
       ],
-      "phone": "0538041826",
-      "username": "dammam",
+      "district": "الدمام - حي طيبة",
       "password": "$2b$10$nCdAk.evHkqKTD9SWTYJHO.v8p/7v5oXBlSGNfAqx1R6.Y8cy8Z6W",
-      "role": "branch",
-      "syncPool": "sync-group-east"
+      "syncPool": "sync-group-east",
+      "username": "dammam",
+      "code": "KAYF",
+      "orderPrefix": "SND-KAYF",
+      "invoicePrefix": "INV-KAYF",
+      "receiptPrefix": "REC-KAYF"
     },
     {
       "id": "branch-iklil-jubail",
-      "name": "فرع إكليل فيب - الجبيل البلد",
-      "brand": "إكليل فيب",
       "city": "الجبيل",
-      "district": "الجبيل البلد - طريق الملك فيصل الغربي",
+      "name": "فرع إكليل فيب - الجبيل البلد",
+      "role": "branch",
+      "brand": "إكليل فيب",
+      "phone": "0535139959",
       "coords": [
         26.9836,
         49.6465
       ],
-      "phone": "0535139959",
-      "username": "jubail",
+      "district": "الجبيل البلد - طريق الملك فيصل الغربي",
       "password": "123",
-      "role": "branch",
-      "syncPool": "sync-group-jubail"
+      "syncPool": "sync-group-jubail",
+      "username": "jubail",
+      "code": "JBL",
+      "orderPrefix": "SND-JBL",
+      "invoicePrefix": "INV-JBL",
+      "receiptPrefix": "REC-JBL"
     },
     {
       "id": "branch-vape-sharq",
-      "name": "متجر فيب الشرق",
-      "brand": "فيب الشرق",
       "city": "الدمام",
-      "district": "الدمام - حي طيبة",
+      "name": "متجر فيب الشرق",
+      "role": "branch",
+      "brand": "فيب الشرق",
+      "phone": "0559876543",
       "coords": [
         26.3583,
         50.0501
       ],
-      "phone": "0559876543",
-      "username": "sharq",
+      "district": "الدمام - حي طيبة",
       "password": "123",
-      "role": "branch",
-      "syncPool": "sync-group-east"
+      "syncPool": "sync-group-east",
+      "username": "sharq",
+      "code": "SHQ",
+      "orderPrefix": "SND-SHQ",
+      "invoicePrefix": "INV-SHQ",
+      "receiptPrefix": "REC-SHQ"
     },
     {
       "id": "branch-iklil-main",
-      "name": "متجر إكليل فيب",
-      "brand": "إكليل فيب",
       "city": "الدمام",
-      "district": "الدمام - حي طيبة",
+      "name": "متجر إكليل فيب",
+      "role": "branch",
+      "brand": "إكليل فيب",
+      "phone": "0538041826",
       "coords": [
         26.3583,
         50.0501
       ],
-      "phone": "0538041826",
-      "username": "iklil",
+      "district": "الدمام - حي طيبة",
       "password": "$2a$10$3EVgu1OP2fcve3KXJGX9x.8zwK2SNJMlfqjleTl9IDlF5him/DYnG",
-      "role": "branch",
-      "syncPool": "sync-group-east"
+      "syncPool": "sync-group-east",
+      "username": "iklil",
+      "code": "IKL",
+      "orderPrefix": "SND-IKL",
+      "invoicePrefix": "INV-IKL",
+      "receiptPrefix": "REC-IKL"
     }
   ],
   "drivers": [
@@ -101,13 +117,13 @@
       "password": "893163",
       "syncPool": "sync-group-east",
       "username": "+966502893163",
-      "cashOnHand": 0,
-      "lastUpdate": "2026-09-13T19:15:19.449Z",
+      "cashOnHand": 150,
+      "lastUpdate": "2026-09-13T19:40:51.294Z",
       "nationalId": "2463794624",
       "sharedStores": "—",
       "walletBalance": 0,
-      "completedToday": 24,
-      "totalCommissionToday": 565
+      "completedToday": 25,
+      "totalCommissionToday": 595
     },
     {
       "id": "drv-2",
@@ -473,7 +489,43 @@
   ],
   "orders": [
     {
-      "id": "SND-1023",
+      "id": "SND-SHQ-1007",
+      "orderNumber": "SHQ-1007",
+      "trackingNumber": "SND-SHQ-1007",
+      "branchId": "branch-vape-sharq",
+      "customerName": "0",
+      "customerPhone": "0",
+      "customerAddress": "سيهات - 0 - 0",
+      "customerCoords": [
+        26.3667149762976,
+        50.04054455687747
+      ],
+      "items": [
+        {
+          "name": "شحنة منتجات سَنَد",
+          "qty": 1,
+          "price": 0
+        }
+      ],
+      "deliveryFee": 30,
+      "totalAmount": 150,
+      "paymentMethod": "cash",
+      "driverCommission": 30,
+      "status": "delivered",
+      "assignedDriverId": "drv-1",
+      "orderSource": "يدوي (Manual)",
+      "codSettled": false,
+      "createdAt": "2026-09-13T19:42:16.229Z",
+      "notes": "",
+      "inTransitAt": "2026-09-13T19:43:02.622Z",
+      "scannedAtPickup": "2026-09-13T19:43:02.622Z",
+      "scanVerified": true,
+      "deliveredAt": "2026-09-13T19:43:07.830Z",
+      "scannedAtDelivery": "2026-09-13T19:43:07.830Z",
+      "scanDeliveryVerified": true
+    },
+    {
+      "id": "SND-KAYF-1010",
       "items": [
         {
           "qty": 1,
@@ -489,7 +541,7 @@
       "deliveredAt": "2026-09-13T19:15:26.199Z",
       "deliveryFee": 30,
       "inTransitAt": "2026-09-13T19:15:22.393Z",
-      "orderNumber": "1023",
+      "orderNumber": "KAYF-1010",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
       "codSettledAt": "2026-09-13T19:23:41.947Z",
@@ -501,7 +553,7 @@
         26.430941642105683,
         50.099040317480735
       ],
-      "trackingNumber": "SND-1023",
+      "trackingNumber": "SND-KAYF-1010",
       "customerAddress": "سيهات - 0 - 0",
       "scannedAtPickup": "2026-09-13T19:15:22.393Z",
       "assignedDriverId": "drv-1",
@@ -510,7 +562,7 @@
       "scanDeliveryVerified": true
     },
     {
-      "id": "SND-1022",
+      "id": "SND-SHQ-1006",
       "items": [
         {
           "qty": 1,
@@ -526,7 +578,7 @@
       "deliveredAt": "2026-09-13T18:45:10.437Z",
       "deliveryFee": 35,
       "inTransitAt": "2026-09-13T18:45:08.389Z",
-      "orderNumber": "1022",
+      "orderNumber": "SHQ-1006",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 175,
       "codSettledAt": "2026-09-13T19:23:41.948Z",
@@ -538,7 +590,7 @@
         26.30970443814711,
         50.212818866719886
       ],
-      "trackingNumber": "SND-1022",
+      "trackingNumber": "SND-SHQ-1006",
       "customerAddress": "الخبر - حي العزيزية",
       "scannedAtPickup": "2026-09-13T18:45:08.389Z",
       "assignedDriverId": "drv-1",
@@ -547,7 +599,7 @@
       "scanDeliveryVerified": true
     },
     {
-      "id": "SND-1021",
+      "id": "SND-KAYF-1009",
       "items": [
         {
           "qty": 1,
@@ -563,7 +615,7 @@
       "deliveredAt": "2026-09-13T18:45:19.485Z",
       "deliveryFee": 25,
       "inTransitAt": "2026-09-13T18:45:18.500Z",
-      "orderNumber": "1021",
+      "orderNumber": "KAYF-1009",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
       "codSettledAt": "2026-09-13T19:23:41.948Z",
@@ -575,7 +627,7 @@
         26.42650468935547,
         50.099537468156676
       ],
-      "trackingNumber": "SND-1021",
+      "trackingNumber": "SND-KAYF-1009",
       "customerAddress": "الدمام - حي الفيصلية",
       "scannedAtPickup": "2026-09-13T18:45:18.500Z",
       "assignedDriverId": "drv-1",
@@ -584,7 +636,7 @@
       "scanDeliveryVerified": true
     },
     {
-      "id": "SND-1020",
+      "id": "SND-KAYF-1008",
       "items": [
         {
           "qty": 1,
@@ -600,7 +652,7 @@
       "deliveredAt": "2026-09-13T18:45:26.659Z",
       "deliveryFee": 25,
       "inTransitAt": "2026-09-13T18:45:23.611Z",
-      "orderNumber": "1020",
+      "orderNumber": "KAYF-1008",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 150,
       "codSettledAt": "2026-09-13T19:23:41.948Z",
@@ -612,7 +664,7 @@
         26.45208549165085,
         50.11964649618525
       ],
-      "trackingNumber": "SND-1020",
+      "trackingNumber": "SND-KAYF-1008",
       "customerAddress": "الدمام - حي الفيصلية",
       "scannedAtPickup": "2026-09-13T18:45:23.611Z",
       "assignedDriverId": "drv-1",
@@ -621,7 +673,355 @@
       "scanDeliveryVerified": true
     },
     {
-      "id": "SND-1001",
+      "id": "SND-JBL-1003",
+      "items": [
+        {
+          "qty": 1,
+          "name": "جهاز Vaporesso XROS 4 جديد",
+          "price": 160
+        },
+        {
+          "qty": 2,
+          "name": "نكهة سامز فيب مانجو سولت",
+          "price": 120
+        }
+      ],
+      "notes": "جاهز للاستلام والتوصيل",
+      "status": "delivered",
+      "branchId": "branch-iklil-jubail",
+      "createdAt": "2026-09-13T12:17:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:32.367Z",
+      "deliveryFee": 40,
+      "inTransitAt": "2026-09-13T18:45:30.928Z",
+      "orderNumber": "JBL-1003",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 280,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "فهد الدوسري",
+      "scanVerified": true,
+      "customerPhone": "0561122334",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        27.015,
+        49.665
+      ],
+      "customerAddress": "الجبيل الصناعية - حي الفناتير",
+      "scannedAtPickup": "2026-09-13T18:45:30.928Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 40,
+      "scannedAtDelivery": "2026-09-13T18:45:32.367Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-JBL-1003"
+    },
+    {
+      "id": "SND-KAYF-1007",
+      "items": [
+        {
+          "qty": 1,
+          "name": "سحبة Oxva Xlim Pro 2",
+          "price": 175
+        },
+        {
+          "qty": 2,
+          "name": "بودات أوكسفا 0.8",
+          "price": 90
+        },
+        {
+          "qty": 1,
+          "name": "نكهة VGOD سولت 25",
+          "price": 65
+        }
+      ],
+      "notes": "جاهز للتوصيل",
+      "status": "delivered",
+      "branchId": "branch-iklil-dammam",
+      "createdAt": "2026-09-13T12:07:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:37.728Z",
+      "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:36.247Z",
+      "orderNumber": "KAYF-1007",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 340,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "ريان القحطاني",
+      "scanVerified": true,
+      "customerPhone": "0553311224",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.441,
+        50.112
+      ],
+      "customerAddress": "الدمام - حي الشاطئ - شارع 18",
+      "scannedAtPickup": "2026-09-13T18:45:36.247Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:37.728Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-KAYF-1007"
+    },
+    {
+      "id": "SND-SHQ-1005",
+      "items": [
+        {
+          "qty": 2,
+          "name": "سحبة جاهزة Elf Bar 10000",
+          "price": 140
+        },
+        {
+          "qty": 1,
+          "name": "نكهة توكيو بنانا سولت",
+          "price": 55
+        }
+      ],
+      "notes": "الدفع شبكة مدى",
+      "status": "delivered",
+      "branchId": "branch-vape-sharq",
+      "createdAt": "2026-09-13T11:57:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:43.599Z",
+      "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T18:45:41.433Z",
+      "orderNumber": "SHQ-1005",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 195,
+      "customerName": "عبدالله المطيري",
+      "scanVerified": true,
+      "customerPhone": "0504488991",
+      "paymentMethod": "mada",
+      "customerCoords": [
+        26.312,
+        50.218
+      ],
+      "customerAddress": "الخبر - حي العليا - قرب الراشد",
+      "scannedAtPickup": "2026-09-13T18:45:41.433Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T18:45:43.599Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-SHQ-1005"
+    },
+    {
+      "id": "SND-IKL-1004",
+      "items": [
+        {
+          "qty": 1,
+          "name": "جهاز Geekvape Aegis Legend 3",
+          "price": 310
+        }
+      ],
+      "notes": "تحصيل كاش عند الاستلام",
+      "status": "delivered",
+      "branchId": "branch-iklil-main",
+      "createdAt": "2026-09-13T11:52:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:50.231Z",
+      "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:47.917Z",
+      "orderNumber": "IKL-1004",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 310,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "نواف الشمري",
+      "scanVerified": true,
+      "customerPhone": "0547788112",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.415,
+        50.089
+      ],
+      "customerAddress": "الدمام - حي الفيصلية - شارع الملك فهد",
+      "scannedAtPickup": "2026-09-13T18:45:47.917Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:50.231Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-IKL-1004"
+    },
+    {
+      "id": "SND-KAYF-1006",
+      "items": [
+        {
+          "qty": 1,
+          "name": "سحبة فيب فاخرة",
+          "price": 350
+        }
+      ],
+      "notes": "مسند للمندوب سلطان العتيبي",
+      "status": "delivered",
+      "branchId": "branch-iklil-dammam",
+      "createdAt": "2026-09-13T11:32:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:56.531Z",
+      "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:45:54.645Z",
+      "orderNumber": "KAYF-1006",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 350,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "سلطان العمري",
+      "scanVerified": true,
+      "customerPhone": "0522222222",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.398,
+        50.075
+      ],
+      "customerAddress": "الدمام - حي المنار - شارع أبو بكر الصديق",
+      "scannedAtPickup": "2026-09-13T18:45:54.645Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:45:56.531Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-KAYF-1006"
+    },
+    {
+      "id": "SND-SHQ-1004",
+      "items": [
+        {
+          "qty": 1,
+          "name": "شحنة فيب ونكهات",
+          "price": 420
+        }
+      ],
+      "notes": "مسند للمندوب فيصل الدوسري",
+      "status": "delivered",
+      "branchId": "branch-vape-sharq",
+      "createdAt": "2026-09-13T11:17:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:46:02.659Z",
+      "deliveryFee": 35,
+      "inTransitAt": "2026-09-13T18:46:00.878Z",
+      "orderNumber": "SHQ-1004",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 420,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "تركي الحربي",
+      "scanVerified": true,
+      "customerPhone": "0500000000",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.318,
+        50.222
+      ],
+      "customerAddress": "الخبر - حي الحزام الذهبي",
+      "scannedAtPickup": "2026-09-13T18:46:00.878Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 35,
+      "scannedAtDelivery": "2026-09-13T18:46:02.659Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-SHQ-1004"
+    },
+    {
+      "id": "SND-IKL-1003",
+      "items": [
+        {
+          "qty": 2,
+          "name": "بودات وكويلات",
+          "price": 90
+        }
+      ],
+      "notes": "مسند للمندوب محمد الشمري",
+      "status": "delivered",
+      "branchId": "branch-iklil-main",
+      "createdAt": "2026-09-13T11:02:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:51:32.889Z",
+      "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T18:46:07.383Z",
+      "orderNumber": "IKL-1003",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 180,
+      "customerName": "مشعل الغامدي",
+      "scanVerified": true,
+      "customerPhone": "0555555555",
+      "paymentMethod": "mada",
+      "customerCoords": [
+        26.425,
+        50.098
+      ],
+      "customerAddress": "الدمام - حي المنار",
+      "scannedAtPickup": "2026-09-13T18:46:07.383Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T18:51:32.889Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-IKL-1003"
+    },
+    {
+      "id": "SND-JBL-1002",
+      "items": [
+        {
+          "qty": 4,
+          "name": "سحبات مزاج 8000",
+          "price": 260
+        }
+      ],
+      "notes": "مسند للمندوب ياسر الحربي",
+      "status": "delivered",
+      "branchId": "branch-iklil-jubail",
+      "createdAt": "2026-09-13T10:52:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T19:03:08.453Z",
+      "deliveryFee": 40,
+      "inTransitAt": "2026-09-13T19:02:37.074Z",
+      "orderNumber": "JBL-1002",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 260,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "بدر الخالدي",
+      "scanVerified": true,
+      "customerPhone": "0566667788",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        27.009,
+        49.66
+      ],
+      "customerAddress": "الجبيل الصناعية - محلة الحجاز",
+      "scannedAtPickup": "2026-09-13T19:02:37.074Z",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 40,
+      "scannedAtDelivery": "2026-09-13T19:03:08.453Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-JBL-1002"
+    },
+    {
+      "id": "SND-KAYF-1005",
+      "items": [
+        {
+          "qty": 1,
+          "name": "باقة أجهزة فيب ونكهات مميزة",
+          "price": 1000
+        }
+      ],
+      "notes": "المندوب في الطريق إلى العميل",
+      "status": "delivered",
+      "branchId": "branch-iklil-dammam",
+      "createdAt": "2026-09-13T10:32:22.891Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T18:45:13.575Z",
+      "deliveryFee": 25,
+      "orderNumber": "KAYF-1005",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 1000,
+      "codSettledAt": "2026-09-13T19:23:41.948Z",
+      "customerName": "سعد المنصور",
+      "customerPhone": "0522233111",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.401,
+        50.082
+      ],
+      "customerAddress": "الدمام - حي طيبة - شارع الأربعين",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 30,
+      "scannedAtDelivery": "2026-09-13T18:45:13.575Z",
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-KAYF-1005"
+    },
+    {
+      "id": "SND-KAYF-1004",
       "items": [
         {
           "qty": 1,
@@ -680,7 +1080,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T12:02:22.891Z",
       "deliveryFee": 25,
-      "orderNumber": "1001",
+      "orderNumber": "KAYF-1004",
       "orderSource": "سلة (Salla)",
       "requiresCod": false,
       "totalAmount": 148,
@@ -698,349 +1098,11 @@
       "assignedDriverId": "drv-7",
       "deliverySchedule": "لم يتم تحديد موعد التسليم",
       "driverCommission": 25,
-      "sallaOrderNumber": "284741285"
+      "sallaOrderNumber": "284741285",
+      "trackingNumber": "SND-KAYF-1004"
     },
     {
-      "id": "SND-1002",
-      "items": [
-        {
-          "qty": 1,
-          "name": "جهاز Vaporesso XROS 4 جديد",
-          "price": 160
-        },
-        {
-          "qty": 2,
-          "name": "نكهة سامز فيب مانجو سولت",
-          "price": 120
-        }
-      ],
-      "notes": "جاهز للاستلام والتوصيل",
-      "status": "delivered",
-      "branchId": "branch-iklil-jubail",
-      "createdAt": "2026-09-13T12:17:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:32.367Z",
-      "deliveryFee": 40,
-      "inTransitAt": "2026-09-13T18:45:30.928Z",
-      "orderNumber": "1002",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 280,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "فهد الدوسري",
-      "scanVerified": true,
-      "customerPhone": "0561122334",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        27.015,
-        49.665
-      ],
-      "customerAddress": "الجبيل الصناعية - حي الفناتير",
-      "scannedAtPickup": "2026-09-13T18:45:30.928Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 40,
-      "scannedAtDelivery": "2026-09-13T18:45:32.367Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1003",
-      "items": [
-        {
-          "qty": 1,
-          "name": "سحبة Oxva Xlim Pro 2",
-          "price": 175
-        },
-        {
-          "qty": 2,
-          "name": "بودات أوكسفا 0.8",
-          "price": 90
-        },
-        {
-          "qty": 1,
-          "name": "نكهة VGOD سولت 25",
-          "price": 65
-        }
-      ],
-      "notes": "جاهز للتوصيل",
-      "status": "delivered",
-      "branchId": "branch-iklil-dammam",
-      "createdAt": "2026-09-13T12:07:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:37.728Z",
-      "deliveryFee": 25,
-      "inTransitAt": "2026-09-13T18:45:36.247Z",
-      "orderNumber": "1003",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 340,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "ريان القحطاني",
-      "scanVerified": true,
-      "customerPhone": "0553311224",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        26.441,
-        50.112
-      ],
-      "customerAddress": "الدمام - حي الشاطئ - شارع 18",
-      "scannedAtPickup": "2026-09-13T18:45:36.247Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 25,
-      "scannedAtDelivery": "2026-09-13T18:45:37.728Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1004",
-      "items": [
-        {
-          "qty": 2,
-          "name": "سحبة جاهزة Elf Bar 10000",
-          "price": 140
-        },
-        {
-          "qty": 1,
-          "name": "نكهة توكيو بنانا سولت",
-          "price": 55
-        }
-      ],
-      "notes": "الدفع شبكة مدى",
-      "status": "delivered",
-      "branchId": "branch-vape-sharq",
-      "createdAt": "2026-09-13T11:57:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:43.599Z",
-      "deliveryFee": 35,
-      "inTransitAt": "2026-09-13T18:45:41.433Z",
-      "orderNumber": "1004",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 195,
-      "customerName": "عبدالله المطيري",
-      "scanVerified": true,
-      "customerPhone": "0504488991",
-      "paymentMethod": "mada",
-      "customerCoords": [
-        26.312,
-        50.218
-      ],
-      "customerAddress": "الخبر - حي العليا - قرب الراشد",
-      "scannedAtPickup": "2026-09-13T18:45:41.433Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 35,
-      "scannedAtDelivery": "2026-09-13T18:45:43.599Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1005",
-      "items": [
-        {
-          "qty": 1,
-          "name": "جهاز Geekvape Aegis Legend 3",
-          "price": 310
-        }
-      ],
-      "notes": "تحصيل كاش عند الاستلام",
-      "status": "delivered",
-      "branchId": "branch-iklil-main",
-      "createdAt": "2026-09-13T11:52:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:50.231Z",
-      "deliveryFee": 25,
-      "inTransitAt": "2026-09-13T18:45:47.917Z",
-      "orderNumber": "1005",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 310,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "نواف الشمري",
-      "scanVerified": true,
-      "customerPhone": "0547788112",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        26.415,
-        50.089
-      ],
-      "customerAddress": "الدمام - حي الفيصلية - شارع الملك فهد",
-      "scannedAtPickup": "2026-09-13T18:45:47.917Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 25,
-      "scannedAtDelivery": "2026-09-13T18:45:50.231Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1006",
-      "items": [
-        {
-          "qty": 1,
-          "name": "سحبة فيب فاخرة",
-          "price": 350
-        }
-      ],
-      "notes": "مسند للمندوب سلطان العتيبي",
-      "status": "delivered",
-      "branchId": "branch-iklil-dammam",
-      "createdAt": "2026-09-13T11:32:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:56.531Z",
-      "deliveryFee": 25,
-      "inTransitAt": "2026-09-13T18:45:54.645Z",
-      "orderNumber": "1006",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 350,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "سلطان العمري",
-      "scanVerified": true,
-      "customerPhone": "0522222222",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        26.398,
-        50.075
-      ],
-      "customerAddress": "الدمام - حي المنار - شارع أبو بكر الصديق",
-      "scannedAtPickup": "2026-09-13T18:45:54.645Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 25,
-      "scannedAtDelivery": "2026-09-13T18:45:56.531Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1007",
-      "items": [
-        {
-          "qty": 1,
-          "name": "شحنة فيب ونكهات",
-          "price": 420
-        }
-      ],
-      "notes": "مسند للمندوب فيصل الدوسري",
-      "status": "delivered",
-      "branchId": "branch-vape-sharq",
-      "createdAt": "2026-09-13T11:17:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:46:02.659Z",
-      "deliveryFee": 35,
-      "inTransitAt": "2026-09-13T18:46:00.878Z",
-      "orderNumber": "1007",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 420,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "تركي الحربي",
-      "scanVerified": true,
-      "customerPhone": "0500000000",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        26.318,
-        50.222
-      ],
-      "customerAddress": "الخبر - حي الحزام الذهبي",
-      "scannedAtPickup": "2026-09-13T18:46:00.878Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 35,
-      "scannedAtDelivery": "2026-09-13T18:46:02.659Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1008",
-      "items": [
-        {
-          "qty": 2,
-          "name": "بودات وكويلات",
-          "price": 90
-        }
-      ],
-      "notes": "مسند للمندوب محمد الشمري",
-      "status": "delivered",
-      "branchId": "branch-iklil-main",
-      "createdAt": "2026-09-13T11:02:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:51:32.889Z",
-      "deliveryFee": 25,
-      "inTransitAt": "2026-09-13T18:46:07.383Z",
-      "orderNumber": "1008",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 180,
-      "customerName": "مشعل الغامدي",
-      "scanVerified": true,
-      "customerPhone": "0555555555",
-      "paymentMethod": "mada",
-      "customerCoords": [
-        26.425,
-        50.098
-      ],
-      "customerAddress": "الدمام - حي المنار",
-      "scannedAtPickup": "2026-09-13T18:46:07.383Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 25,
-      "scannedAtDelivery": "2026-09-13T18:51:32.889Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1009",
-      "items": [
-        {
-          "qty": 4,
-          "name": "سحبات مزاج 8000",
-          "price": 260
-        }
-      ],
-      "notes": "مسند للمندوب ياسر الحربي",
-      "status": "delivered",
-      "branchId": "branch-iklil-jubail",
-      "createdAt": "2026-09-13T10:52:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T19:03:08.453Z",
-      "deliveryFee": 40,
-      "inTransitAt": "2026-09-13T19:02:37.074Z",
-      "orderNumber": "1009",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 260,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "بدر الخالدي",
-      "scanVerified": true,
-      "customerPhone": "0566667788",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        27.009,
-        49.66
-      ],
-      "customerAddress": "الجبيل الصناعية - محلة الحجاز",
-      "scannedAtPickup": "2026-09-13T19:02:37.074Z",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 40,
-      "scannedAtDelivery": "2026-09-13T19:03:08.453Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1010",
-      "items": [
-        {
-          "qty": 1,
-          "name": "باقة أجهزة فيب ونكهات مميزة",
-          "price": 1000
-        }
-      ],
-      "notes": "المندوب في الطريق إلى العميل",
-      "status": "delivered",
-      "branchId": "branch-iklil-dammam",
-      "createdAt": "2026-09-13T10:32:22.891Z",
-      "codSettled": true,
-      "deliveredAt": "2026-09-13T18:45:13.575Z",
-      "deliveryFee": 25,
-      "orderNumber": "1010",
-      "orderSource": "يدوي (Manual)",
-      "totalAmount": 1000,
-      "codSettledAt": "2026-09-13T19:23:41.948Z",
-      "customerName": "سعد المنصور",
-      "customerPhone": "0522233111",
-      "paymentMethod": "cash",
-      "customerCoords": [
-        26.401,
-        50.082
-      ],
-      "customerAddress": "الدمام - حي طيبة - شارع الأربعين",
-      "assignedDriverId": "drv-1",
-      "driverCommission": 30,
-      "scannedAtDelivery": "2026-09-13T18:45:13.575Z",
-      "scanDeliveryVerified": true
-    },
-    {
-      "id": "SND-1011",
+      "id": "SND-SHQ-1003",
       "items": [
         {
           "qty": 1,
@@ -1056,7 +1118,7 @@
       "deliveredAt": "2026-09-13T19:03:37.081Z",
       "deliveryFee": 35,
       "inTransitAt": "2026-09-13T19:03:33.722Z",
-      "orderNumber": "1011",
+      "orderNumber": "SHQ-1003",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 310,
       "codSettledAt": "2026-09-13T19:23:41.948Z",
@@ -1073,10 +1135,11 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 35,
       "scannedAtDelivery": "2026-09-13T19:03:37.081Z",
-      "scanDeliveryVerified": true
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-SHQ-1003"
     },
     {
-      "id": "SND-1012",
+      "id": "SND-IKL-1002",
       "items": [
         {
           "qty": 1,
@@ -1092,7 +1155,7 @@
       "deliveredAt": "2026-09-13T19:03:50.201Z",
       "deliveryFee": 30,
       "inTransitAt": "2026-09-13T19:03:43.233Z",
-      "orderNumber": "1012",
+      "orderNumber": "IKL-1002",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 450,
       "codSettledAt": "2026-09-13T19:23:41.948Z",
@@ -1109,10 +1172,11 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 30,
       "scannedAtDelivery": "2026-09-13T19:03:50.201Z",
-      "scanDeliveryVerified": true
+      "scanDeliveryVerified": true,
+      "trackingNumber": "SND-IKL-1002"
     },
     {
-      "id": "SND-1013",
+      "id": "SND-KAYF-1003",
       "items": [
         {
           "qty": 1,
@@ -1127,7 +1191,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T11:32:22.891Z",
       "deliveryFee": 25,
-      "orderNumber": "1013",
+      "orderNumber": "KAYF-1003",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 440,
       "codSettledAt": "2026-09-13T18:42:32.042Z",
@@ -1140,10 +1204,11 @@
       ],
       "customerAddress": "الدمام - حي طيبة",
       "assignedDriverId": "drv-1",
-      "driverCommission": 25
+      "driverCommission": 25,
+      "trackingNumber": "SND-KAYF-1003"
     },
     {
-      "id": "SND-1014",
+      "id": "SND-SHQ-1002",
       "items": [
         {
           "qty": 1,
@@ -1158,7 +1223,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T11:22:22.891Z",
       "deliveryFee": 35,
-      "orderNumber": "1014",
+      "orderNumber": "SHQ-1002",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 330,
       "codSettledAt": "2026-09-13T18:42:39.371Z",
@@ -1171,10 +1236,11 @@
       ],
       "customerAddress": "الخبر - حي الراشد",
       "assignedDriverId": "drv-2",
-      "driverCommission": 35
+      "driverCommission": 35,
+      "trackingNumber": "SND-SHQ-1002"
     },
     {
-      "id": "SND-1015",
+      "id": "SND-KAYF-1002",
       "items": [
         {
           "qty": 2,
@@ -1189,7 +1255,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T11:02:22.891Z",
       "deliveryFee": 25,
-      "orderNumber": "1015",
+      "orderNumber": "KAYF-1002",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 110,
       "codSettledAt": "2026-09-13T18:42:32.042Z",
@@ -1202,10 +1268,11 @@
       ],
       "customerAddress": "الدمام - حي أحد 71",
       "assignedDriverId": "drv-1",
-      "driverCommission": 25
+      "driverCommission": 25,
+      "trackingNumber": "SND-KAYF-1002"
     },
     {
-      "id": "SND-1016",
+      "id": "SND-JBL-1001",
       "items": [
         {
           "qty": 4,
@@ -1225,7 +1292,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T10:42:22.891Z",
       "deliveryFee": 40,
-      "orderNumber": "1016",
+      "orderNumber": "JBL-1001",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 245,
       "customerName": "ماجد الدوسري",
@@ -1237,10 +1304,11 @@
       ],
       "customerAddress": "الجبيل الصناعية - حي الفناتير",
       "assignedDriverId": "drv-4",
-      "driverCommission": 40
+      "driverCommission": 40,
+      "trackingNumber": "SND-JBL-1001"
     },
     {
-      "id": "SND-1017",
+      "id": "SND-IKL-1001",
       "items": [
         {
           "qty": 4,
@@ -1255,7 +1323,7 @@
       "codSettled": true,
       "deliveredAt": "2026-09-13T10:02:22.891Z",
       "deliveryFee": 25,
-      "orderNumber": "1017",
+      "orderNumber": "IKL-1001",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 280,
       "codSettledAt": "2026-09-13T18:42:43.423Z",
@@ -1268,10 +1336,11 @@
       ],
       "customerAddress": "الدمام - حي المنار",
       "assignedDriverId": "drv-3",
-      "driverCommission": 25
+      "driverCommission": 25,
+      "trackingNumber": "SND-IKL-1001"
     },
     {
-      "id": "SND-1018",
+      "id": "SND-KAYF-1001",
       "items": [
         {
           "qty": 1,
@@ -1285,7 +1354,7 @@
       "createdAt": "2026-09-13T04:12:22.891Z",
       "codSettled": false,
       "deliveryFee": 25,
-      "orderNumber": "1018",
+      "orderNumber": "KAYF-1001",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 160,
       "customerName": "سامي الشهري",
@@ -1300,10 +1369,11 @@
       "customerAddress": "الدمام - حي النورس",
       "assignedDriverId": "drv-1",
       "driverCommission": 25,
-      "returnRequestedAt": "2026-09-13T12:32:22.891Z"
+      "returnRequestedAt": "2026-09-13T12:32:22.891Z",
+      "trackingNumber": "SND-KAYF-1001"
     },
     {
-      "id": "SND-1019",
+      "id": "SND-SHQ-1001",
       "items": [
         {
           "qty": 1,
@@ -1317,7 +1387,7 @@
       "createdAt": "2026-09-13T02:32:22.891Z",
       "codSettled": false,
       "deliveryFee": 35,
-      "orderNumber": "1019",
+      "orderNumber": "SHQ-1001",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 290,
       "customerName": "ناصر التميمي",
@@ -1329,12 +1399,13 @@
       ],
       "customerAddress": "الخبر - حي الجسر",
       "assignedDriverId": null,
-      "driverCommission": 35
+      "driverCommission": 35,
+      "trackingNumber": "SND-SHQ-1001"
     }
   ],
   "fridayInvoices": [
     {
-      "id": "INV-1001",
+      "id": "INV-KAYF-1001",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-dammam",
@@ -1354,7 +1425,7 @@
       "weekNumber": 36,
       "driverPhone": "+966502893163",
       "driverVehicle": "سيارة خاصة (كامري 2023)",
-      "invoiceNumber": "INV-1001",
+      "invoiceNumber": "INV-KAYF-1001",
       "netSettlement": -510,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1363,10 +1434,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 550,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1002",
+      "id": "INV-SHQ-1001",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-vape-sharq",
@@ -1375,7 +1447,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1002,
+      "seqNumber": 1001,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1386,7 +1458,7 @@
       "weekNumber": 36,
       "driverPhone": "+966532004649",
       "driverVehicle": "سيارة توصيل (أكسنت)",
-      "invoiceNumber": "INV-1002",
+      "invoiceNumber": "INV-SHQ-1001",
       "netSettlement": -310,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1395,10 +1467,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 330,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1003",
+      "id": "INV-IKL-1001",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-main",
@@ -1407,7 +1480,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1003,
+      "seqNumber": 1001,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1418,7 +1491,7 @@
       "weekNumber": 36,
       "driverPhone": "+966542733880",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1003",
+      "invoiceNumber": "INV-IKL-1001",
       "netSettlement": -260,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1427,10 +1500,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 280,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1004",
+      "id": "INV-KAYF-1002",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-dammam",
@@ -1439,7 +1513,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1004,
+      "seqNumber": 1002,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1450,7 +1524,7 @@
       "weekNumber": 36,
       "driverPhone": "+966541202276",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1004",
+      "invoiceNumber": "INV-KAYF-1002",
       "netSettlement": -320,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1459,10 +1533,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1005",
+      "id": "INV-KAYF-1003",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-dammam",
@@ -1471,7 +1546,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1005,
+      "seqNumber": 1003,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1482,7 +1557,7 @@
       "weekNumber": 36,
       "driverPhone": "+966552775103",
       "driverVehicle": "السيارة الصفراء",
-      "invoiceNumber": "INV-1005",
+      "invoiceNumber": "INV-KAYF-1003",
       "netSettlement": -220,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1491,10 +1566,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1006",
+      "id": "INV-JBL-1001",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-jubail",
@@ -1503,7 +1579,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1006,
+      "seqNumber": 1001,
       "autoIssued": true,
       "branchName": "فرع إكليل الجبيل",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1514,7 +1590,7 @@
       "weekNumber": 36,
       "driverPhone": "+966561080390",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1006",
+      "invoiceNumber": "INV-JBL-1001",
       "netSettlement": -300,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1523,10 +1599,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "JBL"
     },
     {
-      "id": "INV-1007",
+      "id": "INV-SHQ-1002",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-vape-sharq",
@@ -1535,7 +1612,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1007,
+      "seqNumber": 1002,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1546,7 +1623,7 @@
       "weekNumber": 36,
       "driverPhone": "+966534185799",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1007",
+      "invoiceNumber": "INV-SHQ-1002",
       "netSettlement": -320,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1555,10 +1632,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1008",
+      "id": "INV-IKL-1002",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-main",
@@ -1567,7 +1645,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1008,
+      "seqNumber": 1002,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1578,7 +1656,7 @@
       "weekNumber": 36,
       "driverPhone": "+966562048849",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1008",
+      "invoiceNumber": "INV-IKL-1002",
       "netSettlement": -280,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1587,10 +1665,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1009",
+      "id": "INV-KAYF-1004",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-dammam",
@@ -1599,7 +1678,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1009,
+      "seqNumber": 1004,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1610,7 +1689,7 @@
       "weekNumber": 36,
       "driverPhone": "+966501928374",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1009",
+      "invoiceNumber": "INV-KAYF-1004",
       "netSettlement": -100,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1619,10 +1698,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1010",
+      "id": "INV-SHQ-1003",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-vape-sharq",
@@ -1631,7 +1711,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1010,
+      "seqNumber": 1003,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1642,7 +1722,7 @@
       "weekNumber": 36,
       "driverPhone": "+966551827364",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1010",
+      "invoiceNumber": "INV-SHQ-1003",
       "netSettlement": -100,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1651,10 +1731,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1011",
+      "id": "INV-IKL-1003",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-main",
@@ -1663,7 +1744,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1011,
+      "seqNumber": 1003,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1674,7 +1755,7 @@
       "weekNumber": 36,
       "driverPhone": "+966561728394",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1011",
+      "invoiceNumber": "INV-IKL-1003",
       "netSettlement": -100,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1683,10 +1764,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1012",
+      "id": "INV-KAYF-1005",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-08-28 إلى 2026-09-04) - منصة سَنَد",
       "status": "settled",
       "branchId": "branch-iklil-dammam",
@@ -1695,7 +1777,7 @@
       "issuedAt": "2026-09-06T12:32:22.892Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1012,
+      "seqNumber": 1005,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 36",
@@ -1706,7 +1788,7 @@
       "weekNumber": 36,
       "driverPhone": "+966541928374",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1012",
+      "invoiceNumber": "INV-KAYF-1005",
       "netSettlement": -100,
       "periodEndDate": "2026-09-04",
       "periodStartDate": "2026-08-28",
@@ -1715,10 +1797,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-11",
       "totalCodCollected": 340,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1013",
+      "id": "INV-KAYF-1006",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-dammam",
@@ -1727,7 +1810,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1013,
+      "seqNumber": 1006,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1738,7 +1821,7 @@
       "weekNumber": 37,
       "driverPhone": "+966502893163",
       "driverVehicle": "سيارة خاصة (كامري 2023)",
-      "invoiceNumber": "INV-1013",
+      "invoiceNumber": "INV-KAYF-1006",
       "netSettlement": -510,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1747,10 +1830,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 550,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1014",
+      "id": "INV-SHQ-1004",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-vape-sharq",
@@ -1759,7 +1843,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1014,
+      "seqNumber": 1004,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1770,7 +1854,7 @@
       "weekNumber": 37,
       "driverPhone": "+966532004649",
       "driverVehicle": "سيارة توصيل (أكسنت)",
-      "invoiceNumber": "INV-1014",
+      "invoiceNumber": "INV-SHQ-1004",
       "netSettlement": -310,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1779,10 +1863,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 330,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1015",
+      "id": "INV-IKL-1004",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-main",
@@ -1791,7 +1876,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1015,
+      "seqNumber": 1004,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1802,7 +1887,7 @@
       "weekNumber": 37,
       "driverPhone": "+966542733880",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1015",
+      "invoiceNumber": "INV-IKL-1004",
       "netSettlement": -260,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1811,10 +1896,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 280,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1016",
+      "id": "INV-KAYF-1007",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-dammam",
@@ -1823,7 +1909,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1016,
+      "seqNumber": 1007,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1834,7 +1920,7 @@
       "weekNumber": 37,
       "driverPhone": "+966541202276",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1016",
+      "invoiceNumber": "INV-KAYF-1007",
       "netSettlement": 20,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1843,10 +1929,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1017",
+      "id": "INV-KAYF-1008",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-dammam",
@@ -1855,7 +1942,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1017,
+      "seqNumber": 1008,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1866,7 +1953,7 @@
       "weekNumber": 37,
       "driverPhone": "+966552775103",
       "driverVehicle": "السيارة الصفراء",
-      "invoiceNumber": "INV-1017",
+      "invoiceNumber": "INV-KAYF-1008",
       "netSettlement": 120,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1875,10 +1962,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1018",
+      "id": "INV-JBL-1002",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-jubail",
@@ -1887,7 +1975,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1018,
+      "seqNumber": 1002,
       "autoIssued": true,
       "branchName": "فرع إكليل الجبيل",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1898,7 +1986,7 @@
       "weekNumber": 37,
       "driverPhone": "+966561080390",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1018",
+      "invoiceNumber": "INV-JBL-1002",
       "netSettlement": 40,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1907,10 +1995,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "JBL"
     },
     {
-      "id": "INV-1019",
+      "id": "INV-SHQ-1005",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-vape-sharq",
@@ -1919,7 +2008,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1019,
+      "seqNumber": 1005,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1930,7 +2019,7 @@
       "weekNumber": 37,
       "driverPhone": "+966534185799",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1019",
+      "invoiceNumber": "INV-SHQ-1005",
       "netSettlement": 20,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1939,10 +2028,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1020",
+      "id": "INV-IKL-1005",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-main",
@@ -1951,7 +2041,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1020,
+      "seqNumber": 1005,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1962,7 +2052,7 @@
       "weekNumber": 37,
       "driverPhone": "+966562048849",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1020",
+      "invoiceNumber": "INV-IKL-1005",
       "netSettlement": 60,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -1971,10 +2061,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1021",
+      "id": "INV-KAYF-1009",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-dammam",
@@ -1983,7 +2074,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1021,
+      "seqNumber": 1009,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -1994,7 +2085,7 @@
       "weekNumber": 37,
       "driverPhone": "+966501928374",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1021",
+      "invoiceNumber": "INV-KAYF-1009",
       "netSettlement": 160,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -2003,10 +2094,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     },
     {
-      "id": "INV-1022",
+      "id": "INV-SHQ-1006",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-vape-sharq",
@@ -2015,7 +2107,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1022,
+      "seqNumber": 1006,
       "autoIssued": true,
       "branchName": "متجر فيب الشرق",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -2026,7 +2118,7 @@
       "weekNumber": 37,
       "driverPhone": "+966551827364",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1022",
+      "invoiceNumber": "INV-SHQ-1006",
       "netSettlement": 160,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -2035,10 +2127,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "SHQ"
     },
     {
-      "id": "INV-1023",
+      "id": "INV-IKL-1006",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-main",
@@ -2047,7 +2140,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1023,
+      "seqNumber": 1006,
       "autoIssued": true,
       "branchName": "متجر إكليل فيب",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -2058,7 +2151,7 @@
       "weekNumber": 37,
       "driverPhone": "+966561728394",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1023",
+      "invoiceNumber": "INV-IKL-1006",
       "netSettlement": 160,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -2067,10 +2160,11 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "IKL"
     },
     {
-      "id": "INV-1024",
+      "id": "INV-KAYF-1010",
       "notes": "تم الإصدار التلقائي لدورة الـ 7 أيام (2026-09-04 إلى 2026-09-11) - منصة سَنَد",
       "status": "approved",
       "branchId": "branch-iklil-dammam",
@@ -2079,7 +2173,7 @@
       "issuedAt": "2026-09-13T18:31:33.977Z",
       "cycleDays": 7,
       "cycleType": "every_7_days",
-      "seqNumber": 1024,
+      "seqNumber": 1010,
       "autoIssued": true,
       "branchName": "فرع إكليل الدمام",
       "cycleTitle": "فاتورة تسوية دورية (كل 7 أيام) - أسبوع 37",
@@ -2090,7 +2184,7 @@
       "weekNumber": 37,
       "driverPhone": "+966541928374",
       "driverVehicle": "سيارة توصيل",
-      "invoiceNumber": "INV-1024",
+      "invoiceNumber": "INV-KAYF-1010",
       "netSettlement": 160,
       "periodEndDate": "2026-09-11",
       "periodStartDate": "2026-09-04",
@@ -2099,7 +2193,8 @@
       "executionSchedule": "تلقائي كل 7 أيام (Autonomous 7-Day Cycle)",
       "nextAutoCycleDate": "2026-09-18",
       "totalCodCollected": 0,
-      "commissionPerOrder": 20
+      "commissionPerOrder": 20,
+      "branchCode": "KAYF"
     }
   ],
   "inventoryItems": [
@@ -2480,19 +2575,19 @@
         "orderCount": 13,
         "receiptNumber": "REC-1001",
         "settledOrderIds": [
-          "SND-1023",
-          "SND-1022",
-          "SND-1021",
-          "SND-1020",
-          "SND-1002",
-          "SND-1003",
-          "SND-1005",
-          "SND-1006",
-          "SND-1007",
-          "SND-1009",
-          "SND-1010",
-          "SND-1011",
-          "SND-1012"
+          "SND-SHQ-1007",
+          "SND-SHQ-1006",
+          "SND-KAYF-1009",
+          "SND-KAYF-1008",
+          "SND-JBL-1003",
+          "SND-KAYF-1007",
+          "SND-IKL-1004",
+          "SND-KAYF-1006",
+          "SND-SHQ-1004",
+          "SND-JBL-1002",
+          "SND-KAYF-1005",
+          "SND-SHQ-1003",
+          "SND-IKL-1002"
         ]
       },
       {
@@ -2521,7 +2616,7 @@
         "orderCount": 1,
         "receiptNumber": "REC-1003",
         "settledOrderIds": [
-          "SND-1017"
+          "SND-IKL-1001"
         ]
       },
       {
@@ -2535,7 +2630,7 @@
         "orderCount": 1,
         "receiptNumber": "REC-1002",
         "settledOrderIds": [
-          "SND-1014"
+          "SND-SHQ-1002"
         ]
       },
       {
@@ -2549,8 +2644,8 @@
         "orderCount": 2,
         "receiptNumber": "REC-1001",
         "settledOrderIds": [
-          "SND-1013",
-          "SND-1015"
+          "SND-KAYF-1003",
+          "SND-KAYF-1002"
         ]
       },
       {

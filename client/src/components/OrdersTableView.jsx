@@ -134,9 +134,10 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
       let matchSearch = true;
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
-        const safeId = String(o?.id || '');
-        const tid = (safeId.startsWith('SND-') ? safeId : ('SND-' + (safeId.replace(/\D/g, '') || '1001'))).toLowerCase();
+        const tid = String(o?.trackingNumber || o?.id || '').toLowerCase();
+        const onum = String(o?.orderNumber || '').toLowerCase();
         matchSearch = tid.includes(q) || 
+                      onum.includes(q) ||
                       (o?.customerName && String(o.customerName).toLowerCase().includes(q)) || 
                       (o?.customerPhone && String(o.customerPhone).includes(q)) ||
                       (o?.customerAddress && String(o.customerAddress).toLowerCase().includes(q));
@@ -562,8 +563,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
               ) : (
                 filteredOrders.map(order => {
                   const assignedDriver = drivers.find(d => d.id === order.assignedDriverId);
-                  const safeOrderId = String(order?.id || '');
-                  const trackingId = safeOrderId.startsWith('SND-') ? safeOrderId : ('SND-' + (safeOrderId.replace(/\D/g, '') || '1001'));
+                  const trackingId = order.trackingNumber || order.id || 'SND-1001';
                   const neighborhood = order.customerAddress ? order.customerAddress.split('-')[0].trim() : '—';
 
                   return (

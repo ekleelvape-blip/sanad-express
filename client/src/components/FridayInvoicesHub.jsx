@@ -22,6 +22,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCycleFilter, setSelectedCycleFilter] = useState('all');
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
   const [generating, setGenerating] = useState(false);
 
   // توليد فواتير افتراضية تلقائية ذكية في حال كانت قاعدة البيانات فارغة
@@ -140,10 +141,15 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
       const matchesSearch = !q || (
         (inv.driverName || '').toLowerCase().includes(q) ||
         (inv.invoiceNumber || '').toLowerCase().includes(q) ||
-        (inv.driverPhone || '').includes(q)
+        (inv.driverPhone || '').includes(q) ||
+        (inv.branchName || '').toLowerCase().includes(q)
       );
 
       if (!matchesSearch) return false;
+
+      if (selectedBranchFilter !== 'all' && inv.branchId !== selectedBranchFilter) {
+        return false;
+      }
 
       if (selectedCycleFilter === 'current') {
         return inv.status !== 'settled';
@@ -152,7 +158,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
       }
       return true;
     });
-  }, [invoices, searchQuery, selectedCycleFilter]);
+  }, [invoices, searchQuery, selectedCycleFilter, selectedBranchFilter]);
 
   const totalCommissionsAll = filteredInvoices.reduce((sum, i) => sum + (Number(i.totalCommissions) || 0), 0);
   const totalCodAll = filteredInvoices.reduce((sum, i) => sum + (Number(i.totalCodCollected) || 0), 0);
@@ -299,15 +305,30 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
           </button>
         </div>
 
-        <div className="relative flex-1 max-w-sm">
-          <Search className="w-4 h-4 absolute right-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="البحث باسم المندوب أو رقم الفاتورة..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pr-9 pl-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          />
+        <div className="flex items-center gap-2 flex-1 max-w-lg">
+          <select
+            value={selectedBranchFilter}
+            onChange={(e) => setSelectedBranchFilter(e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 font-bold shrink-0"
+          >
+            <option value="all">جميع الفروع</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>
+                {b.name} ({b.code || b.id})
+              </option>
+            ))}
+          </select>
+
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute right-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="البحث باسم المندوب أو رقم الفاتورة..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pr-9 pl-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            />
+          </div>
         </div>
       </div>
 

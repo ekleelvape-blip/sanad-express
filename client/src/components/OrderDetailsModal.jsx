@@ -35,7 +35,7 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
   const assignedDriver = drivers.find(d => d.id === (order.assignedDriverId || selectedDriverId));
   const rawId = order.id ? order.id.replace(/\D/g, '') : '284741285';
   const orderNumber = order.orderNumber || rawId || '284741285';
-  const trackingId = order.id?.startsWith('SND-') ? order.id : ('SND-' + (rawId || '284741285'));
+  const trackingId = order.trackingNumber || order.id || 'SND-1001';
 
   // نسخ رابط التتبع
   const handleCopyTrackingLink = () => {

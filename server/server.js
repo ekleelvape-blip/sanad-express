@@ -150,6 +150,10 @@ const systemUsers = [
 let branches = [
   {
     id: 'branch-iklil-dammam',
+    code: 'KAYF',
+    orderPrefix: 'SND-KAYF',
+    invoicePrefix: 'INV-KAYF',
+    receiptPrefix: 'REC-KAYF',
     name: 'فرع إكليل الكيف - الدمام حي طيبة',
     brand: 'إكليل الكيف',
     city: 'الدمام',
@@ -163,6 +167,10 @@ let branches = [
   },
   {
     id: 'branch-iklil-jubail',
+    code: 'JBL',
+    orderPrefix: 'SND-JBL',
+    invoicePrefix: 'INV-JBL',
+    receiptPrefix: 'REC-JBL',
     name: 'فرع إكليل فيب - الجبيل البلد',
     brand: 'إكليل فيب',
     city: 'الجبيل',
@@ -176,6 +184,10 @@ let branches = [
   },
   {
     id: 'branch-vape-sharq',
+    code: 'SHQ',
+    orderPrefix: 'SND-SHQ',
+    invoicePrefix: 'INV-SHQ',
+    receiptPrefix: 'REC-SHQ',
     name: 'متجر فيب الشرق',
     brand: 'فيب الشرق',
     city: 'الدمام',
@@ -189,6 +201,10 @@ let branches = [
   },
   {
     id: 'branch-iklil-main',
+    code: 'IKL',
+    orderPrefix: 'SND-IKL',
+    invoicePrefix: 'INV-IKL',
+    receiptPrefix: 'REC-IKL',
     name: 'متجر إكليل فيب',
     brand: 'إكليل فيب',
     city: 'الدمام',
@@ -523,41 +539,80 @@ let drivers = [
 
 
 // =========================================================================
-// محرك الأرقام المتسلسلة الموحد لمنصة سَنَد
-// (Sequential Sequence Engine for Orders, Invoices, Receipts & Waybills)
+// محرك الأرقام المتسلسلة المستقل لكل فرع لمنصة سَنَد
+// (Branch-Scoped Sequence Engine for Orders, Invoices, Receipts & Waybills)
 // =========================================================================
 
-function getNextOrderSequence() {
+function getBranchConfig(branchId) {
+  const b = branches.find(br => br.id === branchId);
+  if (b) return b;
+  return branches[0] || {
+    id: 'branch-iklil-dammam',
+    code: 'KAYF',
+    orderPrefix: 'SND-KAYF',
+    invoicePrefix: 'INV-KAYF',
+    receiptPrefix: 'REC-KAYF'
+  };
+}
+
+function getNextOrderSequence(branchId) {
+  const b = getBranchConfig(branchId);
+  const prefix = b.orderPrefix || ('SND-' + (b.code || 'B'));
   let maxSeq = 1000;
   for (const o of orders) {
-    const num = parseInt((o.orderNumber || o.id || '').replace(/\D/g, ''), 10);
-    if (!isNaN(num) && num < 200000 && num > maxSeq) {
-      maxSeq = num;
+    if (o.branchId === b.id || (o.id && o.id.includes(b.code))) {
+      const num = parseInt((o.orderNumber || o.id || '').replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num < 200000 && num > maxSeq) {
+        maxSeq = num;
+      }
     }
   }
-  return maxSeq + 1;
+  const nextSeq = maxSeq + 1;
+  return {
+    seq: nextSeq,
+    orderNumber: `${b.code || 'B'}-${nextSeq}`,
+    id: `${prefix}-${nextSeq}`,
+    trackingNumber: `${prefix}-${nextSeq}`
+  };
 }
 
-let invoiceSequenceCounter = 1001;
-function getNextInvoiceNumber() {
+function getNextInvoiceNumber(branchId) {
+  const b = getBranchConfig(branchId);
+  const prefix = b.invoicePrefix || ('INV-' + (b.code || 'B'));
   let maxInv = 1000;
   for (const inv of fridayInvoices) {
-    const num = parseInt((inv.invoiceNumber || inv.id || '').replace(/\D/g, ''), 10);
-    if (!isNaN(num) && num > maxInv) {
-      maxInv = num;
+    if (inv.branchId === b.id || (inv.invoiceNumber && inv.invoiceNumber.includes(b.code))) {
+      const num = parseInt((inv.invoiceNumber || inv.id || '').replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num > maxInv) {
+        maxInv = num;
+      }
     }
   }
-  return 'INV-' + (maxInv + 1);
+  const nextSeq = maxInv + 1;
+  return {
+    seqNumber: nextSeq,
+    invoiceNumber: `${prefix}-${nextSeq}`
+  };
 }
 
-let receiptSequenceCounter = 1001;
-function getNextReceiptNumber() {
-  return 'REC-' + (receiptSequenceCounter++);
+function getNextReceiptNumber(branchId) {
+  const b = getBranchConfig(branchId);
+  const prefix = b.receiptPrefix || ('REC-' + (b.code || 'B'));
+  let maxRec = 1000;
+  const transactions = (storeReceivedCashWallet && storeReceivedCashWallet.transactions) || [];
+  for (const t of transactions) {
+    if (t.branchId === b.id || (t.receiptNumber && t.receiptNumber.includes(b.code))) {
+      const num = parseInt((t.receiptNumber || '').replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num > maxRec) maxRec = num;
+    }
+  }
+  return `${prefix}-${maxRec + 1}`;
 }
 
-let transactionSequenceCounter = 1001;
-function getNextTransactionNumber() {
-  return 'TXN-' + (transactionSequenceCounter++);
+function getNextTransactionNumber(branchId) {
+  const b = getBranchConfig(branchId);
+  const prefix = 'TXN-' + (b.code || 'GEN');
+  return `${prefix}-${Date.now().toString().slice(-6)}`;
 }
 
 let orders = [
@@ -1345,13 +1400,16 @@ app.get('/api/orders', (req, res) => {
   res.json(filtered);
 });
 
-// إنشاء طلب جديد بنظام سَنَد (SND-XXXXXX)
+// إنشاء طلب جديد بنظام سَنَد المستقل لكل فرع (SND-[CODE]-XXXX)
 app.post('/api/orders', (req, res) => {
   const { branchId, customerName, customerPhone, customerAddress, items, totalAmount, paymentMethod, notes, customerCoords, driverCommission, assignedDriverId, orderNumber, orderSource } = req.body;
-  const branch = branches.find(b => b.id === branchId) || branches[0];
-  const incomingNum = orderNumber ? parseInt(String(orderNumber).replace(/\D/g, ''), 10) : null;
-  const nextSeq = (incomingNum && !isNaN(incomingNum) && incomingNum < 200000) ? incomingNum : getNextOrderSequence();
-  const newId = 'SND-' + nextSeq;
+  const targetBranchId = branchId || 'branch-iklil-dammam';
+  const branch = branches.find(b => b.id === targetBranchId) || branches[0];
+
+  const seqData = getNextOrderSequence(targetBranchId);
+  const newId = seqData.id;
+  const newOrderNumber = seqData.orderNumber;
+  const newTrackingNumber = seqData.trackingNumber;
 
   let orderStatus = 'unassigned';
   let targetDriverId = null;
@@ -1376,9 +1434,9 @@ app.post('/api/orders', (req, res) => {
 
   const newOrder = {
     id: newId,
-    orderNumber: String(nextSeq),
-    trackingNumber: newId,
-    branchId: branchId || (branch ? branch.id : 'branch-iklil-dammam'),
+    orderNumber: newOrderNumber,
+    trackingNumber: newTrackingNumber,
+    branchId: targetBranchId,
     customerName: customerName || 'عميل جديد',
     customerPhone: customerPhone || '0501239988',
     customerAddress: customerAddress || 'عنوان العميل',
@@ -1616,7 +1674,7 @@ function generate7DayInvoices(offsetWeeks = 0) {
     const netSettlement = totalCommissions - totalCod;
     const branch = branches.find(b => b.id === driver.branchId) || branches[0];
 
-    // الحفاظ على الرقم المتسلسل الثابت للفاتورة
+    // الحفاظ على الرقم المتسلسل الثابت للفاتورة بحسب الفرع
     const existingIdx = fridayInvoices.findIndex(inv => inv.cycleKey === cycleKey || inv.id === cycleKey);
     let invSeq;
     let invNum;
@@ -1624,13 +1682,9 @@ function generate7DayInvoices(offsetWeeks = 0) {
       invNum = fridayInvoices[existingIdx].invoiceNumber;
       invSeq = fridayInvoices[existingIdx].seqNumber || parseInt(invNum.replace(/\D/g, ''), 10);
     } else {
-      let maxInv = 1000;
-      for (const inv of fridayInvoices) {
-        const num = parseInt((inv.invoiceNumber || '').replace(/\D/g, ''), 10);
-        if (!isNaN(num) && num > maxInv) maxInv = num;
-      }
-      invSeq = maxInv + 1;
-      invNum = `INV-${invSeq}`;
+      const seqData = getNextInvoiceNumber(branch?.id);
+      invSeq = seqData.seqNumber;
+      invNum = seqData.invoiceNumber;
     }
 
     const invoiceObj = {
@@ -1654,7 +1708,8 @@ function generate7DayInvoices(offsetWeeks = 0) {
       driverNationalId: driver.nationalId || '2463794624',
       driverVehicle: driver.vehicle || 'سيارة خاصة',
       branchId: branch?.id,
-      branchName: branch?.name || 'فرع إكليل الدمام',
+      branchCode: branch?.code,
+      branchName: branch?.name || 'فرع إكليل الكيف',
       orderCount: orderCount,
       commissionPerOrder: avgCommission,
       totalCommissions: totalCommissions,
@@ -1769,12 +1824,13 @@ app.post('/api/drivers/:id/settle-zero', (req, res) => {
   driver.cashOnHand = 0;
   driver.walletBalance = 0;
 
+  const targetBranchId = branchId || driver.branchId;
   const transaction = {
-    id: getNextTransactionNumber(),
-    receiptNumber: getNextReceiptNumber(),
+    id: getNextTransactionNumber(targetBranchId),
+    receiptNumber: getNextReceiptNumber(targetBranchId),
     driverId: driver.id,
     driverName: driver.name,
-    branchId: branchId || driver.branchId,
+    branchId: targetBranchId,
     amount: settledAmount,
     orderCount: driverOrders.length,
     settledOrderIds: driverOrders.map(o => o.id),
@@ -1832,12 +1888,13 @@ app.post('/api/settlements/cod', (req, res) => {
     storeReceivedCashWallet.totalBalance += settleTotal;
   }
 
+  const targetBranchId = branchId || driver.branchId;
   const transaction = {
-    id: getNextTransactionNumber(),
-    receiptNumber: getNextReceiptNumber(),
+    id: getNextTransactionNumber(targetBranchId),
+    receiptNumber: getNextReceiptNumber(targetBranchId),
     driverId: driver.id,
     driverName: driver.name,
-    branchId: branchId || driver.branchId,
+    branchId: targetBranchId,
     amount: settleTotal || prevCash || 0,
     orderCount: targetOrders.length,
     settledOrderIds: targetOrders.map(o => o.id),
