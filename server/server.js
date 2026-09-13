@@ -2949,7 +2949,11 @@ app.use('/assets', (req, res, next) => {
       if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
       else if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      return res.sendFile(filePath);
+      const stream = fs.createReadStream(filePath);
+      stream.on('error', (err) => {
+        if (!res.headersSent) res.status(500).send('Stream error');
+      });
+      return stream.pipe(res);
     }
   }
   // إذا لم يتم العثور على الملف، لا نرجع index.html أبداً حتى لا يعطل محرك الجافاسكريبت!
@@ -2980,8 +2984,13 @@ const serveAppIndex = (req, res) => {
   if (distPath) {
     const indexFile = path.join(distPath, 'index.html');
     if (fs.existsSync(indexFile)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      return res.sendFile('index.html', { root: distPath });
+      const stream = fs.createReadStream(indexFile);
+      stream.on('error', () => {
+        if (!res.headersSent) res.status(500).send('Index error');
+      });
+      return stream.pipe(res);
     }
   }
   return res.status(200).send(`<!doctype html>
