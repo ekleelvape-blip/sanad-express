@@ -5,6 +5,7 @@ import DriverManifestModal from './DriverManifestModal';
 import BarcodeScannerBar from './BarcodeScannerBar';
 import DeliveryExceptionModal from './DeliveryExceptionModal';
 import { sound } from '../utils/sound';
+import { getDeliveryFeeByAddress } from '../utils/geo';
 
 export default function OrderDispatch({ orders, drivers, branches, selectedBranch, onAssignOrder, onCreateOrder, onRefresh }) {
   const [selectedDriverForOrder, setSelectedDriverForOrder] = useState({});
@@ -49,13 +50,16 @@ export default function OrderDispatch({ orders, drivers, branches, selectedBranc
       customerAddress: formData.customerAddress,
       totalAmount: Number(formData.totalAmount),
       paymentMethod: formData.paymentMethod,
-      driverCommission: Number(formData.driverCommission) || 20,
+      deliveryFee: getDeliveryFeeByAddress(formData.customerAddress),
+      driverCommission: (Number(formData.driverCommission) && Number(formData.driverCommission) !== 20) 
+        ? Number(formData.driverCommission) 
+        : getDeliveryFeeByAddress(formData.customerAddress),
       notes: formData.notes,
       items: [{ name: formData.productDescription || 'شحنة متنوعة', qty: 1, price: Number(formData.totalAmount) }]
     });
     setFormData({
       branchId: selectedBranch !== 'all' ? selectedBranch : 'branch-iklil-dammam',
-      customerName: '', customerPhone: '', customerAddress: '', productDescription: '', totalAmount: '', paymentMethod: 'cash', driverCommission: 20, notes: ''
+      customerName: '', customerPhone: '', customerAddress: '', productDescription: '', totalAmount: '', paymentMethod: 'cash', driverCommission: 25, notes: ''
     });
     setShowAddModal(false);
   };
@@ -279,7 +283,9 @@ export default function OrderDispatch({ orders, drivers, branches, selectedBranc
                   </div>
                   <div>
                     <span className="text-slate-400">أجرة المندوب: </span>
-                    <span className="font-mono font-bold text-purple-400">{order.driverCommission} ر.س</span>
+                    <span className="font-mono font-bold text-purple-400">
+                      {(order.driverCommission && Number(order.driverCommission) !== 20 ? Number(order.driverCommission) : (order.deliveryFee && Number(order.deliveryFee) !== 20 ? Number(order.deliveryFee) : getDeliveryFeeByAddress(order.customerAddress))).toFixed(2)} ر.س
+                    </span>
                   </div>
                 </div>
               </div>

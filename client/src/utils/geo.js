@@ -132,7 +132,9 @@ export const FIXED_DELIVERY_RATES = {
   'القطيف': 35,
   'الخبر': 35,
   'صفوى': 40,
-  'صفوي': 40
+  'صفوي': 40,
+  'الجبيل': 40,
+  'الأحساء': 45
 };
 
 export const OFFICIAL_CITIES = [
@@ -141,7 +143,9 @@ export const OFFICIAL_CITIES = [
   { id: 'dhahran', name: 'الظهران', fee: 30, prefix: 'DH', sla: '30 - 45 دقيقة', hub: 'محطة الظهران' },
   { id: 'qatif', name: 'القطيف', fee: 35, prefix: 'Q', sla: '40 - 55 دقيقة', hub: 'محطة القطيف' },
   { id: 'khobar', name: 'الخبر', fee: 35, prefix: 'K', sla: '35 - 50 دقيقة', hub: 'محطة الخبر' },
-  { id: 'safwa', name: 'صفوى (صفوي)', fee: 40, prefix: 'SF', sla: '45 - 60 دقيقة', hub: 'محطة صفوى' }
+  { id: 'safwa', name: 'صفوى (صفوي)', fee: 40, prefix: 'SF', sla: '45 - 60 دقيقة', hub: 'محطة صفوى' },
+  { id: 'jubail', name: 'الجبيل', fee: 40, prefix: 'J', sla: '45 - 60 دقيقة', hub: 'محطة الجبيل' },
+  { id: 'ahsa', name: 'الأحساء', fee: 45, prefix: 'AH', sla: '50 - 70 دقيقة', hub: 'محطة الأحساء' }
 ];
 
 /**
@@ -157,6 +161,8 @@ export function getDeliveryFeeByAddress(addressOrCity) {
   if (text.includes('خبر') || text.includes('عزيزية') || text.includes('عقربية') || text.includes('حزام ذهبي')) return 35;
   if (text.includes('ظهران') || text.includes('دوحة') || text.includes('دانة') || text.includes('قصور') || text.includes('جامعة')) return 30;
   if (text.includes('سيهات') || text.includes('عنك') || text.includes('كوثر')) return 30;
+  if (text.includes('جبيل') || text.includes('jubail')) return 40;
+  if (text.includes('أحساء') || text.includes('احساء') || text.includes('هفوف')) return 45;
   if (text.includes('دمام') || text.includes('شاطئ') || text.includes('فيصلية') || text.includes('منار')) return 25;
   return 25; // الافتراضي للمركز (الدمام) 25 ريال ثابت
 }

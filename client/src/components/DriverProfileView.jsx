@@ -278,8 +278,8 @@ export default function DriverProfileView({ driver, orders = [], branches = [], 
                     <span className="font-bold text-amber-600 font-mono">⭐ {driver.rating || 5.0} / 5.0</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-slate-500">عمولة التوصيل الافتراضية:</span>
-                    <span className="font-bold font-mono text-slate-900">20.00 ﷼ لكل شحنة</span>
+                    <span className="text-slate-500">تسعيرة التوصيل والعمولة:</span>
+                    <span className="font-bold font-mono text-emerald-600">حسب تسعيرة المدينة المعتمدة (25 - 45 ﷼)</span>
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import {
   ShieldCheck, CreditCard, Banknote, Sparkles, Smartphone, Upload, Check, AlertCircle 
 } from 'lucide-react';
 import { sound } from '../utils/sound';
+import { getDeliveryFeeByAddress } from '../utils/geo';
 
 export default function DriverProofOfDeliveryModal({
   isOpen,
@@ -12,6 +13,18 @@ export default function DriverProofOfDeliveryModal({
   onConfirmDelivery
 }) {
   if (!isOpen || !order) return null;
+
+  // احتساب عمولة المندوب ورسم التوصيل المعتمد للطلب بدقة وفق التسعيرة الرسمية
+  const calculatedCommission = (() => {
+    if (order.driverCommission && Number(order.driverCommission) > 0 && Number(order.driverCommission) !== 20) {
+      return Number(order.driverCommission);
+    }
+    if (order.deliveryFee && Number(order.deliveryFee) > 0 && Number(order.deliveryFee) !== 20 && Number(order.deliveryFee) !== 17.39) {
+      return Number(order.deliveryFee);
+    }
+    return getDeliveryFeeByAddress(order.customerAddress || order.city || '');
+  })();
+  const commissionAmount = Number(calculatedCommission || 25).toFixed(2);
 
   // طريقة الدفع المستلمة: 'cash' | 'mada' | 'bank_transfer'
   const [paymentMethod, setPaymentMethod] = useState(order.paymentMethod === 'cash' ? 'cash' : 'mada');
@@ -122,7 +135,8 @@ export default function DriverProofOfDeliveryModal({
         signature: signatureData,
         otpCode,
         photoProof,
-        notes: deliveryNotes
+        notes: deliveryNotes,
+        commissionAmount: Number(commissionAmount)
       });
       sound.playSuccess();
     } catch (err) {
@@ -148,9 +162,14 @@ export default function DriverProofOfDeliveryModal({
                 <span>إثبات وإنهاء تسليم الشحنة</span>
                 <span className="font-mono text-cyan-600 dark:text-cyan-400">#{order.id}</span>
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                العميل: <strong className="text-slate-800 dark:text-slate-200">{order.customerName}</strong>
-              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  العميل: <strong className="text-slate-800 dark:text-slate-200">{order.customerName}</strong>
+                </p>
+                <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 text-[10px]">
+                  عمولة المشوار: +{commissionAmount} ﷼
+                </span>
+              </div>
             </div>
           </div>
 
@@ -432,7 +451,7 @@ export default function DriverProofOfDeliveryModal({
             ) : (
               <>
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>تأكيد التسليم بنجاح وإيداع العمولة بالرصيد ✅ (+20.00 ﷼)</span>
+                <span>تأكيد التسليم بنجاح وإيداع العمولة بالرصيد ✅ (+{commissionAmount} ﷼)</span>
               </>
             )}
           </button>

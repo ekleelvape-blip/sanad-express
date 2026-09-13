@@ -243,20 +243,22 @@ export default function DriverApp({
     if (!deliveryConfirmOrder) return;
     try {
       const pMethod = podData?.paymentMethod || confirmPaymentMethod;
+      const commissionVal = Number(podData?.commissionAmount || deliveryConfirmOrder.driverCommission || deliveryConfirmOrder.deliveryFee || 25);
       if (onUpdateOrderStatus) {
         await onUpdateOrderStatus(deliveryConfirmOrder.id, 'delivered', pMethod, {
           podData,
           deliveredAt: new Date().toISOString(),
           proofType: podData?.podTab,
           receivedCash: podData?.receivedCash,
-          changeDue: podData?.changeDue
+          changeDue: podData?.changeDue,
+          driverCommission: commissionVal
         });
       }
       sound.playSuccess();
       const currentOrderSaved = deliveryConfirmOrder;
       setDeliveryConfirmOrder(null);
       if (onRefresh) onRefresh();
-      alert(`✅ تم تأكيد تسليم الشحنة #${currentOrderSaved.id} وتوثيق إثبات التسليم الرقمي بنجاح!`);
+      alert(`✅ تم تأكيد تسليم الشحنة #${currentOrderSaved.id} وإيداع العمولة (+${commissionVal.toFixed(2)} ﷼) في رصيدك بنجاح!`);
     } catch (err) {
       alert('حدث خطأ أثناء تأكيد التسليم');
     }
@@ -1839,17 +1841,17 @@ export default function DriverApp({
               <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-center">
                 <div className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">رصيد العمولات المستحقة لك</div>
                 <div className="text-2xl font-black font-mono text-emerald-600 mt-1">
-                  {(deliveredOrders.length * 20).toFixed(2)} ﷼
+                  {(deliveredOrders.reduce((sum, o) => sum + Number(o.driverCommission || o.deliveryFee || 25), 0)).toFixed(2)} ﷼
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-500">الكاش المسلم باليد (العهدة):</span>
-                  <span className="font-bold font-mono">{currentDriver.cashOnHand || '327.74'} ﷼</span>
+                  <span className="font-bold font-mono">{currentDriver.cashOnHand || '0.00'} ﷼</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">عمولة كل مشوار:</span>
-                  <span className="font-bold font-mono text-[#00d2d3]">20.00 ﷼</span>
+                  <span className="text-slate-500">عمولة المشوار:</span>
+                  <span className="font-bold font-mono text-[#00d2d3]">حسب تسعيرة المدينة (25 - 40 ﷼)</span>
                 </div>
               </div>
             </div>

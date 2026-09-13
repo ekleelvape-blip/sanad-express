@@ -259,7 +259,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
         totalAmount: Number(newOrderData.totalAmount),
         paymentMethod: newOrderData.paymentMethod || 'cash',
         assignedDriverId: newOrderData.assignedDriverId || null,
-        driverCommission: 20,
+        driverCommission: fee,
         notes: (newOrderData.notes || '').trim(),
         orderSource: newOrderData.orderSource === 'سلة' ? 'سلة (Salla)' : 'يدوي (Manual)',
         items: [{ name: 'شحنة منتجات سَنَد', qty: 1, price: Number(newOrderData.totalAmount) }]

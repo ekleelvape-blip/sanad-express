@@ -741,7 +741,9 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
                       </div>
                       <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <div className="text-slate-400 text-[11px]">عمولة المندوب (المستحقة)</div>
-                        <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base mt-1">20.00 ر.س</div>
+                        <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base mt-1">
+                          {(order.driverCommission && Number(order.driverCommission) !== 20 ? Number(order.driverCommission) : deliveryFeeNum).toFixed(2)} ر.س
+                        </div>
                       </div>
                     </div>
                   </div>

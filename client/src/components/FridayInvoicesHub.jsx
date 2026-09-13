@@ -247,7 +247,7 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-          <div className="text-xs text-slate-400 font-bold mb-1">عمولات التوصيل المستحقة (20 ﷼/طلب)</div>
+          <div className="text-xs text-slate-400 font-bold mb-1">عمولات التوصيل المستحقة (وفق تسعيرة التوصيل)</div>
           <div className="text-2xl font-black font-mono text-emerald-400">{totalCommissionsAll.toFixed(2)} ﷼</div>
           <div className="text-[10px] text-emerald-500/80 mt-1">مستحقات أرباح السائقين المعتمدة</div>
         </div>
@@ -527,7 +527,11 @@ export default function FridayInvoicesHub({ drivers = [], branches = [], orders 
                         عمولات توصيل الشحنات المكتملة بنجاح
                       </td>
                       <td className="p-2.5 text-center border-l border-slate-200">{selectedInvoice.orderCount} شحنة</td>
-                      <td className="p-2.5 text-center border-l border-slate-200">20.00 ر.س</td>
+                      <td className="p-2.5 text-center border-l border-slate-200">
+                        {selectedInvoice.commissionPerOrder && Number(selectedInvoice.commissionPerOrder) !== 20
+                          ? `${Number(selectedInvoice.commissionPerOrder).toFixed(2)} ر.س`
+                          : `${(Number(selectedInvoice.totalCommissions || 0) / Math.max(1, Number(selectedInvoice.orderCount) || 1)).toFixed(2)} ر.س`}
+                      </td>
                       <td className="p-2.5 text-left font-bold text-emerald-700">
                         +{Number(selectedInvoice.totalCommissions || 0).toFixed(2)} ر.س
                       </td>

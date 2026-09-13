@@ -20,6 +20,8 @@ function getCityDeliveryFee(address, city) {
   if (text.includes('خبر') || text.includes('عزيزية') || text.includes('عقربية') || text.includes('حزام')) return 35; // الخبر 35 ريال ثابت
   if (text.includes('ظهران') || text.includes('دوحة') || text.includes('دانة') || text.includes('قصور')) return 30; // الظهران 30 ريال ثابت
   if (text.includes('سيهات') || text.includes('عنك') || text.includes('كوثر')) return 30; // سيهات 30 ريال ثابت
+  if (text.includes('جبيل') || text.includes('jubail')) return 40; // الجبيل 40 ريال ثابت
+  if (text.includes('أحساء') || text.includes('احساء') || text.includes('هفوف')) return 45; // الأحساء 45 ريال ثابت
   if (text.includes('دمام') || text.includes('شاطئ') || text.includes('منار') || text.includes('فيصلية')) return 25; // الدمام 25 ريال ثابت
   return 25; // افتراضي الدمام 25 ريال
 }
@@ -978,10 +980,14 @@ let orders = [
   }
 ];
 
-// تثبيت رسوم التوصيل لجميع الطلبات حسب المدينة المعتمدة
+// تثبيت رسوم التوصيل وعمولات المندوب لجميع الطلبات حسب المدينة المعتمدة
 orders.forEach(o => {
-  if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
-    o.deliveryFee = getCityDeliveryFee(o.customerAddress);
+  const cityFee = getCityDeliveryFee(o.customerAddress);
+  if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20 || (cityFee !== 25 && o.deliveryFee === 25)) {
+    o.deliveryFee = cityFee;
+  }
+  if (!o.driverCommission || o.driverCommission === 17.39 || o.driverCommission === 20 || (cityFee !== 25 && o.driverCommission === 25)) {
+    o.driverCommission = o.deliveryFee;
   }
 });
 
@@ -1366,6 +1372,8 @@ app.post('/api/orders', (req, res) => {
     branch.coords[1] + (Math.random() - 0.5) * 0.03
   ] : [26.4207, 50.0888];
 
+  const calculatedFee = Number(req.body.deliveryFee) || getCityDeliveryFee(customerAddress);
+
   const newOrder = {
     id: newId,
     orderNumber: String(nextSeq),
@@ -1376,10 +1384,10 @@ app.post('/api/orders', (req, res) => {
     customerAddress: customerAddress || 'عنوان العميل',
     customerCoords: customerCoords || defaultCoords,
     items: (items && items.length > 0) ? items : [{ name: 'شحنة منتجات سَنَد', qty: 1, price: Number(totalAmount) || 150 }],
-    deliveryFee: Number(req.body.deliveryFee) || getCityDeliveryFee(customerAddress),
+    deliveryFee: calculatedFee,
     totalAmount: Number(totalAmount) || 150,
     paymentMethod: paymentMethod || 'cash',
-    driverCommission: Number(driverCommission) || 20.00,
+    driverCommission: (Number(driverCommission) && Number(driverCommission) !== 20) ? Number(driverCommission) : calculatedFee,
     status: orderStatus,
     assignedDriverId: targetDriverId,
     orderSource: orderSource || 'يدوي (Manual)',
@@ -1513,9 +1521,22 @@ app.post('/api/orders/:id/status', (req, res) => {
     order.scanDeliveryVerified = true;
     if (paymentMethod) order.paymentMethod = paymentMethod;
 
+    // احتساب عمولة المندوب ورسم التوصيل المعتمد للطلب بدقة
+    const dynamicCommission = Number(
+      req.body.driverCommission || 
+      (order.driverCommission && Number(order.driverCommission) !== 20 ? order.driverCommission : null) ||
+      (order.deliveryFee && Number(order.deliveryFee) !== 20 && Number(order.deliveryFee) !== 17.39 ? order.deliveryFee : null) ||
+      getCityDeliveryFee(order.customerAddress) ||
+      25
+    );
+    order.driverCommission = dynamicCommission;
+    if (!order.deliveryFee || order.deliveryFee === 20 || order.deliveryFee === 17.39) {
+      order.deliveryFee = dynamicCommission;
+    }
+
     if (driver) {
       driver.completedToday += 1;
-      driver.totalCommissionToday += Number(order.driverCommission) || 20;
+      driver.totalCommissionToday = Number(((driver.totalCommissionToday || 0) + dynamicCommission).toFixed(2));
 
       // إذا كان الدفع عند الاستلام كاش -> يُضاف إلى محفظة كاش المندوب
       if (order.paymentMethod === 'cash') {
@@ -1587,7 +1608,10 @@ function generate7DayInvoices(offsetWeeks = 0) {
     const cycleKey = `INV-7D-${cycle.year}-W${cycle.weekNumber}-${driver.id}`;
     const delivered = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered');
     const orderCount = delivered.length || driver.completedToday || (offsetWeeks === 0 ? 8 : 12);
-    const totalCommissions = orderCount * 20.00;
+    const totalCommissions = delivered.length > 0 
+      ? delivered.reduce((sum, o) => sum + (Number(o.driverCommission || o.deliveryFee) || 25), 0)
+      : (orderCount * 25.00);
+    const avgCommission = orderCount > 0 ? Number((totalCommissions / orderCount).toFixed(2)) : 25.00;
     const totalCod = delivered.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + (o.totalAmount || 0), 0) || (offsetWeeks === 0 ? (driver.cashOnHand || 0) : 340);
     const netSettlement = totalCommissions - totalCod;
     const branch = branches.find(b => b.id === driver.branchId) || branches[0];
@@ -1632,7 +1656,7 @@ function generate7DayInvoices(offsetWeeks = 0) {
       branchId: branch?.id,
       branchName: branch?.name || 'فرع إكليل الدمام',
       orderCount: orderCount,
-      commissionPerOrder: 20.00,
+      commissionPerOrder: avgCommission,
       totalCommissions: totalCommissions,
       totalCodCollected: totalCod,
       netSettlement: netSettlement,
@@ -2898,12 +2922,17 @@ const dbAdapter = require('./db');
 
 // التحميل عند الإقلاع عبر محول قاعدة البيانات المزدوج (PostgreSQL / Supabase + نسخة محلية)
 dbAdapter.loadInitialData(PERSISTED, () => {
-  // ضمان بقاء رسوم التوصيل وفق تسعيرة سند المعتمدة
+  // ضمان بقاء رسوم التوصيل وعمولات المناديب وفق تسعيرة سند المعتمدة
   orders.forEach(o => {
-    if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
-      o.deliveryFee = getCityDeliveryFee(o.customerAddress);
+    const cityFee = getCityDeliveryFee(o.customerAddress);
+    if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20 || (cityFee !== 25 && o.deliveryFee === 25)) {
+      o.deliveryFee = cityFee;
+    }
+    if (!o.driverCommission || o.driverCommission === 17.39 || o.driverCommission === 20 || (cityFee !== 25 && o.driverCommission === 25)) {
+      o.driverCommission = o.deliveryFee;
     }
   });
+  scheduleSave();
   console.log('✅ تم تجهيز واستقرار قاعدة بيانات سَنَد | طلبات:', orders.length, '| مناديب:', drivers.length, '| كاش الخزينة:', storeReceivedCashWallet.totalBalance);
 });
 
