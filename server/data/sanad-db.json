@@ -100,12 +100,12 @@
       "phone": "+966502893163",
       "speed": 0,
       "coords": [
-        26.432,
-        50.1166
+        26.35164518707951,
+        50.05016364554568
       ],
       "online": true,
       "rating": 5,
-      "status": "delivering",
+      "status": "available",
       "heading": 0,
       "vehicle": "سيارة خاصة (كامري 2023)",
       "branchId": "branch-iklil-dammam",
@@ -117,13 +117,13 @@
       "password": "893163",
       "syncPool": "sync-group-east",
       "username": "+966502893163",
-      "cashOnHand": 150,
-      "lastUpdate": "2026-09-13T20:29:11.708Z",
+      "cashOnHand": 300,
+      "lastUpdate": "2026-09-13T20:46:40.558Z",
       "nationalId": "2463794624",
       "sharedStores": "—",
       "walletBalance": 0,
-      "completedToday": 25,
-      "totalCommissionToday": 595
+      "completedToday": 28,
+      "totalCommissionToday": 685
     },
     {
       "id": "drv-2",
@@ -489,6 +489,40 @@
   ],
   "orders": [
     {
+      "id": "SND-KAYF-1011",
+      "items": [
+        {
+          "qty": 1,
+          "name": "شحنة منتجات سَنَد",
+          "price": 0
+        }
+      ],
+      "notes": "",
+      "status": "delivered",
+      "branchId": "branch-iklil-dammam",
+      "createdAt": "2026-09-13T20:45:51.285Z",
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T20:46:39.330Z",
+      "deliveryFee": 25,
+      "orderNumber": "KAYF-1011",
+      "orderSource": "يدوي (Manual)",
+      "totalAmount": 150,
+      "customerName": "0",
+      "customerPhone": "0502893163",
+      "paymentMethod": "cash",
+      "customerCoords": [
+        26.35556266282156,
+        50.04773337119894
+      ],
+      "trackingNumber": "SND-KAYF-1011",
+      "customerAddress": "الدمام - 0 - 0",
+      "assignedDriverId": "drv-1",
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T20:46:39.330Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T20:56:39.858Z"
+    },
+    {
       "id": "SND-SHQ-1008",
       "items": [
         {
@@ -498,15 +532,18 @@
         }
       ],
       "notes": "",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T19:50:23.212Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T20:44:15.495Z",
       "deliveryFee": 25,
+      "inTransitAt": "2026-09-13T20:43:18.382Z",
       "orderNumber": "SHQ-1008",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 220,
       "customerName": "تجربة فيب الشرق",
+      "scanVerified": true,
       "customerPhone": "0550003344",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -515,8 +552,12 @@
       ],
       "trackingNumber": "SND-SHQ-1008",
       "customerAddress": "الدمام - حي طيبة",
+      "scannedAtPickup": "2026-09-13T20:43:18.382Z",
       "assignedDriverId": "drv-1",
-      "driverCommission": 25
+      "driverCommission": 25,
+      "scannedAtDelivery": "2026-09-13T20:44:15.495Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T20:56:39.858Z"
     },
     {
       "id": "SND-JBL-1004",
@@ -528,15 +569,18 @@
         }
       ],
       "notes": "",
-      "status": "assigned",
+      "status": "delivered",
       "branchId": "branch-iklil-jubail",
       "createdAt": "2026-09-13T19:50:23.204Z",
-      "codSettled": false,
+      "codSettled": true,
+      "deliveredAt": "2026-09-13T20:44:34.436Z",
       "deliveryFee": 40,
+      "inTransitAt": "2026-09-13T20:44:24.239Z",
       "orderNumber": "JBL-1004",
       "orderSource": "يدوي (Manual)",
       "totalAmount": 180,
       "customerName": "تجربة فرع الجبيل",
+      "scanVerified": true,
       "customerPhone": "0540001122",
       "paymentMethod": "cash",
       "customerCoords": [
@@ -545,8 +589,12 @@
       ],
       "trackingNumber": "SND-JBL-1004",
       "customerAddress": "الجبيل البلد - شارع جدة",
+      "scannedAtPickup": "2026-09-13T20:44:24.239Z",
       "assignedDriverId": "drv-1",
-      "driverCommission": 40
+      "driverCommission": 40,
+      "scannedAtDelivery": "2026-09-13T20:44:34.436Z",
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T20:56:39.858Z"
     },
     {
       "id": "SND-SHQ-1007",
@@ -561,7 +609,7 @@
       "status": "delivered",
       "branchId": "branch-vape-sharq",
       "createdAt": "2026-09-13T19:42:16.229Z",
-      "codSettled": false,
+      "codSettled": true,
       "deliveredAt": "2026-09-13T19:43:07.830Z",
       "deliveryFee": 30,
       "inTransitAt": "2026-09-13T19:43:02.622Z",
@@ -582,7 +630,8 @@
       "assignedDriverId": "drv-1",
       "driverCommission": 30,
       "scannedAtDelivery": "2026-09-13T19:43:07.830Z",
-      "scanDeliveryVerified": true
+      "scanDeliveryVerified": true,
+      "codSettledAt": "2026-09-13T20:56:39.858Z"
     },
     {
       "id": "SND-KAYF-1010",
@@ -2608,8 +2657,45 @@
     }
   ],
   "storeReceivedCashWallet": {
-    "totalBalance": 0,
+    "totalBalance": 400,
     "transactions": [
+      {
+        "id": "TXN-KAYF-304226",
+        "receiptNumber": "REC-KAYF-890899",
+        "driverId": "drv-1",
+        "driverName": "يونس",
+        "branchId": "branch-iklil-dammam",
+        "amount": 250,
+        "orderCount": 0,
+        "settledOrderIds": [],
+        "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - يونس (اختبار الاعتماد والتوقيع)",
+        "driverSignature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAAA8CAYAAADgGz6AAAAAXUlEQVR42u3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuBkJXwABWk0J4wAAAABJRU5ErkJggg==",
+        "signedAt": "2026-09-13T21:01:44.226Z",
+        "settlementRequestId": "REQ-SETTLE-KAYF-1002",
+        "status": "approved",
+        "timestamp": "2026-09-13T21:01:44.226Z"
+      },
+      {
+        "id": "TXN-KAYF-999858",
+        "receiptNumber": "REC-KAYF-890898",
+        "driverId": "drv-1",
+        "driverName": "يونس",
+        "branchId": "branch-iklil-dammam",
+        "amount": 150,
+        "orderCount": 4,
+        "settledOrderIds": [
+          "SND-KAYF-1011",
+          "SND-SHQ-1008",
+          "SND-JBL-1004",
+          "SND-SHQ-1007"
+        ],
+        "notes": "تسوية تجريبية وتوريد كاش - يونس",
+        "driverSignature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "signedAt": "2026-09-13T20:56:39.858Z",
+        "settlementRequestId": "REQ-SETTLE-KAYF-1001",
+        "status": "approved",
+        "timestamp": "2026-09-13T20:56:39.858Z"
+      },
       {
         "id": "TX-DISB-589120",
         "type": "disbursement",
@@ -2726,6 +2812,78 @@
       }
     ]
   },
+  "settlementRequests": [
+    {
+      "id": "REQ-SETTLE-KAYF-1002",
+      "driverId": "drv-1",
+      "driverName": "يونس",
+      "driverPhone": "+966502893163",
+      "branchId": "branch-iklil-dammam",
+      "amount": 250,
+      "orderIds": [],
+      "orderCount": 0,
+      "ordersSummary": [],
+      "notes": "تسوية وتوريد كاش طلبات الدفع عند الاستلام - يونس (اختبار الاعتماد والتوقيع)",
+      "status": "approved",
+      "createdBy": "admin",
+      "createdAt": "2026-09-13T21:01:44.214Z",
+      "driverSignature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAAA8CAYAAADgGz6AAAAAXUlEQVR42u3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuBkJXwABWk0J4wAAAABJRU5ErkJggg==",
+      "signedAt": "2026-09-13T21:01:44.226Z",
+      "receiptNumber": "REC-KAYF-890899",
+      "rejectedReason": null,
+      "driverNotes": "موافق وتم تسليم المبلغ 250 ﷼ نقداً"
+    },
+    {
+      "id": "REQ-SETTLE-KAYF-1001",
+      "driverId": "drv-1",
+      "driverName": "يونس",
+      "driverPhone": "+966502893163",
+      "branchId": "branch-iklil-dammam",
+      "amount": 150,
+      "orderIds": [
+        "SND-KAYF-1011",
+        "SND-SHQ-1008",
+        "SND-JBL-1004",
+        "SND-SHQ-1007"
+      ],
+      "orderCount": 4,
+      "ordersSummary": [
+        {
+          "id": "SND-KAYF-1011",
+          "customerName": "0",
+          "customerAddress": "الدمام - 0 - 0",
+          "totalAmount": 150
+        },
+        {
+          "id": "SND-SHQ-1008",
+          "customerName": "تجربة فيب الشرق",
+          "customerAddress": "الدمام - حي طيبة",
+          "totalAmount": 220
+        },
+        {
+          "id": "SND-JBL-1004",
+          "customerName": "تجربة فرع الجبيل",
+          "customerAddress": "الجبيل البلد - شارع جدة",
+          "totalAmount": 180
+        },
+        {
+          "id": "SND-SHQ-1007",
+          "customerName": "0",
+          "customerAddress": "سيهات - 0 - 0",
+          "totalAmount": 150
+        }
+      ],
+      "notes": "تسوية تجريبية وتوريد كاش - يونس",
+      "status": "approved",
+      "createdBy": "admin",
+      "createdAt": "2026-09-13T20:56:39.829Z",
+      "driverSignature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "signedAt": "2026-09-13T20:56:39.858Z",
+      "receiptNumber": "REC-KAYF-890898",
+      "rejectedReason": null,
+      "driverNotes": "موافق وتم تسليم الكاش للمشرف"
+    }
+  ],
   "systemSettings": {
     "selfAssign": true,
     "readyOnly": true,

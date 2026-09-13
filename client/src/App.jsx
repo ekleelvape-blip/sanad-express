@@ -564,6 +564,7 @@ export default function App() {
               orders={orders}
               onRefresh={fetchData}
               activeTab={activeTab}
+              socket={socket}
             />
           )}
 

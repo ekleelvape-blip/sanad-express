@@ -616,6 +616,22 @@ function getNextTransactionNumber(branchId) {
   return `${prefix}-${Date.now().toString().slice(-6)}`;
 }
 
+// طلبات تسوية وتوريد عهدة المناديب (معتمدة وموقعة إلكترونياً)
+let settlementRequests = [];
+
+function getNextSettlementRequestId(branchId) {
+  const b = getBranchConfig(branchId);
+  const prefix = 'REQ-SETTLE-' + (b.code || 'GEN');
+  let maxNum = 1000;
+  for (const r of settlementRequests) {
+    if (r.branchId === b.id || (r.id && r.id.includes(b.code))) {
+      const num = parseInt((r.id || '').replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
+  }
+  return `${prefix}-${maxNum + 1}`;
+}
+
 let orders = [
   // طلب مطابق لصورة سلة / تيار بالكامل
   {
@@ -1927,6 +1943,251 @@ app.post('/api/settlements/cod', (req, res) => {
   });
 });
 
+// =========================================================================
+// نظام طلبات تسوية وتوريد عهدة المناديب مع التوقيع الإلكتروني الحي
+// (Driver Settlement Requests with Interactive Digital Signature)
+// =========================================================================
+
+// 1. إنشاء طلب تسوية وتوريد عهدة (ينتظر موافقة وتوقيع المندوب)
+app.post('/api/settlements/request', (req, res) => {
+  const { driverId, orderIds, amount, branchId, notes, createdBy } = req.body || {};
+  const driver = drivers.find(d => d.id === driverId || d.id === (driverId?.replace('drv-10', 'drv-')) || ('drv-10' + d.id.replace('drv-', '')) === driverId);
+
+  if (!driver) return res.status(404).json({ error: 'المندوب غير موجود' });
+
+  // تحديد الطلبات المعنية بالتسوية
+  let targetOrders = orders.filter(o => o.assignedDriverId === driver.id && o.status === 'delivered' && !o.codSettled);
+  if (orderIds && orderIds.length > 0) {
+    targetOrders = targetOrders.filter(o => orderIds.includes(o.id));
+  }
+
+  let settleTotal = typeof amount === 'number' && amount >= 0 ? amount : 0;
+  if (!settleTotal) {
+    if (targetOrders.length > 0) {
+      settleTotal = targetOrders.reduce((sum, o) => sum + (o.paymentMethod === 'cash' ? (Number(o.totalAmount) || 0) : 0), 0);
+    } else {
+      settleTotal = driver.cashOnHand || 0;
+    }
+  }
+
+  const targetBranchId = branchId || driver.branchId;
+  const requestId = getNextSettlementRequestId(targetBranchId);
+
+  const request = {
+    id: requestId,
+    driverId: driver.id,
+    driverName: driver.name,
+    driverPhone: driver.phone,
+    branchId: targetBranchId,
+    amount: settleTotal,
+    orderIds: targetOrders.map(o => o.id),
+    orderCount: targetOrders.length,
+    ordersSummary: targetOrders.map(o => ({
+      id: o.id,
+      customerName: o.customerName,
+      customerAddress: o.customerAddress,
+      totalAmount: o.totalAmount
+    })),
+    notes: notes || `طلب تسوية وتوريد كاش عهدة المندوب (${driver.name})`,
+    status: 'pending_driver_signature',
+    createdBy: createdBy || 'admin',
+    createdAt: new Date().toISOString(),
+    driverSignature: null,
+    signedAt: null,
+    receiptNumber: null,
+    rejectedReason: null
+  };
+
+  settlementRequests.unshift(request);
+  if (typeof scheduleSave === 'function') scheduleSave();
+
+  // بث إشعار فوري للمندوب وللإدارة
+  io.emit('settlement_request_created', { request, driverId: driver.id });
+  io.emit('settlement_requests_updated', { requests: settlementRequests });
+
+  res.json({
+    success: true,
+    message: `تم إنشاء طلب تسوية العهدة بمبلغ ${settleTotal} ر.س وإرساله للمندوب ${driver.name} بانتظار توقيعه الإلكتروني.`,
+    request
+  });
+});
+
+// 2. جلب طلبات التسوية
+app.get('/api/settlements/requests', (req, res) => {
+  const { driverId, branchId, status } = req.query;
+  let list = settlementRequests;
+
+  if (driverId) {
+    list = list.filter(r => r.driverId === driverId || r.driverId === (driverId?.replace('drv-10', 'drv-')) || ('drv-10' + r.driverId.replace('drv-', '')) === driverId);
+  }
+  if (branchId && branchId !== 'all') {
+    list = list.filter(r => r.branchId === branchId);
+  }
+  if (status) {
+    list = list.filter(r => r.status === status);
+  }
+
+  res.json(list);
+});
+
+// 3. موافقة واعتماد المندوب للتسوية مع التوقيع الإلكتروني (تنصدر التسوية تلقائياً)
+app.post('/api/settlements/requests/:id/approve', (req, res) => {
+  const { id } = req.params;
+  const { signature, driverNotes } = req.body || {};
+
+  if (!signature) {
+    return res.status(400).json({ error: 'التوقيع الإلكتروني مطلوب لإتمام التسوية' });
+  }
+
+  const request = settlementRequests.find(r => r.id === id);
+  if (!request) return res.status(404).json({ error: 'طلب التسوية غير موجود' });
+
+  if (request.status !== 'pending_driver_signature') {
+    return res.status(400).json({ error: `طلب التسوية بحالة (${request.status}) ولا يمكن اعتماده مجدداً` });
+  }
+
+  const driver = drivers.find(d => d.id === request.driverId || d.id === (request.driverId?.replace('drv-10', 'drv-')) || ('drv-10' + d.id.replace('drv-', '')) === request.driverId);
+  if (!driver) return res.status(404).json({ error: 'المندوب غير موجود' });
+
+  // 1. تصفية الطلبات المحددة واعتمادها كمسواة
+  if (request.orderIds && request.orderIds.length > 0) {
+    orders.forEach(o => {
+      if (request.orderIds.includes(o.id)) {
+        o.codSettled = true;
+        o.codSettledAt = new Date().toISOString();
+      }
+    });
+  } else {
+    orders.forEach(o => {
+      if (o.assignedDriverId === driver.id && o.status === 'delivered' && !o.codSettled) {
+        o.codSettled = true;
+        o.codSettledAt = new Date().toISOString();
+      }
+    });
+  }
+
+  // 2. تصفير أو خصم عهدة المندوب
+  driver.cashOnHand = Math.max(0, (driver.cashOnHand || 0) - request.amount);
+  driver.walletBalance = 0;
+
+  // 3. توريد وإيداع الكاش في محفظة خزينة المتجر
+  if (request.amount > 0) {
+    storeReceivedCashWallet.totalBalance += request.amount;
+  }
+
+  // 4. إصدار سند القبض الرسمي المعتمد للفرع
+  const targetBranchId = request.branchId || driver.branchId;
+  const receiptNumber = getNextReceiptNumber(targetBranchId);
+  const transactionId = getNextTransactionNumber(targetBranchId);
+  const now = new Date().toISOString();
+
+  // تحديث حالة طلب التسوية
+  request.status = 'approved';
+  request.driverSignature = signature;
+  request.signedAt = now;
+  request.receiptNumber = receiptNumber;
+  if (driverNotes) request.driverNotes = driverNotes;
+
+  // قيد العملية في سجل الخزينة مع حفظ التوقيع الإلكتروني
+  const transaction = {
+    id: transactionId,
+    receiptNumber: receiptNumber,
+    driverId: driver.id,
+    driverName: driver.name,
+    branchId: targetBranchId,
+    amount: request.amount,
+    orderCount: request.orderCount || (request.orderIds || []).length,
+    settledOrderIds: request.orderIds || [],
+    notes: request.notes || `تسوية وتوريد عهدة المندوب (${driver.name}) مع التوقيع الإلكتروني الحي`,
+    driverSignature: signature,
+    signedAt: now,
+    settlementRequestId: request.id,
+    status: 'approved',
+    timestamp: now
+  };
+
+  storeReceivedCashWallet.transactions.unshift(transaction);
+
+  if (typeof scheduleSave === 'function') scheduleSave();
+
+  // 5. بث التحديثات اللحظية عبر Socket.io
+  io.emit('cod_settled', {
+    transaction,
+    driver,
+    receivedCashWallet: storeReceivedCashWallet
+  });
+  io.emit('settlement_approved', {
+    request,
+    transaction,
+    driver
+  });
+  io.emit('settlement_requests_updated', { requests: settlementRequests });
+  io.emit('driver_status_changed', driver);
+  io.emit('drivers_updated', { drivers });
+
+  res.json({
+    success: true,
+    message: `تم اعتماد التسوية وتوريد مبلغ ${request.amount} ر.س وإصدار السند ${receiptNumber} بالتوقيع الإلكتروني بنجاح!`,
+    transaction,
+    request,
+    receiptNumber
+  });
+});
+
+// 4. رفض طلب التسوية من قبل المندوب (مع ذكر سبب الاعتراض)
+app.post('/api/settlements/requests/:id/reject', (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+
+  const request = settlementRequests.find(r => r.id === id);
+  if (!request) return res.status(404).json({ error: 'طلب التسوية غير موجود' });
+
+  if (request.status !== 'pending_driver_signature') {
+    return res.status(400).json({ error: `طلب التسوية بحالة (${request.status}) ولا يمكن رفضه الآن` });
+  }
+
+  request.status = 'rejected';
+  request.rejectedReason = reason || 'اعتراض من المندوب على صحة الحساب أو المبالغ';
+  request.rejectedAt = new Date().toISOString();
+
+  if (typeof scheduleSave === 'function') scheduleSave();
+
+  io.emit('settlement_rejected', { request });
+  io.emit('settlement_requests_updated', { requests: settlementRequests });
+
+  res.json({
+    success: true,
+    message: 'تم تسجيل رفض المندوب لطلب التسوية بنجاح',
+    request
+  });
+});
+
+// 5. إلغاء طلب التسوية من قبل الإدارة
+app.post('/api/settlements/requests/:id/cancel', (req, res) => {
+  const { id } = req.params;
+
+  const request = settlementRequests.find(r => r.id === id);
+  if (!request) return res.status(404).json({ error: 'طلب التسوية غير موجود' });
+
+  if (request.status !== 'pending_driver_signature') {
+    return res.status(400).json({ error: `طلب التسوية بحالة (${request.status}) ولا يمكن إلغاؤه` });
+  }
+
+  request.status = 'cancelled';
+  request.cancelledAt = new Date().toISOString();
+
+  if (typeof scheduleSave === 'function') scheduleSave();
+
+  io.emit('settlement_cancelled', { request });
+  io.emit('settlement_requests_updated', { requests: settlementRequests });
+
+  res.json({
+    success: true,
+    message: 'تم إلغاء طلب التسوية بنجاح',
+    request
+  });
+});
+
 // توريد وتسليم كاش المتجر للمحاسب المالي / البنك وتصفير الخزينة
 app.post('/api/store-vault/transfer-to-accountant', (req, res) => {
   const { amount, recipientType, recipientName, referenceNumber, notes, branchId, officerName } = req.body;
@@ -1997,6 +2258,7 @@ app.get('/api/financials', (req, res) => {
     totalCashOnHandWithDrivers: totalCashOnHandDrivers,
     totalCommissionsEarned,
     storeReceivedCashWallet,
+    settlementRequests: branchId && branchId !== 'all' ? settlementRequests.filter(r => r.branchId === branchId) : settlementRequests,
     driverSummary: targetDrivers.map(d => ({
       id: d.id,
       name: d.name,
@@ -2978,6 +3240,7 @@ const PERSISTED = {
   get ratings() { return ratings; },
   get zones() { return zones; },
   get storeReceivedCashWallet() { return storeReceivedCashWallet; },
+  get settlementRequests() { return settlementRequests; },
   get systemSettings() { return systemSettings; }
 };
 

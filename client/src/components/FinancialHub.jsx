@@ -4,10 +4,11 @@ import {
   TrendingUp, Building, CreditCard, Banknote, CheckSquare, Square, 
   ChevronDown, ChevronUp, Calendar, Sparkles, RefreshCw, Search, 
   Package, AlertTriangle, ShieldCheck, Check, Filter, Printer, ExternalLink,
-  Send, Landmark, UserCheck, ArrowRightLeft, FileText, X, AlertCircle
+  Send, Landmark, UserCheck, ArrowRightLeft, FileText, X, AlertCircle, PenTool
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import FridayInvoicesHub from './FridayInvoicesHub';
+import { getDriverAppUrl } from '../utils/driverLink';
 import { 
   SANAD_OFFICIAL_ENTITY, 
   tafqeetArabic, 
@@ -72,7 +73,7 @@ function tafqeetSaudiRiyal(n) {
   return 'فقط ' + parts.join(' و') + ' ريال سعودي لا غير';
 }
 
-export default function FinancialHub({ drivers = [], branches = [], orders = [], onRefresh, activeTab = 'settlements' }) {
+export default function FinancialHub({ drivers = [], branches = [], orders = [], onRefresh, activeTab = 'settlements', socket }) {
   const [financialData, setFinancialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [settleDriver, setSettleDriver] = useState(null);
@@ -121,6 +122,33 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
   useEffect(() => {
     fetchFinancials();
   }, [drivers, orders]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onApproved = (data) => {
+      try { sound.playCashRegister(); } catch (e) {}
+      fetchFinancials();
+      if (onRefresh) onRefresh();
+      if (data?.transaction) {
+        setLastReceipt(data.transaction);
+      }
+    };
+    const onRefreshNeeded = () => {
+      fetchFinancials();
+      if (onRefresh) onRefresh();
+    };
+    socket.on('settlement_approved', onApproved);
+    socket.on('settlement_request_created', onRefreshNeeded);
+    socket.on('settlement_rejected', onRefreshNeeded);
+    socket.on('settlement_cancelled', onRefreshNeeded);
+
+    return () => {
+      socket.off('settlement_approved', onApproved);
+      socket.off('settlement_request_created', onRefreshNeeded);
+      socket.off('settlement_rejected', onRefreshNeeded);
+      socket.off('settlement_cancelled', onRefreshNeeded);
+    };
+  }, [socket]);
 
   // فتح نافذة تسليم الكاش للمحاسب المالي وتصفير الخزينة
   const handleOpenTransferModal = () => {
@@ -294,6 +322,81 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
       console.error('Error settling COD:', err);
     }
   };
+
+  // إنشاء طلب تسوية وتوريد عهدة بانتظار توقيع المندوب إلكترونياً
+  const handleCreateSettlementRequest = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!settleDriver) return;
+
+    const calculatedTotal = orders
+      .filter(o => selectedOrderIds.includes(o.id))
+      .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+    
+    const amount = calculatedTotal > 0 ? calculatedTotal : (Number(settleDriver.cashOnHand) || 0);
+
+    try {
+      const res = await fetch('/api/settlements/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: settleDriver.id,
+          orderIds: selectedOrderIds,
+          amount,
+          branchId: settleDriver.branchId,
+          notes: settleNotes
+        })
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        sound.pop();
+        alert(`تم إرسال طلب تسوية العهدة بنجاح إلى المندوب (${settleDriver.name}) بمبلغ ${amount.toLocaleString()} ﷼.\nستظل التسوية بحسابك بحالة "بانتظار موافقة وتوقيع المندوب" وسيتم إصدار السند وتصفير الحساب تلقائياً فور توقيعه على الجوال.`);
+        setSettleDriver(null);
+        fetchFinancials();
+        if (onRefresh) onRefresh();
+      } else {
+        alert(result.error || 'فشل إرسال طلب التسوية');
+      }
+    } catch (err) {
+      console.error('Error creating settlement request:', err);
+      alert('تعذر الاتصال بالسيرفر');
+    }
+  };
+
+  // إلغاء طلب تسوية معلق
+  const handleCancelSettlementRequest = async (requestId) => {
+    if (!window.confirm('هل أنت متأكد من إلغاء طلب التسوية هذا؟')) return;
+    try {
+      const res = await fetch(`/api/settlements/requests/${requestId}/cancel`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        fetchFinancials();
+        if (onRefresh) onRefresh();
+      } else {
+        alert(data.error || 'فشل إلغاء الطلب');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // إرسال تذكير عبر الواتساب للمندوب مع رابط التوقيع
+  const handleSendWhatsAppReminder = (req) => {
+    const driver = drivers.find(d => d.id === req.driverId);
+    const phone = driver?.phone || req.driverPhone || '';
+    const cleanPhone = phone.replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+    const driverUrl = getDriverAppUrl();
+    const text = `مرحباً يا ${req.driverName}، يرجى الدخول لتطبيق المندوب الميداني ومراجعة وتوقيع طلب تسوية وتوريد عهدة الكاش رقم #${req.id} بمبلغ (${req.amount} ﷼) لاعتمادها فوراً:\n${driverUrl}\nشكراً لتعاونك.`;
+    window.open(`https://wa.me/966${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  // طلبات التسوية بانتظار توقيع المندوب إلكترونياً
+  const pendingSignatureRequests = useMemo(() => {
+    const list = financialData?.settlementRequests || [];
+    return list.filter(r => r.status === 'pending_driver_signature');
+  }, [financialData]);
 
   // معالجة بيانات المناديب وحسابات الكاش بدقة
   const driversListWithCod = useMemo(() => {
@@ -580,6 +683,75 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
               </span>
             </div>
           </div>
+
+          {/* قسم طلبات التسوية المعلقة بانتظار توقيع المندوب إلكترونياً */}
+          {pendingSignatureRequests.length > 0 && (
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-950/50 via-purple-950/40 to-blue-950/50 border border-amber-500/50 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-amber-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                  <PenTool className="w-4 h-4 text-amber-400" />
+                  <span>طلبات تسوية بانتظار موافقة وتوقيع المندوب إلكترونياً ({pendingSignatureRequests.length}):</span>
+                </div>
+                <span className="text-[11px] text-slate-400">
+                  ستصدر التسوية ويصفّر الحساب تلقائياً فور توقيع المندوب من جواله
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pendingSignatureRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 hover:border-amber-400/60 transition-all space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center text-sm">
+                          👤
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white">{req.driverName}</div>
+                          <div className="text-[10px] font-mono text-slate-400">{req.id}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black font-mono text-emerald-400">
+                          {Number(req.amount || 0).toLocaleString()} ﷼
+                        </div>
+                        <div className="text-[10px] text-slate-400">{req.orderCount || (req.orderIds || []).length} شحنة</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
+                      <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        <Clock className="w-3 h-3" />
+                        <span>بانتظار توقيع المندوب ✍️</span>
+                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSendWhatsAppReminder(req)}
+                          className="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                          title="إرسال تذكير للمندوب برابط التوقيع على الواتساب"
+                        >
+                          <Send className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCancelSettlementRequest(req.id)}
+                          className="px-2 py-1 rounded-lg bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300 text-[10px] font-bold transition-colors cursor-pointer"
+                          title="إلغاء طلب التسوية"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* أزرار الفلترة وشريط البحث السريع */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -1751,9 +1923,18 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 text-center text-xs relative">
-                      <div className="space-y-3">
+                      <div className="space-y-1">
                         <span className="font-bold text-slate-700 block text-[10px]">المورّد (المندوب)</span>
-                        <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto"></div>
+                        {lastReceipt.driverSignature ? (
+                          <div className="h-12 flex flex-col items-center justify-center">
+                            <img src={lastReceipt.driverSignature} alt="توقيع المندوب" className="max-h-9 max-w-[120px] object-contain" />
+                            <span className="text-[8px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.2 rounded-full mt-0.5">
+                              توقيع إلكتروني موثق ✓
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="border-b-2 border-dotted border-slate-400 w-24 mx-auto my-3"></div>
+                        )}
                         <div className="text-[9.5px] text-slate-600 font-semibold">{lastReceipt.driverName}</div>
                       </div>
 
@@ -1818,10 +1999,10 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
               <span>تسوية وتوريد كاش المندوب ({settleDriver.name})</span>
             </h3>
             <p className="text-xs text-slate-400 mb-4">
-              حدد الشحنات المراد تسويتها، وسيتم <strong>تصفير المبلغ المختار من محفظة المندوب</strong> وإيداعه في <strong>محفظة الكاش المستلم للمتجر</strong> فوراً.
+              حدد الشحنات المراد تسويتها، وسيتم <strong>إرسال طلب تسوية وتوريد عهدة للمندوب على جواله</strong> للموافقة والتوقيع إلكترونياً، وتصدر التسوية ويصفّر الحساب تلقائياً فور توقيعه.
             </p>
 
-            <form onSubmit={handleConfirmSettleCOD} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateSettlementRequest} className="space-y-4 text-xs">
               
               {/* قائمة الطلبات لاختيارها */}
               <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2">
@@ -1922,11 +2103,11 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                 <button
                   type="button"
                   onClick={() => handleDirectZeroOutDriver(settleDriver)}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-900/40 cursor-pointer active:scale-95 transition-all"
-                  title="تصفير عهدة المندوب فوراً بالكامل وتوريد الرصيد للمتجر"
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-700 text-slate-400 hover:text-rose-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                  title="تصفير عاجل وتجاوز توقيع المندوب في الحالات الاستثنائية فقط"
                 >
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <span>تصفير كامل العهدة فوراً (0 ﷼)</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>تصفير عاجل وتجاوز التوقيع (استثنائي) ⚡</span>
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -1939,10 +2120,10 @@ export default function FinancialHub({ drivers = [], branches = [], orders = [],
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 flex items-center gap-1.5 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-900/40 flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
                   >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>تأكيد التسوية المحددة</span>
+                    <span>✍️</span>
+                    <span>إرسال طلب التسوية للمندوب للاعتماد والتوقيع</span>
                   </button>
                 </div>
               </div>

@@ -23,6 +23,7 @@ import {
 import DriverWallet from './DriverWallet';
 import DeliveryExceptionModal from './DeliveryExceptionModal';
 import DriverProofOfDeliveryModal from './DriverProofOfDeliveryModal';
+import DriverSettlementSignModal from './DriverSettlementSignModal';
 
 
 // دالة مساعدة لإنشاء رابط محادثة واتساب مباشر مع العميل
@@ -132,6 +133,11 @@ export default function DriverApp({
   const routeTileLayerRef = useRef(null);
   const routeMarkersRef = useRef({ driver: null, branch: null, customer: null, polyline: null });
   
+  // طلبات تسوية وتوريد الكاش بانتظار توقيع المندوب
+  const [pendingSettlementRequest, setPendingSettlementRequest] = useState(null);
+  const [showSettlementSignModal, setShowSettlementSignModal] = useState(false);
+  const [lastSettlementReceipt, setLastSettlementReceipt] = useState(null);
+
   // تأكيد التسليم والتعثر
   const [deliveryConfirmOrder, setDeliveryConfirmOrder] = useState(null);
   const [inventorySearchQuery, setInventorySearchQuery] = useState('');
@@ -236,6 +242,107 @@ export default function DriverApp({
         );
       }
     }, 1000);
+  };
+
+  // جلب طلب التسوية المعلق بانتظار توقيع المندوب
+  const fetchPendingSettlement = async () => {
+    if (!currentDriver?.id) return;
+    try {
+      const res = await fetch(`/api/settlements/requests?driverId=${currentDriver.id}&status=pending_driver_signature`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setPendingSettlementRequest(data[0]);
+        } else {
+          setPendingSettlementRequest(null);
+        }
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchPendingSettlement();
+    if (!socket) return;
+    const onSettlementCreated = (data) => {
+      const targetId = data?.driverId || data?.request?.driverId;
+      if (targetId === currentDriver?.id) {
+        setPendingSettlementRequest(data.request);
+        setShowSettlementSignModal(true);
+        try { sound.playNewOrderAlert(); } catch (e) {}
+      }
+    };
+    const onSettlementApproved = (data) => {
+      if (data?.request?.driverId === currentDriver?.id) {
+        setPendingSettlementRequest(null);
+        setShowSettlementSignModal(false);
+        if (onRefresh) onRefresh();
+      }
+    };
+    socket.on('settlement_request_created', onSettlementCreated);
+    socket.on('settlement_approved', onSettlementApproved);
+    socket.on('settlement_rejected', fetchPendingSettlement);
+    socket.on('settlement_cancelled', fetchPendingSettlement);
+
+    return () => {
+      socket.off('settlement_request_created', onSettlementCreated);
+      socket.off('settlement_approved', onSettlementApproved);
+      socket.off('settlement_rejected', fetchPendingSettlement);
+      socket.off('settlement_cancelled', fetchPendingSettlement);
+    };
+  }, [socket, currentDriver?.id]);
+
+  // اعتماد وموافقة المندوب على التسوية وتوريد الكاش مع التوقيع الإلكتروني
+  const handleApproveSettlement = async (requestId, signature) => {
+    try {
+      const res = await fetch(`/api/settlements/requests/${requestId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signature,
+          driverNotes: 'تم التوقيع والموافقة على استلام وتوريد العهدة'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        try { sound.playCashRegister(); } catch (e) {}
+        setShowSettlementSignModal(false);
+        setPendingSettlementRequest(null);
+        setLastSettlementReceipt(data.transaction || {
+          receiptNumber: data.receiptNumber,
+          amount: data.request?.amount,
+          driverSignature: signature,
+          timestamp: new Date().toISOString()
+        });
+        if (onRefresh) onRefresh();
+      } else {
+        alert(data.error || 'فشل اعتماد التسوية');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('تعذر الاتصال بالسيرفر');
+    }
+  };
+
+  // تسجيل اعتراض على طلب التسوية
+  const handleRejectSettlement = async (requestId, reason) => {
+    try {
+      const res = await fetch(`/api/settlements/requests/${requestId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('تم إرسال اعتراضك للإدارة لمراجعة الحسابات.');
+        setShowSettlementSignModal(false);
+        setPendingSettlementRequest(null);
+      } else {
+        alert(data.error || 'فشل إرسال الاعتراض');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('تعذر الاتصال بالسيرفر');
+    }
   };
 
   // تأكيد تسليم الشحنة وتوثيق إثبات التسليم الرقمي POD
@@ -663,6 +770,36 @@ export default function DriverApp({
       {activeBottomTab === 'home' && (
         <div className="p-4 space-y-4">
           
+          {/* تنبيه طلب تسوية وتوريد عهدة بانتظار توقيع المندوب */}
+          {pendingSettlementRequest && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/70 via-purple-950/60 to-blue-950/70 border-2 border-amber-500/80 shadow-[0_0_25px_rgba(245,158,11,0.3)] flex items-center justify-between gap-3 animate-pulse">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-bold text-lg shrink-0">
+                  ✍️
+                </div>
+                <div>
+                  <div className="font-black text-xs text-amber-300 flex items-center gap-1.5">
+                    <span>طلب تسوية عهدة كاش جديد</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/30 text-amber-200 font-mono">
+                      {pendingSettlementRequest.id}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-200 mt-0.5">
+                    مطلوب توقيعك لاعتماد توريد مبلغ <span className="font-mono font-bold text-emerald-400 text-xs">{Number(pendingSettlementRequest.amount || 0).toLocaleString()} ﷼</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettlementSignModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md cursor-pointer active:scale-95 shrink-0 transition-all"
+              >
+                <span>مراجعة وتوقيع</span>
+                <span>✍️</span>
+              </button>
+            </div>
+          )}
+
           {/* الترويسة العلوية للرئيسية */}
           <div className="flex items-center justify-between pt-1">
             {/* جهة اليمين: الترحيب والمعرف والمخزون */}
@@ -2416,6 +2553,49 @@ export default function DriverApp({
             if (onRefresh) onRefresh();
           }}
         />
+      )}
+
+      {/* نافذة اعتماد وتوقيع تسوية وتوريد العهدة النقدية */}
+      <DriverSettlementSignModal
+        isOpen={showSettlementSignModal}
+        onClose={() => setShowSettlementSignModal(false)}
+        request={pendingSettlementRequest}
+        driverName={currentDriver?.name}
+        onApprove={handleApproveSettlement}
+        onReject={handleRejectSettlement}
+      />
+
+      {/* نافذة نجاح التوريد وعرض السند الموقع */}
+      {lastSettlementReceipt && (
+        <div className="fixed inset-0 z-[7500] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn font-sans">
+          <div className="bg-[#0f172a] border border-emerald-500/50 rounded-3xl p-6 text-white text-center max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-3xl font-black">
+              ✓
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white">تم اعتماد التسوية وتوريد الكاش بنجاح!</h3>
+              <p className="text-xs text-slate-300 mt-1">تم تصفير العهدة وتوثيق السند المالي المعتمد برقم:</p>
+              <div className="mt-2 py-1.5 px-3 rounded-xl bg-slate-900 border border-emerald-500/40 font-mono font-bold text-emerald-400 text-sm inline-block">
+                {lastSettlementReceipt.receiptNumber || 'REC-SANAD'}
+              </div>
+            </div>
+
+            {lastSettlementReceipt.driverSignature && (
+              <div className="p-3 bg-white rounded-xl border border-slate-300 text-right">
+                <div className="text-[10px] text-slate-600 font-bold mb-1 text-center">توقيعك الإلكتروني المعتمد:</div>
+                <img src={lastSettlementReceipt.driverSignature} alt="Driver Signature" className="h-16 mx-auto object-contain" />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setLastSettlementReceipt(null)}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-lg active:scale-95 transition-all"
+            >
+              تم ومتابعة العمل 🚀
+            </button>
+          </div>
+        </div>
       )}
 
     </div>
