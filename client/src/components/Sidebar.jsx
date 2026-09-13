@@ -107,7 +107,8 @@ export default function Sidebar({
       menuKey: 'settings',
       children: [
         { key: 'system_settings', label: 'إعدادات النظام' },
-        { key: 'delivery_settings', label: 'إعدادات التوصيل الذكي' }
+        { key: 'delivery_settings', label: 'إعدادات التوصيل الذكي' },
+        { key: 'printer_settings', label: 'إعدادات الطابعات والبوالص 🖨️' }
       ]
     }
   ];

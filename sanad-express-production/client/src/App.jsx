@@ -581,8 +581,11 @@ export default function App() {
             <SallaIntegrationView branches={branches} />
           )}
 
-          {['system_settings', 'delivery_settings'].includes(activeTab) && (
-            <SettingsView branches={branches} />
+          {['system_settings', 'delivery_settings', 'printer_settings'].includes(activeTab) && (
+            <SettingsView 
+              branches={branches} 
+              initialSubTab={activeTab === 'printer_settings' ? 'printers' : (activeTab === 'delivery_settings' ? 'pricing' : 'rules')}
+            />
           )}
 
           {activeTab === 'support' && <SupportView />}
