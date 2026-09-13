@@ -3,28 +3,41 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';
 
-// ===== إرفاق التوكن تلقائياً مع كل طلب API =====
+// ===== إرفاق التوكن تلقائياً مع كل طلب API مع عزل المناديب عن الإدارة =====
 const _fetch = window.fetch.bind(window);
 window.fetch = (url, options = {}) => {
   if (typeof url === 'string' && url.startsWith('/api')) {
-    let token = localStorage.getItem('sanad_token');
-    try {
-      const d = JSON.parse(localStorage.getItem('sanad_driver_auth') || 'null');
-      if (d?.token) token = d.token;
-    } catch (e) {}
+    const isDriverRoute = window.location.pathname.startsWith('/driver');
+    let token = null;
+    if (isDriverRoute) {
+      try {
+        const d = JSON.parse(localStorage.getItem('sanad_driver_auth') || 'null');
+        if (d?.token) token = d.token;
+      } catch (e) {}
+    } else {
+      token = localStorage.getItem('sanad_token');
+    }
     if (token) {
       options.headers = { ...(options.headers || {}), Authorization: 'Bearer ' + token };
     }
   }
   return _fetch(url, options).then(res => {
     if (res.status === 401) {
-      const hadToken = !!localStorage.getItem('sanad_token') || !!localStorage.getItem('sanad_driver_auth');
-      localStorage.removeItem('sanad_token');
-      localStorage.removeItem('sanad_user');
-      localStorage.removeItem('sanad_driver_auth');
-      localStorage.removeItem('sanad_driver_id');
+      const isDriverRoute = window.location.pathname.startsWith('/driver');
+      const hadToken = isDriverRoute 
+        ? !!localStorage.getItem('sanad_driver_auth') 
+        : !!localStorage.getItem('sanad_token');
+      
+      if (isDriverRoute) {
+        localStorage.removeItem('sanad_driver_auth');
+        localStorage.removeItem('sanad_driver_id');
+      } else {
+        localStorage.removeItem('sanad_token');
+        localStorage.removeItem('sanad_user');
+      }
+
       if (hadToken && !window.location.pathname.startsWith('/track')) {
-        window.location.href = '/';
+        window.location.href = isDriverRoute ? '/driver' : '/';
       }
     }
     return res;

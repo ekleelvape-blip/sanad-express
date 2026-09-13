@@ -455,10 +455,10 @@ export default function DriverApp({
   if (!authDriver) {
     return (
       <DriverAuthGate
-        drivers={drivers}
         onLoginSuccess={(loggedDriver) => {
           setAuthDriver(loggedDriver);
           if (onChangeDriver) onChangeDriver(loggedDriver.id);
+          if (onRefresh) onRefresh();
         }}
       />
     );
@@ -1752,22 +1752,6 @@ export default function DriverApp({
               <div className="pt-2 flex justify-between">
                 <span className="text-slate-400">الفرع الرئيسي التابع له:</span>
                 <span className="font-bold">فرع إكليل الدمام</span>
-              </div>
-              <div className="pt-3">
-                <label className="text-slate-400 block mb-1 text-[11px] font-bold">تبديل حساب المندوب (للاختبار والمحاكاة):</label>
-                <select
-                  value={currentDriver.id}
-                  onChange={(e) => {
-                    if (onChangeDriver) onChangeDriver(e.target.value);
-                  }}
-                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none"
-                >
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} — {d.phone} ({d.code || d.id})
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
             <button onClick={() => setShowProfileModal(false)} className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">

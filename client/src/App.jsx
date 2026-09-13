@@ -310,25 +310,10 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(window.location.origin + '/driver');
-                alert('تم نسخ رابط بوابة المندوب المشفر بنجاح! يمكنك إرساله للمناديب:\n' + window.location.origin + '/driver');
-              }}
-              className="text-[11px] bg-cyan-950/60 text-[#00d2d3] border border-cyan-800/50 hover:bg-cyan-900/60 px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-colors shadow-sm"
-              title="نسخ رابط المندوب لإرساله عبر الواتساب"
-            >
-              نسخ الرابط 📋
-            </button>
-            <button
-              type="button"
-              onClick={() => navigateTo('admin', '/admin')}
-              className="text-[11px] text-slate-500 hover:text-slate-300 bg-slate-900/60 border border-slate-800 px-2.5 py-1.5 rounded-xl font-semibold cursor-pointer"
-              title="الدخول للوحة الإدارة"
-            >
-              الإدارة 🔒
-            </button>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-cyan-950/60 border border-cyan-800/40 text-[#00d2d3]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              بوابة مشفرة 256-bit
+            </span>
           </div>
         </header>
 

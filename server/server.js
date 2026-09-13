@@ -1005,8 +1005,15 @@ app.get('/api/branches', (req, res) => {
   res.json(branches);
 });
 
-// جلب المناديب (مع تطبيق خوارزمية المزامنة)
+// جلب المناديب (مع تطبيق خوارزمية المزامنة وحماية الخصوصية للمناديب)
 app.get('/api/drivers', (req, res) => {
+  // خصوصية تامة: إذا كان الطالب مندوباً، يعاد حسابه فقط دون كشف باقي أسطول المناديب
+  if (req.user?.role === 'driver') {
+    const myId = req.user.driverId || req.user.id;
+    const me = drivers.find(d => d.id === myId || d.id === myId.replace('drv-10', 'drv-') || ('drv-10' + d.id.replace('drv-', '')) === myId);
+    return res.json(me ? [me] : []);
+  }
+
   const { branchId } = req.query;
   let resDrivers = drivers.map(d => {
     const activeOrders = orders.filter(o => o.assignedDriverId === d.id && ['assigned', 'picked_up', 'in_transit'].includes(o.status));
@@ -1197,6 +1204,16 @@ app.post('/api/driver/login', async (req, res) => {
 // استرجاع شحنات المندوب المحددة فقط لحماية خصوصية العملاء
 app.get('/api/driver/:id/orders', (req, res) => {
   const { id } = req.params;
+
+  // خصوصية صارمة: لا يمكن لأي مندوب استعراض شحنات غيره
+  if (req.user?.role === 'driver') {
+    const myId = req.user.driverId || req.user.id;
+    const isSelf = myId === id || myId?.replace('drv-10', 'drv-') === id?.replace('drv-10', 'drv-');
+    if (!isSelf) {
+      return res.status(403).json({ error: 'غير مصرح — يمكنك فقط الاطلاع على شحناتك المسندة إليك' });
+    }
+  }
+
   const matchId = (assignedId) => {
     if (!assignedId) return false;
     return assignedId === id ||
@@ -1258,13 +1275,28 @@ app.post('/api/drivers', (req, res) => {
   });
 });
 
-// جلب الطلبات
+// جلب الطلبات (مع تطبيق خصوصية المناديب والفروع)
 app.get('/api/orders', (req, res) => {
   const { branchId, status, driverId } = req.query;
   let filtered = [...orders];
-  if (branchId && branchId !== 'all') {
+
+  // خصوصية تامة للمندوب: المندوب يشاهد شحناته المسندة إليه فقط
+  if (req.user?.role === 'driver') {
+    const dId = req.user.driverId || req.user.id;
+    filtered = filtered.filter(o => {
+      const a = o.assignedDriverId;
+      return a === dId || a === dId?.replace('drv-10', 'drv-') || ('drv-10' + (a ? a.replace('drv-', '') : '')) === dId;
+    });
+    return res.json(filtered);
+  }
+
+  // خصوصية الفروع
+  if (req.user?.role === 'branch' && req.user.branchId) {
+    filtered = filtered.filter(o => o.branchId === req.user.branchId);
+  } else if (branchId && branchId !== 'all') {
     filtered = filtered.filter(o => o.branchId === branchId);
   }
+
   if (status && status !== 'all') {
     filtered = filtered.filter(o => o.status === status);
   }
