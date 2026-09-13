@@ -2875,49 +2875,23 @@ const PERSISTED = {
   get systemSettings() { return systemSettings; }
 };
 
-// التحميل عند الإقلاع (إذا الملف موجود يستعيد البيانات، وإلا يستخدم البيانات الأولية)
-if (fs.existsSync(DATA_FILE)) {
-  try {
-    const loaded = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
-    for (const key of Object.keys(PERSISTED)) {
-      if (Array.isArray(loaded[key])) {
-        PERSISTED[key].length = 0;
-        PERSISTED[key].push(...loaded[key]);
-      }
-    }
-    if (loaded.systemSettings) {
-      systemSettings = { ...systemSettings, ...loaded.systemSettings };
-    }
-    if (loaded.storeReceivedCashWallet) {
-      storeReceivedCashWallet.totalBalance = Number(loaded.storeReceivedCashWallet.totalBalance) || 0;
-      storeReceivedCashWallet.transactions = loaded.storeReceivedCashWallet.transactions || [];
-    }
-    // ضمان بقاء رسوم التوصيل وفق تسعيرة سند المعتمدة
-    orders.forEach(o => {
-      if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
-        o.deliveryFee = getCityDeliveryFee(o.customerAddress);
-      }
-    });
-    console.log('✅ تم استعادة البيانات من:', DATA_FILE, '| طلبات:', orders.length, '| مناديب:', drivers.length, '| كاش الخزينة:', storeReceivedCashWallet.totalBalance);
-  } catch (e) {
-    console.error('⚠️ تعذّر قراءة ملف البيانات، سيتم استخدام البيانات الأولية:', e.message);
-  }
-} else {
-  console.log('ℹ️ لا يوجد ملف بيانات محفوظ — بدء بنظيف بالبيانات الأولية');
-}
+const dbAdapter = require('./db');
 
-// حفظ ذري (كتابة مؤقتة ثم نقل) مع تأخير بسيط لتجميع التعديلات المتتالية
+// التحميل عند الإقلاع عبر محول قاعدة البيانات المزدوج (PostgreSQL / Supabase + نسخة محلية)
+dbAdapter.loadInitialData(PERSISTED, () => {
+  // ضمان بقاء رسوم التوصيل وفق تسعيرة سند المعتمدة
+  orders.forEach(o => {
+    if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
+      o.deliveryFee = getCityDeliveryFee(o.customerAddress);
+    }
+  });
+  console.log('✅ تم تجهيز واستقرار قاعدة بيانات سَنَد | طلبات:', orders.length, '| مناديب:', drivers.length, '| كاش الخزينة:', storeReceivedCashWallet.totalBalance);
+});
+
+// حفظ ذري ومزامنة سحابية مع تجميع التعديلات المتتالية
 let saveTimer = null;
 function persistNow() {
-  try {
-    const snapshot = {};
-    for (const key of Object.keys(PERSISTED)) snapshot[key] = PERSISTED[key];
-    const tmp = DATA_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(snapshot, null, 2));
-    fs.renameSync(tmp, DATA_FILE);
-  } catch (e) {
-    console.error('❌ فشل حفظ البيانات:', e.message);
-  }
+  dbAdapter.saveAll(PERSISTED);
 }
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer);

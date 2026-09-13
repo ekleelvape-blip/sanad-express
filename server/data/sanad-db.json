@@ -2290,5 +2290,18 @@
   "storeReceivedCashWallet": {
     "totalBalance": 14500,
     "transactions": []
+  },
+  "systemSettings": {
+    "selfAssign": true,
+    "readyOnly": true,
+    "reassignAfterDelay": true,
+    "soundEnabled": true,
+    "voiceEnabled": true,
+    "soundVolume": 0.9,
+    "defaultPrinterType": "thermal",
+    "thermalCopies": 1,
+    "a4Copies": 1,
+    "a4Layout": "full",
+    "storeNameOnWaybill": "سند إكسبريس SANAD EXPRESS"
   }
 }
