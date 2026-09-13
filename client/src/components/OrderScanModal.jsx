@@ -3,7 +3,7 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { 
   ScanLine, QrCode, Camera, AlertTriangle, CheckCircle2, X, Sparkles, 
   ShieldCheck, Box, User, MapPin, DollarSign, RefreshCw, Upload, Image as ImageIcon,
-  Zap, ZapOff, FlipHorizontal
+  Zap, ZapOff, FlipHorizontal, Loader2
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
@@ -22,6 +22,7 @@ export default function OrderScanModal({
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [cameraStarting, setCameraStarting] = useState(false);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [availableCameras, setAvailableCameras] = useState([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   const [torchOn, setTorchOn] = useState(false);
@@ -105,7 +106,7 @@ export default function OrderScanModal({
 
     // 3. الكود غير مسجل إطلاقاً
     sound.playOrderAlert();
-    setErrorMessage(`❌ الباركود الممسوح [${code}] غير مطابق لهذه الشحنة. يرجى مسح بوليصة الشحنة الصحيحة المطبوعة على الكرتون.`);
+    setErrorMessage(`❌ الباركود الممسوح [${code}] غير مطابق لهذه الشحنة. يرجى مسح بوليصة الشحنة الصحيحة #${order.id}.`);
   };
 
   // إيقاف الماسح وتنظيف الموارد بأمان
@@ -129,7 +130,7 @@ export default function OrderScanModal({
     }
   };
 
-  // تشغيل الكاميرا والماسح الضوئي
+  // تشغيل الكاميرا والماسح الضوئي المباشر
   const startScanner = async (preferredCameraId = null) => {
     if (isTransitioningRef.current) return;
     isTransitioningRef.current = true;
@@ -149,7 +150,7 @@ export default function OrderScanModal({
         return;
       }
 
-      // تهيئة الماسح مع دعم جميع أنواع الباركود وQR
+      // تهيئة الماسح مع دعم جميع أنواع الباركود الشائعة وبوليصات الشحن
       const html5QrCode = new Html5Qrcode('sanad-qr-reader', {
         formatsToSupport: [
           Html5QrcodeSupportedFormats.QR_CODE,
@@ -164,13 +165,13 @@ export default function OrderScanModal({
       });
       scannerRef.current = html5QrCode;
 
-      // حساب أبعاد صندوق المسح ديناميكياً لتفادي أي خطأ
+      // صندوق المسح مستطيل عريض ليلتقط الباركود الخطي 1D وبنفس الوقت كود 2D QR
       const qrboxFunction = (viewfinderWidth, viewfinderHeight) => {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const edgeSize = Math.max(160, Math.floor(minEdge * 0.75));
+        const w = Math.min(320, Math.floor(viewfinderWidth * 0.88));
+        const h = Math.min(220, Math.floor(viewfinderHeight * 0.72));
         return {
-          width: Math.min(edgeSize, viewfinderWidth - 20),
-          height: Math.min(edgeSize, viewfinderHeight - 20)
+          width: Math.max(160, w),
+          height: Math.max(130, h)
         };
       };
 
@@ -180,27 +181,15 @@ export default function OrderScanModal({
       };
 
       // فحص قائمة الكاميرات المتاحة بالجهاز
-      let cams = [];
       try {
-        cams = await Html5Qrcode.getCameras();
+        const cams = await Html5Qrcode.getCameras();
         if (isMountedRef.current && cams && cams.length > 0) {
           setAvailableCameras(cams);
         }
-      } catch (e) {
-        // بعض المتصفحات تمنع حصر الكاميرات قبل الحصول على الإذن، سنتعامل مع الكاميرا الافتراضية
-      }
+      } catch (e) {}
 
-      // تحديد الكاميرا المراد استخدامها
-      let cameraConstraint = { facingMode: 'environment' };
-      if (preferredCameraId) {
-        cameraConstraint = preferredCameraId;
-      } else if (cams && cams.length > 0) {
-        // تفضيل الكاميرا الخلفية إن أمكن
-        const backCam = cams.find(c => /back|rear|environment|خلفية/i.test(c.label)) || cams[cams.length - 1];
-        cameraConstraint = backCam.id;
-        const camIdx = cams.findIndex(c => c.id === cameraConstraint);
-        if (camIdx >= 0 && isMountedRef.current) setCurrentCameraIndex(camIdx);
-      }
+      // استخدام الكاميرا الخلفية تلقائياً
+      const cameraConstraint = preferredCameraId ? preferredCameraId : { facingMode: 'environment' };
 
       const onScanSuccess = (decodedText) => {
         if (isMountedRef.current) {
@@ -208,13 +197,7 @@ export default function OrderScanModal({
         }
       };
 
-      try {
-        await html5QrCode.start(cameraConstraint, scanConfig, onScanSuccess, () => {});
-      } catch (camErr) {
-        console.warn('Initial camera constraint failed, retrying with fallback:', camErr);
-        // محاولة بديلة بكاميرا البيئة العامة
-        await html5QrCode.start({ facingMode: 'environment' }, scanConfig, onScanSuccess, () => {});
-      }
+      await html5QrCode.start(cameraConstraint, scanConfig, onScanSuccess, () => {});
 
       // فحص دعم الفلاش (Torch)
       try {
@@ -229,17 +212,17 @@ export default function OrderScanModal({
         setCameraStarting(false);
       }
     } catch (err) {
-      console.warn('Camera start final error:', err);
+      console.warn('Camera start error:', err);
       if (isMountedRef.current) {
         setCameraActive(false);
         setCameraStarting(false);
         const errMsg = String(err?.message || err || '');
         if (errMsg.includes('Permission') || errMsg.includes('NotAllowedError') || errMsg.includes('denied')) {
-          setCameraError('تم حظر إذن الكاميرا. يرجى تفعيل إذن الكاميرا من إعدادات المتصفح، أو اضغط على "التقاط صورة 📸" فوراً.');
+          setCameraError('يرجى السماح بإذن الكاميرا من إعدادات المتصفح، أو استخدم زر "التقاط صورة 📸" فوراً.');
         } else if (errMsg.includes('NotFound') || errMsg.includes('DevicesNotFoundError')) {
           setCameraError('لم يتم العثور على كاميرا في هذا الجهاز، يمكنك استخدام التقاط صورة أو إدخال الكود يدوياً.');
         } else {
-          setCameraError('تعذر فتح بث الفيديو المباشر. يمكنك استخدام زر "التقاط صورة 📸" لالتقاط الباركود فوراً.');
+          setCameraError('الكاميرا المباشرة بانتظار الإذن. يمكنك الضغط على "تشغيل الكاميرا 📷" أو "التقاط صورة 📸".');
         }
       }
     } finally {
@@ -277,8 +260,8 @@ export default function OrderScanModal({
       setErrorMessage('');
       setMatchedOtherOrder(null);
       setSuccessVerified(false);
+      setIsProcessingPhoto(false);
       
-      // بدء الكاميرا بعد تحميل العنصر بالـ DOM
       const timer = setTimeout(() => {
         startScanner();
         if (inputRef.current) inputRef.current.focus();
@@ -298,12 +281,135 @@ export default function OrderScanModal({
     };
   }, [isOpen, order]);
 
+  // محرك فك تشفير متعدد المراحل فائق القوة للصور الملتقطة بالجوال
+  const decodeBarcodeFromImageFile = async (file, html5Qr) => {
+    // 1. المحاولة الأولى: المعالج المدمج عتادياً بالهاتف (BarcodeDetector API)
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new window.BarcodeDetector({
+          formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e']
+        });
+        const bmp = await createImageBitmap(file);
+        const results = await detector.detect(bmp);
+        if (results && results.length > 0 && results[0].rawValue) {
+          return results[0].rawValue;
+        }
+      } catch (e) {
+        console.warn('Native BarcodeDetector pass 1 failed:', e);
+      }
+    }
+
+    // 2. قراءة الصورة وضبط أبعادها (Downscaling إلى 1280px لتسريع ودقة فك التشفير)
+    const img = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const maxDim = 1280;
+    let { width, height } = img;
+    let scale = 1;
+    if (width > maxDim || height > maxDim) {
+      scale = maxDim / Math.max(width, height);
+    }
+    const targetW = Math.round(width * scale);
+    const targetH = Math.round(height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+    // فحص بالمعالج العتادي على الصورة المعدلة الأبعاد
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new window.BarcodeDetector({
+          formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'upc_a']
+        });
+        const results = await detector.detect(canvas);
+        if (results && results.length > 0 && results[0].rawValue) {
+          return results[0].rawValue;
+        }
+      } catch (e) {}
+    }
+
+    // 3. المحاولة عبر محرك Html5Qrcode على الصورة المحسنة
+    const downscaledBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (downscaledBlob) {
+      try {
+        const res = await html5Qr.scanFile(downscaledBlob, false);
+        if (res) return res;
+      } catch (e) {}
+    }
+
+    // 4. محاولة التدوير 90 درجة (في حال التقاط الصورة بالطول والبوليصة بالعرض)
+    const rotCanvas = document.createElement('canvas');
+    rotCanvas.width = targetH;
+    rotCanvas.height = targetW;
+    const rotCtx = rotCanvas.getContext('2d', { willReadFrequently: true });
+    rotCtx.translate(targetH / 2, targetW / 2);
+    rotCtx.rotate((90 * Math.PI) / 180);
+    rotCtx.drawImage(img, -targetW / 2, -targetH / 2, targetW, targetH);
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new window.BarcodeDetector({
+          formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'upc_a']
+        });
+        const results = await detector.detect(rotCanvas);
+        if (results && results.length > 0 && results[0].rawValue) {
+          return results[0].rawValue;
+        }
+      } catch (e) {}
+    }
+
+    const rotBlob = await new Promise(resolve => rotCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (rotBlob) {
+      try {
+        const res = await html5Qr.scanFile(rotBlob, false);
+        if (res) return res;
+      } catch (e) {}
+    }
+
+    // 5. محاولة زيادة التباين (Contrast Enhancing & Grayscale) لفك تشفير الباركود في الإضاءة المنخفضة
+    const imgData = ctx.getImageData(0, 0, targetW, targetH);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+      const enhanced = gray < 120 ? Math.max(0, gray * 0.6) : Math.min(255, gray * 1.35);
+      d[i] = enhanced;
+      d[i + 1] = enhanced;
+      d[i + 2] = enhanced;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const enhancedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (enhancedBlob) {
+      try {
+        const res = await html5Qr.scanFile(enhancedBlob, false);
+        if (res) return res;
+      } catch (e) {}
+    }
+
+    // 6. المحاولة الأخيرة على الملف الأصلي
+    return await html5Qr.scanFile(file, false);
+  };
+
   // مسح صورة تم التقاطها عبر الكاميرا المدمجة بالهاتف
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setErrorMessage('');
+    setIsProcessingPhoto(true);
+
     try {
       const html5Qr = new Html5Qrcode('sanad-qr-temp-reader', {
         formatsToSupport: [
@@ -315,15 +421,20 @@ export default function OrderScanModal({
         ],
         verbose: false
       });
-      const result = await html5Qr.scanFile(file, true);
-      html5Qr.clear();
-      if (result) {
-        handleVerifyBarcode(result);
+
+      const decoded = await decodeBarcodeFromImageFile(file, html5Qr);
+      try { html5Qr.clear(); } catch (clErr) {}
+
+      if (decoded) {
+        handleVerifyBarcode(decoded);
+      } else {
+        throw new Error('No barcode detected');
       }
     } catch (err) {
-      setErrorMessage('لم نتمكن من قراءة باركود أو QR واضح من الصورة، تأكد من وضوح الإضاءة وحاول مجدداً');
       sound.playOrderAlert();
+      setErrorMessage('لم نتمكن من التقاط باركود واضح من الصورة. نصيحة: قرّب الكاميرا من رمز الباركود أو الـ QR على البوليصة واجعله في منتصف الإطار بدون اهتزاز، أو استخدم حقل الإدخال السريع بالأسفل.');
     } finally {
+      setIsProcessingPhoto(false);
       if (e.target) e.target.value = '';
     }
   };
@@ -348,7 +459,7 @@ export default function OrderScanModal({
 
   return (
     <div className="fixed inset-0 z-[8000] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200" dir="rtl">
-      {/* حاوية غير مرئية لمسح الصور الملتقطة */}
+      {/* حاوية غير مرئية لمعالجة الصور */}
       <div id="sanad-qr-temp-reader" style={{ display: 'none' }}></div>
 
       <div className="w-full max-w-md bg-[#0d1424] border-2 border-cyan-500/60 rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] text-slate-100 relative overflow-hidden flex flex-col max-h-[94vh]">
@@ -419,23 +530,32 @@ export default function OrderScanModal({
 
         {/* نافذة المسح المباشر بالكاميرا */}
         <div className="relative w-full h-56 sm:h-64 bg-black rounded-2xl overflow-hidden border-2 border-cyan-500/40 flex flex-col items-center justify-center mb-3 shadow-inner">
-          {/* عنصر حاوية Html5Qrcode */}
+          {/* عنصر حاوية Html5Qrcode المباشرة */}
           <div id="sanad-qr-reader" className="w-full h-full object-cover"></div>
 
-          {/* في حال كانت الكاميرا قيد التشغيل أو فشلت */}
-          {!cameraActive && (
+          {/* حالة معالجة الصورة الملتقطة */}
+          {isProcessingPhoto && (
+            <div className="absolute inset-0 bg-[#070c16]/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-3 z-30 animate-in fade-in">
+              <Loader2 className="w-10 h-10 text-[#00d2d3] animate-spin" />
+              <div className="text-sm font-bold text-white">جاري تحليل وفك تشفير الباركود بدقة عالية...</div>
+              <p className="text-[11px] text-slate-400">نستخدم الذكاء الاصطناعي والمعالجة البصرية لمطابقة الطرد</p>
+            </div>
+          )}
+
+          {/* في حال كانت الكاميرا المباشرة غير مفعلة */}
+          {!cameraActive && !isProcessingPhoto && (
             <div className="absolute inset-0 bg-[#070c16] flex flex-col items-center justify-center p-4 text-center space-y-2.5 z-10">
               {cameraStarting ? (
                 <>
                   <RefreshCw className="w-9 h-9 text-[#00d2d3] animate-spin" />
-                  <span className="text-xs font-bold text-slate-300">جاري تشغيل الكاميرا والماسح الضوئي...</span>
-                  <p className="text-[10px] text-slate-400">يرجى الضغط على "سماح / Allow" عند طلب إذن الكاميرا</p>
+                  <span className="text-xs font-bold text-slate-300">جاري تشغيل الكاميرا المباشرة...</span>
+                  <p className="text-[10px] text-slate-400">يرجى الضغط على "سماح / Allow" إذا ظهر طلب الإذن</p>
                 </>
               ) : (
                 <>
                   <QrCode className="w-12 h-12 text-slate-500" />
                   <p className="text-[11px] text-slate-300 max-w-xs leading-relaxed">
-                    {cameraError || 'وجّه الكاميرا أو التقط صورة لبوليصة الشحنة المطبوعة على الكرتون.'}
+                    {cameraError || 'وجّه الكاميرا نحو بوليصة الشحنة المطبوعة على الكرتون.'}
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                     <button
@@ -460,10 +580,13 @@ export default function OrderScanModal({
             </div>
           )}
 
-          {/* زوايا إطار التصويب للمسح */}
-          {cameraActive && (
+          {/* زوايا إطار التصويب للمسح المباشر */}
+          {cameraActive && !isProcessingPhoto && (
             <>
+              {/* خط الليزر المتحرك للمسح */}
               <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_15px_#f43f5e] animate-pulse pointer-events-none"></div>
+              
+              {/* زوايا التحديد الأربعة */}
               <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#00d2d3] pointer-events-none"></div>
               <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#00d2d3] pointer-events-none"></div>
               <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00d2d3] pointer-events-none"></div>
@@ -517,7 +640,7 @@ export default function OrderScanModal({
             </>
           )}
 
-          {/* مدخل ملف الكاميرا المخفي لالتقاط صورة مباشرة */}
+          {/* مدخل ملف الكاميرا المخفي لالتقاط صورة مباشرة عبر الهاتف */}
           <input
             ref={fileInputRef}
             type="file"
