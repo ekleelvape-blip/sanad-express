@@ -2547,21 +2547,38 @@ let managers = [
 app.get('/api/managers', (req, res) => res.json(managers));
 
 app.post('/api/managers', (req, res) => {
-  const { name, phone, email, nationalId, role, status } = req.body;
+  const { name, phone, email, nationalId, role, status, branchName } = req.body;
   if (!name || !phone) return res.status(400).json({ error: 'يرجى إدخال اسم الموظف ورقم الجوال' });
   const newMgr = {
-    id: 'mgr-' + (managers.length + 1),
+    id: 'mgr-' + (managers.length + 1) + '-' + Date.now().toString().slice(-4),
     name: name.trim(),
     phone: phone.trim(),
     email: (email && email.trim()) || '—',
     nationalId: (nationalId && nationalId.trim()) || '—',
     role: role || 'مشرف فرع',
-    branchName: 'المركز الرئيسي',
+    branchName: branchName || 'المركز الرئيسي',
     status: status || 'نشط',
     lastActive: 'الآن'
   };
   managers.unshift(newMgr);
+  scheduleSave();
   res.json(newMgr);
+});
+
+app.put('/api/managers/:id', (req, res) => {
+  const idx = managers.findIndex(m => m.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'الموظف غير موجود' });
+  managers[idx] = { ...managers[idx], ...req.body };
+  scheduleSave();
+  res.json(managers[idx]);
+});
+
+app.delete('/api/managers/:id', (req, res) => {
+  const idx = managers.findIndex(m => m.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'الموظف غير موجود' });
+  const removed = managers.splice(idx, 1);
+  scheduleSave();
+  res.json({ success: true, removed: removed[0] });
 });
 
 // د) بيانات عهدة السائقين والأجهزة
@@ -2574,6 +2591,34 @@ let equipment = [
 ];
 
 app.get('/api/equipment', (req, res) => res.json(equipment));
+
+app.post('/api/equipment', (req, res) => {
+  const { assetType, serialNumber, driverName, branchName, status } = req.body;
+  if (!assetType || !serialNumber || !driverName) {
+    return res.status(400).json({ error: 'يرجى تحديد نوع العهدة والرقم التسلسلي والسائق المستلم' });
+  }
+  const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const newEq = {
+    id: 'EQ-' + (equipment.length + 1).toString().padStart(2, '0'),
+    assetType: assetType.trim(),
+    serialNumber: serialNumber.trim(),
+    driverName: driverName.trim(),
+    branchName: branchName || 'فرع إكليل الدمام',
+    assignedDate: today,
+    status: status || 'ممتاز / بالخدمة'
+  };
+  equipment.unshift(newEq);
+  scheduleSave();
+  res.json(newEq);
+});
+
+app.delete('/api/equipment/:id', (req, res) => {
+  const idx = equipment.findIndex(e => e.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'الجهاز غير موجود' });
+  const removed = equipment.splice(idx, 1);
+  scheduleSave();
+  res.json({ success: true, removed: removed[0] });
+});
 
 // هـ) تقييمات المناديب ومؤشرات الجودة SLA
 let ratings = [

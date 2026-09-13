@@ -51,9 +51,9 @@ export default function Sidebar({
       icon: <Users className="w-4 h-4" />,
       menuKey: 'users',
       children: [
-        { key: 'store_drivers', label: 'سائقي المتجر' },
-        { key: 'driver_tracking', label: 'تتبع السائقين (رادار)' },
         { key: 'managers', label: 'المدراء والمشرفين' },
+        { key: 'store_drivers', label: 'سائقي المتجر والأسطول' },
+        { key: 'driver_tracking', label: 'تتبع السائقين (رادار)' },
         { key: 'permissions', label: 'الصلاحيات (RBAC)' }
       ]
     },
@@ -81,7 +81,7 @@ export default function Sidebar({
         { key: 'cod_collections', label: 'تحصيلات الدفع عند الإستلام' },
         { key: 'driver_performance', label: 'تقرير أداء السائقين' },
         { key: 'driver_dues', label: 'تقرير مستحقات السائقين' },
-        { key: 'ratings', label: 'تقرير التقييمات' },
+        { key: 'ratings_report', label: 'تقرير التقييمات' },
         { key: 'neighborhoods', label: 'تقرير الأحياء' }
       ]
     },

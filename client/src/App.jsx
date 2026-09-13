@@ -522,23 +522,16 @@ export default function App() {
             </div>
           )}
 
-          {['store_drivers', 'users_group'].includes(activeTab) && (
-            <StoreDriversView
-              drivers={drivers}
-              orders={orders}
-              branches={branches}
-              onRefresh={fetchData}
-              onSwitchToTracking={() => setActiveTab('driver_tracking')}
-              onOpenDriverApp={(d) => { setCurrentDriverId(d.id); setActiveTab('driver_app'); }}
-            />
-          )}
-
-          {['managers', 'permissions', 'driver_inventory', 'ratings', 'locations'].includes(activeTab) && (
+          {['store_drivers', 'users_group', 'managers', 'permissions', 'driver_inventory', 'ratings', 'locations'].includes(activeTab) && (
             <UsersManagementHub
               activeTab={activeTab}
               onSelectTab={handleTabChange}
               branches={branches}
               drivers={drivers}
+              orders={orders}
+              onRefresh={fetchData}
+              onSwitchToTracking={() => setActiveTab('driver_tracking')}
+              onOpenDriverApp={(d) => { setCurrentDriverId(d.id); setActiveTab('driver_app'); }}
             />
           )}
 
@@ -558,7 +551,7 @@ export default function App() {
             />
           )}
 
-          {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings', 'neighborhoods', 'friday_invoices'].includes(activeTab) && (
+          {['reports', 'delivery_reports', 'cod_collections', 'driver_performance', 'driver_dues', 'ratings_report', 'neighborhoods', 'friday_invoices'].includes(activeTab) && (
             <ReportsCenter
               activeTab={activeTab}
               onSelectTab={handleTabChange}

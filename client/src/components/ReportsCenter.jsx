@@ -53,7 +53,7 @@ export default function ReportsCenter({
     { id: 'cod_collections', title: 'تحصيلات الدفع عند الاستلام', icon: <Banknote className="w-4 h-4" /> },
     { id: 'friday_invoices', title: 'فواتير الجمعة التلقائية 📑', icon: <Calendar className="w-4 h-4" /> },
     { id: 'driver_dues', title: 'تقرير مستحقات السائقين', icon: <Receipt className="w-4 h-4" /> },
-    { id: 'ratings', title: 'تقرير التقييمات', icon: <Star className="w-4 h-4" /> },
+    { id: 'ratings_report', title: 'تقرير التقييمات', icon: <Star className="w-4 h-4" /> },
     { id: 'neighborhoods', title: 'تقرير الأحياء ومناطق التوزيع', icon: <MapPin className="w-4 h-4" /> }
   ];
 
@@ -783,7 +783,7 @@ export default function ReportsCenter({
       {/* ========================================================================= */}
       {/* التبويب 5: تقرير التقييمات */}
       {/* ========================================================================= */}
-      {activeTab === 'ratings' && (
+      {(activeTab === 'ratings' || activeTab === 'ratings_report') && (
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
