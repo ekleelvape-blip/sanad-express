@@ -2495,7 +2495,17 @@ let distPath = candidateDistPaths.find(p => fs.existsSync(p));
 console.log('سند SANAD — مسار واجهة العميل المعتمد:', distPath || 'غير متوفر (وضع التطوير)');
 
 if (distPath) {
-  app.use(express.static(distPath, { maxAge: '1h' }));
+  app.use(express.static(distPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 }
 
 const serveAppIndex = (req, res) => {
