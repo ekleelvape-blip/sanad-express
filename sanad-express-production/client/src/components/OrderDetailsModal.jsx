@@ -213,9 +213,22 @@ export default function OrderDetailsModal({ order, drivers = [], branches = [], 
   const saPhone = cleanPhone.startsWith('966') ? cleanPhone : ('966' + cleanPhone.replace(/^0/, ''));
   const nationalAddress = order.nationalAddress || 'EHDC3792';
   const warehouseName = order.warehouse || (branch ? branch.name : 'إكليل الكيف - فرع الدمام');
-  const warehousePhone = order.warehousePhone || '+966539409522';
-  const subtotal = order.subtotal || (order.totalAmount ? (Number(order.totalAmount) - 17.39).toFixed(2) : '111.30');
-  const deliveryFee = order.deliveryFee || '17.39';
+  const getCityDeliveryFee = () => {
+    if (order.deliveryFee && Number(order.deliveryFee) > 0 && order.deliveryFee !== 17.39 && order.deliveryFee !== 20) {
+      return Number(order.deliveryFee);
+    }
+    const addr = ((order.customerAddress || '') + ' ' + (branch?.city || '')).toLowerCase();
+    if (addr.includes('صفو') || addr.includes('صفوي')) return 40;
+    if (addr.includes('قطيف') || addr.includes('تاروت')) return 35;
+    if (addr.includes('خبر') || addr.includes('عزيزية') || addr.includes('عقربية')) return 35;
+    if (addr.includes('ظهران') || addr.includes('دوحة') || addr.includes('دانة') || addr.includes('قصور')) return 30;
+    if (addr.includes('سيهات') || addr.includes('عنك')) return 30;
+    if (addr.includes('دمام')) return 25;
+    return 25;
+  };
+  const deliveryFeeNum = getCityDeliveryFee();
+  const deliveryFee = deliveryFeeNum.toFixed(2);
+  const subtotal = order.subtotal || (order.totalAmount ? Math.max(0, Number(order.totalAmount) - deliveryFeeNum).toFixed(2) : '100.00');
   const totalAmount = order.totalAmount ? Number(order.totalAmount).toFixed(2) : '148.00';
   const paymentLabel = order.paymentMethod === 'stc_pay' ? 'STC Pay' : (order.paymentMethod === 'cash' ? 'دفع عند الاستلام (كاش)' : 'شبكة مدى');
   const requiresCod = order.requiresCod ?? (order.paymentMethod === 'cash');

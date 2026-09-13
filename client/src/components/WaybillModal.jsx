@@ -13,10 +13,13 @@ export default function WaybillModal({ order, branch, onClose }) {
                       (order?.branchId === 'branch-vape-sharq') ||
                       (branch?.name && branch.name.includes('فيب الشرق'));
 
-  // توليد كود التوزيع مثل D963 أو K922 أو J924
+  // توليد كود التوزيع مثل D963 أو K922 أو SF924
   const getCityPrefix = () => {
-    const city = (branch?.city || order?.customerAddress || '').toLowerCase();
-    if (city.includes('دمام') || city.includes('dammam')) return 'D';
+    const city = ((branch?.city || '') + ' ' + (order?.customerAddress || '')).toLowerCase();
+    if (city.includes('صفو') || city.includes('صفوي')) return 'SF';
+    if (city.includes('قطيف') || city.includes('تاروت')) return 'Q';
+    if (city.includes('سيهات') || city.includes('عنك')) return 'S';
+    if (city.includes('ظهران') || city.includes('دوحة')) return 'DH';
     if (city.includes('خبر') || city.includes('khobar')) return 'K';
     if (city.includes('جبيل') || city.includes('jubail')) return 'J';
     return 'D';
@@ -26,12 +29,30 @@ export default function WaybillModal({ order, branch, onClose }) {
   const sortCode = getCityPrefix() + orderNumDigits;
 
   const cityBadgeText = () => {
-    const addr = order.customerAddress || '';
-    if (addr.includes('الخبر')) return 'الخبر';
-    if (addr.includes('الدمام')) return 'الدمام';
-    if (addr.includes('الجبيل')) return 'الجبيل';
-    if (addr.includes('الظهران')) return 'الظهران';
-    return branch?.city || 'الشرقية';
+    const addr = (order.customerAddress || '').toLowerCase();
+    if (addr.includes('صفو') || addr.includes('صفوي')) return 'صفوى';
+    if (addr.includes('قطيف') || addr.includes('تاروت')) return 'القطيف';
+    if (addr.includes('سيهات') || addr.includes('عنك')) return 'سيهات';
+    if (addr.includes('ظهران') || addr.includes('دوحة') || addr.includes('دانة')) return 'الظهران';
+    if (addr.includes('خبر') || addr.includes('عزيزية') || addr.includes('عقربية')) return 'الخبر';
+    if (addr.includes('دمام')) return 'الدمام';
+    if (addr.includes('جبيل')) return 'الجبيل';
+    return branch?.city || 'الدمام';
+  };
+
+  // استخراج رسم التوصيل الثابت المعتمد للمدينة
+  const getCityDeliveryFee = () => {
+    if (order.deliveryFee && Number(order.deliveryFee) > 0 && order.deliveryFee !== 17.39 && order.deliveryFee !== 20) {
+      return Number(order.deliveryFee);
+    }
+    const addr = ((order.customerAddress || '') + ' ' + (branch?.city || '')).toLowerCase();
+    if (addr.includes('صفو') || addr.includes('صفوي')) return 40;
+    if (addr.includes('قطيف') || addr.includes('تاروت')) return 35;
+    if (addr.includes('خبر') || addr.includes('عزيزية') || addr.includes('عقربية')) return 35;
+    if (addr.includes('ظهران') || addr.includes('دوحة') || addr.includes('دانة') || addr.includes('قصور')) return 30;
+    if (addr.includes('سيهات') || addr.includes('عنك')) return 30;
+    if (addr.includes('دمام')) return 25;
+    return 25; // افتراضي الدمام
   };
 
   const formattedRecipientPhone = () => {
@@ -362,7 +383,7 @@ export default function WaybillModal({ order, branch, onClose }) {
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>رسوم الشحن والتوصيل:</span>
-                    <span className="font-mono font-bold">{Number(order.deliveryFee || 20).toFixed(2)} ر.س</span>
+                    <span className="font-mono font-bold">{Number(getCityDeliveryFee()).toFixed(2)} ر.س</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>ضريبة القيمة المضافة (15%):</span>

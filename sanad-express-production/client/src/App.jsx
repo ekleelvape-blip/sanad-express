@@ -15,6 +15,7 @@ import LoginModal from './components/LoginModal';
 import TrackingPortal from './components/TrackingPortal';
 import SallaIntegrationView from './components/SallaIntegrationView';
 import SettingsView from './components/SettingsView';
+import DeliveryPricingView from './components/DeliveryPricingView';
 import SupportView from './components/SupportView';
 import AdminDashboard from './components/AdminDashboard';
 import { Lock, Menu, Search, Store, Bell, RefreshCw, Smartphone, Package, CheckCircle2, UserCheck } from 'lucide-react';
@@ -551,12 +552,18 @@ export default function App() {
             />
           )}
 
-          {['settlements', 'cod_transactions', 'driver_invoices', 'delivery_pricing', 'wallet'].includes(activeTab) && (
+          {['settlements', 'cod_transactions', 'driver_invoices', 'wallet'].includes(activeTab) && (
             <FinancialHub
               drivers={drivers}
               branches={branches}
               orders={orders}
               onRefresh={fetchData}
+            />
+          )}
+
+          {activeTab === 'delivery_pricing' && (
+            <DeliveryPricingView
+              branches={branches}
             />
           )}
 

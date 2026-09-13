@@ -121,3 +121,42 @@ export const MAP_LAYERS = {
     maxZoom: 19
   }
 };
+
+/**
+ * أسعار التوصيل الثابتة الرسمية المعتمدة لمدن المنطقة الشرقية - منصة سَنَد SANAD
+ */
+export const FIXED_DELIVERY_RATES = {
+  'الدمام': 25,
+  'سيهات': 30,
+  'الظهران': 30,
+  'القطيف': 35,
+  'الخبر': 35,
+  'صفوى': 40,
+  'صفوي': 40
+};
+
+export const OFFICIAL_CITIES = [
+  { id: 'dammam', name: 'الدمام', fee: 25, prefix: 'D', sla: '30 - 45 دقيقة', hub: 'محطة الدمام المركزية' },
+  { id: 'saihat', name: 'سيهات', fee: 30, prefix: 'S', sla: '35 - 50 دقيقة', hub: 'محطة سيهات' },
+  { id: 'dhahran', name: 'الظهران', fee: 30, prefix: 'DH', sla: '30 - 45 دقيقة', hub: 'محطة الظهران' },
+  { id: 'qatif', name: 'القطيف', fee: 35, prefix: 'Q', sla: '40 - 55 دقيقة', hub: 'محطة القطيف' },
+  { id: 'khobar', name: 'الخبر', fee: 35, prefix: 'K', sla: '35 - 50 دقيقة', hub: 'محطة الخبر' },
+  { id: 'safwa', name: 'صفوى (صفوي)', fee: 40, prefix: 'SF', sla: '45 - 60 دقيقة', hub: 'محطة صفوى' }
+];
+
+/**
+ * استخراج رسم التوصيل الثابت بناءً على العنوان أو اسم المدينة
+ * @param {string} addressOrCity
+ * @returns {number} رسم التوصيل بالريال السعودي
+ */
+export function getDeliveryFeeByAddress(addressOrCity) {
+  if (!addressOrCity) return 25;
+  const text = String(addressOrCity).toLowerCase();
+  if (text.includes('صفو') || text.includes('صفوي')) return 40;
+  if (text.includes('قطيف') || text.includes('تاروت') || text.includes('سنابس') || text.includes('قديح')) return 35;
+  if (text.includes('خبر') || text.includes('عزيزية') || text.includes('عقربية') || text.includes('حزام ذهبي')) return 35;
+  if (text.includes('ظهران') || text.includes('دوحة') || text.includes('دانة') || text.includes('قصور') || text.includes('جامعة')) return 30;
+  if (text.includes('سيهات') || text.includes('عنك') || text.includes('كوثر')) return 30;
+  if (text.includes('دمام') || text.includes('شاطئ') || text.includes('فيصلية') || text.includes('منار')) return 25;
+  return 25; // الافتراضي للمركز (الدمام) 25 ريال ثابت
+}

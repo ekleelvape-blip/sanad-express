@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import OrderDetailsModal from './OrderDetailsModal';
 import WaybillModal from './WaybillModal';
+import { OFFICIAL_CITIES, FIXED_DELIVERY_RATES, getDeliveryFeeByAddress } from '../utils/geo';
 
 export default function OrdersTableView({ activeTab, onSelectTab, orders = [], drivers = [], branches = [], selectedBranch = "all", onAssignOrder, onCreateOrder, onRefresh, currentUser = null }) {
   // ضبط الفلتر الافتراضي بناءً على التبويب المفتوح من القائمة الجانبية
@@ -48,6 +49,8 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
   const [newOrderData, setNewOrderData] = useState({
     customerName: '',
     customerPhone: '',
+    city: 'الدمام',
+    deliveryFee: 25,
     customerAddress: '',
     neighborhood: '',
     totalAmount: '',
@@ -112,7 +115,9 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
 
     try {
       setIsSubmitting(true);
-      const fullAddress = [newOrderData.neighborhood.trim(), newOrderData.customerAddress.trim()].filter(Boolean).join(' - ') || 'عنوان العميل';
+      const cityName = newOrderData.city || 'الدمام';
+      const fee = Number(newOrderData.deliveryFee || FIXED_DELIVERY_RATES[cityName] || 25);
+      const fullAddress = [cityName, newOrderData.neighborhood.trim(), newOrderData.customerAddress.trim()].filter(Boolean).join(' - ') || 'عنوان العميل';
       
       const payload = {
         orderNumber: String(nextSequentialOrderNumber),
@@ -120,6 +125,7 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
         customerName: newOrderData.customerName.trim(),
         customerPhone: newOrderData.customerPhone.trim(),
         customerAddress: fullAddress,
+        deliveryFee: fee,
         totalAmount: Number(newOrderData.totalAmount),
         paymentMethod: newOrderData.paymentMethod || 'cash',
         assignedDriverId: newOrderData.assignedDriverId || null,
@@ -140,6 +146,8 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
         setNewOrderData({
           customerName: '',
           customerPhone: '',
+          city: 'الدمام',
+          deliveryFee: 25,
           customerAddress: '',
           neighborhood: '',
           totalAmount: '',
@@ -597,7 +605,44 @@ export default function OrdersTableView({ activeTab, onSelectTab, orders = [], d
                 </div>
               </div>
 
-              {/* 3. الحي وتفاصيل العنوان */}
+              {/* 3. اختيار المدينة المعتمدة ورسم التوصيل الثابت */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#00d2d3]" />
+                    <span>المدينة المعتمدة (سعر ثابت) *:</span>
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    رسم التوصيل: {newOrderData.deliveryFee} ﷼ 🔒
+                  </span>
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {OFFICIAL_CITIES.map(c => {
+                    const isSelected = newOrderData.city === c.name || (c.id === 'safwa' && (newOrderData.city.includes('صفو') || newOrderData.city.includes('صفوي')));
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setNewOrderData({
+                          ...newOrderData,
+                          city: c.name,
+                          deliveryFee: c.fee
+                        })}
+                        className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-cyan-950 border-[#00d2d3] text-white shadow-[0_0_10px_rgba(0,210,211,0.3)]'
+                            : 'bg-[#070b13] border-cyan-950/60 text-slate-400 hover:text-slate-200 hover:border-cyan-800'
+                        }`}
+                      >
+                        <div className="text-[11px] font-black truncate">{c.name.split(' ')[0]}</div>
+                        <div className="text-xs font-mono font-bold text-[#00d2d3] mt-0.5">{c.fee} ﷼</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. الحي وتفاصيل العنوان */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">

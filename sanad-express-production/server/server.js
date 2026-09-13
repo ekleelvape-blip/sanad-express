@@ -1,13 +1,27 @@
 
 // تحديد كود محطة الفرز والتوجيه الجغرافي لسَنَد
 function getHubZone(address, city) {
-  const text = (address + ' ' + (city || '')).toLowerCase();
-  if (text.includes('خبر') || text.includes('khobar')) return { code: 'K-02', name: 'محطة الخبر', prefix: 'K' };
+  const text = (String(address || '') + ' ' + String(city || '')).toLowerCase();
+  if (text.includes('صفو') || text.includes('صفوي')) return { code: 'SF-07', name: 'محطة صفوى', prefix: 'SF' };
+  if (text.includes('سيهات') || text.includes('عنك')) return { code: 'S-08', name: 'محطة سيهات', prefix: 'S' };
+  if (text.includes('قطيف') || text.includes('تاروت') || text.includes('سنابس')) return { code: 'Q-05', name: 'محطة القطيف', prefix: 'Q' };
+  if (text.includes('خبر') || text.includes('khobar') || text.includes('عزيزية')) return { code: 'K-02', name: 'محطة الخبر', prefix: 'K' };
+  if (text.includes('ظهران') || text.includes('dhahran') || text.includes('دوحة')) return { code: 'DH-04', name: 'محطة الظهران', prefix: 'DH' };
   if (text.includes('جبيل') || text.includes('jubail')) return { code: 'J-03', name: 'محطة الجبيل', prefix: 'J' };
-  if (text.includes('ظهران') || text.includes('dhahran')) return { code: 'DH-04', name: 'محطة الظهران', prefix: 'DH' };
-  if (text.includes('قطيف') || text.includes('سيهات')) return { code: 'Q-05', name: 'محطة القطيف', prefix: 'Q' };
   if (text.includes('أحساء') || text.includes('هفوف')) return { code: 'AH-06', name: 'محطة الأحساء', prefix: 'AH' };
   return { code: 'D-01', name: 'محطة الدمام المركزية', prefix: 'D' };
+}
+
+// دالة استخراج رسم التوصيل الثابت المعتمد لمدن المنطقة الشرقية لسَنَد (الأسعار ثابتة)
+function getCityDeliveryFee(address, city) {
+  const text = (String(address || '') + ' ' + String(city || '')).toLowerCase();
+  if (text.includes('صفو') || text.includes('صفوي')) return 40; // صفوي 40 ريال ثابت
+  if (text.includes('قطيف') || text.includes('تاروت') || text.includes('سنابس') || text.includes('قديح')) return 35; // القطيف 35 ريال ثابت
+  if (text.includes('خبر') || text.includes('عزيزية') || text.includes('عقربية') || text.includes('حزام')) return 35; // الخبر 35 ريال ثابت
+  if (text.includes('ظهران') || text.includes('دوحة') || text.includes('دانة') || text.includes('قصور')) return 30; // الظهران 30 ريال ثابت
+  if (text.includes('سيهات') || text.includes('عنك') || text.includes('كوثر')) return 30; // سيهات 30 ريال ثابت
+  if (text.includes('دمام') || text.includes('شاطئ') || text.includes('منار') || text.includes('فيصلية')) return 25; // الدمام 25 ريال ثابت
+  return 25; // افتراضي الدمام 25 ريال
 }
 
 const express = require('express');
@@ -876,6 +890,13 @@ let orders = [
   }
 ];
 
+// تثبيت رسوم التوصيل لجميع الطلبات حسب المدينة المعتمدة
+orders.forEach(o => {
+  if (!o.deliveryFee || o.deliveryFee === 17.39 || o.deliveryFee === 20) {
+    o.deliveryFee = getCityDeliveryFee(o.customerAddress);
+  }
+});
+
 // 5. مسارات الـ API
 
 // تسجيل الدخول للفروع
@@ -1227,6 +1248,7 @@ app.post('/api/orders', (req, res) => {
     customerAddress: customerAddress || 'عنوان العميل',
     customerCoords: customerCoords || defaultCoords,
     items: (items && items.length > 0) ? items : [{ name: 'شحنة منتجات سَنَد', qty: 1, price: Number(totalAmount) || 150 }],
+    deliveryFee: Number(req.body.deliveryFee) || getCityDeliveryFee(customerAddress),
     totalAmount: Number(totalAmount) || 150,
     paymentMethod: paymentMethod || 'cash',
     driverCommission: Number(driverCommission) || 20.00,
@@ -2400,6 +2422,7 @@ app.post('/api/salla/simulate', (req, res) => {
     customerAddress: rand.address,
     customerCoords: [26.43 + (Math.random() - 0.5) * 0.04, 50.11 + (Math.random() - 0.5) * 0.04],
     items: [{ name: 'طلب جديد عبر متجر سلة (ربط تلقائي)', qty: 1, price: rand.amount }],
+    deliveryFee: getCityDeliveryFee(rand.address),
     totalAmount: rand.amount,
     paymentMethod: Math.random() > 0.5 ? 'cash' : 'mada',
     driverCommission: 20.00,
@@ -2468,15 +2491,104 @@ let ratings = [
 
 app.get('/api/ratings', (req, res) => res.json(ratings));
 
-// و) نطاقات التغطية وأسعار التوصيل
-let zones = [
-  { id: 'Z-01', name: 'نطاق الدمام الكبرى', coverage: 'وسط الدمام، الشاطئ، المنار، أحد، الفيصلية، الجلوية', fee: 20, slaTime: '30 - 45 دقيقة', store: 'فرع إكليل الدمام', status: 'نشط' },
-  { id: 'Z-02', name: 'نطاق الخبر والظهران', coverage: 'العليا، الراشد، الحزام، العقربية، الدوحة، الجسر', fee: 20, slaTime: '35 - 50 دقيقة', store: 'متجر فيب الشرق', status: 'نشط' },
-  { id: 'Z-03', name: 'نطاق الجبيل الصناعية', coverage: 'الفناتير، الحجاز، الفردوس، حي البلد، اللؤلؤ', fee: 25, slaTime: '40 - 60 دقيقة', store: 'فرع إكليل الجبيل', status: 'نشط' },
-  { id: 'Z-04', name: 'نطاق سيهات وعنك', coverage: 'حي الخليج، سيهات، عنك، المحمدية', fee: 25, slaTime: '40 - 55 دقيقة', store: 'فرع إكليل الدمام', status: 'نشط' }
+// و) نطاقات التغطية وأسعار التوصيل الرسمية المعتمدة لمدن المنطقة الشرقية (الأسعار ثابتة)
+const OFFICIAL_DEFAULT_ZONES = [
+  {
+    id: 'Z-01',
+    name: 'الدمام',
+    city: 'الدمام',
+    prefix: 'D',
+    coverage: 'وسط الدمام، الشاطئ، المنار، الفيصلية، أحد 71، الجلوية، الضباب، النورس، الفرسان، المزروعية، الأمانة، طيبة',
+    fee: 25,
+    fixed: true,
+    slaTime: '30 - 45 دقيقة',
+    store: 'فرع إكليل الدمام',
+    status: 'نشط'
+  },
+  {
+    id: 'Z-02',
+    name: 'سيهات',
+    city: 'سيهات',
+    prefix: 'S',
+    coverage: 'حي الخليج، سيهات، عنك، المحمدية، غرناطة، الكوثر، الجمعية، الديرة',
+    fee: 30,
+    fixed: true,
+    slaTime: '35 - 50 دقيقة',
+    store: 'فرع إكليل الدمام',
+    status: 'نشط'
+  },
+  {
+    id: 'Z-03',
+    name: 'الظهران',
+    city: 'الظهران',
+    prefix: 'DH',
+    coverage: 'الدوحة الجنوبية والشمالية، الدانة، حي القصور، الجامعة، تهامة، مجمع الظهران',
+    fee: 30,
+    fixed: true,
+    slaTime: '30 - 45 دقيقة',
+    store: 'متجر فيب الشرق',
+    status: 'نشط'
+  },
+  {
+    id: 'Z-04',
+    name: 'القطيف',
+    city: 'القطيف',
+    prefix: 'Q',
+    coverage: 'وسط القطيف، المجيدية، الشاطئ، الدخل المحدود، الناصرة، تاروت، سنابس، القديح، الجش',
+    fee: 35,
+    fixed: true,
+    slaTime: '40 - 55 دقيقة',
+    store: 'فرع إكليل الدمام',
+    status: 'نشط'
+  },
+  {
+    id: 'Z-05',
+    name: 'الخبر',
+    city: 'الخبر',
+    prefix: 'K',
+    coverage: 'العليا، الراشد، الحزام الذهبي والأخضر، العقربية، الجسر، العزيزية، الكورنيش، التحلية',
+    fee: 35,
+    fixed: true,
+    slaTime: '35 - 50 دقيقة',
+    store: 'متجر فيب الشرق',
+    status: 'نشط'
+  },
+  {
+    id: 'Z-06',
+    name: 'صفوى (صفوي)',
+    city: 'صفوى',
+    prefix: 'SF',
+    coverage: 'صفوى، صفوي، العروبة، البدرية، النادي، حزم صفوى، أم الساهك، الأوجام',
+    fee: 40,
+    fixed: true,
+    slaTime: '45 - 60 دقيقة',
+    store: 'فرع إكليل الدمام',
+    status: 'نشط'
+  }
 ];
 
+let zones = JSON.parse(JSON.stringify(OFFICIAL_DEFAULT_ZONES));
+
 app.get('/api/zones', (req, res) => res.json(zones));
+
+app.put('/api/zones/:id', (req, res) => {
+  const { id } = req.params;
+  const { fee, slaTime, coverage, status } = req.body;
+  const zone = zones.find(z => z.id === id);
+  if (!zone) return res.status(404).json({ error: 'المنطقة غير موجودة' });
+  if (fee !== undefined) zone.fee = Number(fee);
+  if (slaTime !== undefined) zone.slaTime = slaTime;
+  if (coverage !== undefined) zone.coverage = coverage;
+  if (status !== undefined) zone.status = status;
+  io.emit('zones_updated', zones);
+  res.json({ success: true, zone });
+});
+
+app.post('/api/zones/reset-official', (req, res) => {
+  zones = JSON.parse(JSON.stringify(OFFICIAL_DEFAULT_ZONES));
+  io.emit('zones_updated', zones);
+  res.json({ success: true, zones });
+});
 
 // ==========================================
 // 8. محرك تقديم تطبيق سند وتوجيه الروابط المستقلة (SPA Routing)
