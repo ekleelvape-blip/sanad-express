@@ -930,6 +930,15 @@ export default function DriverApp({
                 <span className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-0.5 rounded-lg text-xs font-bold shadow-2xs">
                   مخزون: {inTransitOrders.length} قطعة
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowWalletModal(true)}
+                  className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+                  title="المحفظة والعوائد المالية"
+                >
+                  <Wallet className="w-3 h-3 text-emerald-500" />
+                  <span>العهدة: <strong className="font-mono">{Number(currentDriver.cashOnHand || 0).toFixed(0)} ﷼</strong></span>
+                </button>
               </div>
             </div>
 
@@ -975,80 +984,6 @@ export default function DriverApp({
                 )}
               </button>
             </div>
-          </div>
-
-          {/* شريط العدادات الميداني الذكي لسند (Smart Live Counters) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            
-            {/* عداد 1: بانتظار المسح والاستلام */}
-            <div 
-              onClick={() => setOrdersSubTab('new')}
-              className="bg-amber-950/30 dark:bg-amber-950/40 p-2.5 rounded-2xl border border-amber-500/40 text-center shadow-sm cursor-pointer hover:border-amber-400 transition-all active:scale-95 flex flex-col items-center justify-between"
-            >
-              <div className="flex items-center justify-between w-full text-[10px] text-amber-400 font-bold">
-                <span>بانتظار الاستلام</span>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              </div>
-              <div className="text-2xl font-black font-mono text-amber-300 my-0.5">
-                {newOrders.length}
-              </div>
-              <div className="text-[9px] text-amber-200/80 bg-amber-950/80 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <ScanLine className="w-2.5 h-2.5" />
-                <span>يلزم مسح QR 📦</span>
-              </div>
-            </div>
-
-            {/* عداد 2: بالسيارة قيد التوصيل */}
-            <div 
-              onClick={() => setOrdersSubTab('in_transit')}
-              className="bg-cyan-950/30 dark:bg-cyan-950/40 p-2.5 rounded-2xl border border-cyan-500/40 text-center shadow-sm cursor-pointer hover:border-cyan-400 transition-all active:scale-95 flex flex-col items-center justify-between"
-            >
-              <div className="flex items-center justify-between w-full text-[10px] text-cyan-400 font-bold">
-                <span>بالسيارة الآن</span>
-                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-              </div>
-              <div className="text-2xl font-black font-mono text-[#00d2d3] my-0.5">
-                {inTransitOrders.length}
-              </div>
-              <div className="text-[9px] text-cyan-200/80 bg-cyan-950/80 px-2 py-0.5 rounded-full font-bold">
-                قيد التوصيل 🚚
-              </div>
-            </div>
-
-            {/* عداد 3: تم التسليم اليوم */}
-            <div 
-              onClick={() => setShowDeliveredModal(true)}
-              className="bg-emerald-950/30 dark:bg-emerald-950/40 p-2.5 rounded-2xl border border-emerald-500/40 text-center shadow-sm cursor-pointer hover:border-emerald-400 transition-all active:scale-95 flex flex-col items-center justify-between"
-            >
-              <div className="flex items-center justify-between w-full text-[10px] text-emerald-400 font-bold">
-                <span>تم التسليم اليوم</span>
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              </div>
-              <div className="text-2xl font-black font-mono text-emerald-300 my-0.5">
-                {deliveredOrders.length}
-              </div>
-              <div className="text-[9px] text-emerald-200/80 bg-emerald-950/80 px-2 py-0.5 rounded-full font-bold">
-                مكتملة بنجاح ✅
-              </div>
-            </div>
-
-            {/* عداد 4: كاش العهدة والمبالغ */}
-            <div 
-              onClick={() => setShowWalletModal(true)}
-              className="bg-slate-900/90 p-2.5 rounded-2xl border border-slate-800 text-center shadow-sm cursor-pointer hover:border-slate-700 transition-all active:scale-95 flex flex-col items-center justify-between"
-            >
-              <div className="flex items-center justify-between w-full text-[10px] text-slate-400 font-bold">
-                <span>كاش العهدة</span>
-                <span className="text-[9px] font-mono text-emerald-400">COD</span>
-              </div>
-              <div className="text-lg font-black font-mono text-emerald-400 my-0.5">
-                {(Number(currentDriver.cashOnHand) || 0).toFixed(0)} <span className="text-[10px]">ر.س</span>
-              </div>
-              <div className="text-[9px] text-slate-400 truncate w-full">
-                المتبقي: {expectedCashAmount.toFixed(0)} ر.س
-              </div>
-            </div>
-
           </div>
 
           {/* قسم طلباتي والأزرار الفلترة */}
