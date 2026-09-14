@@ -199,20 +199,18 @@ export default function DriverApp({
            ('drv-10' + assignedId?.replace('drv-', '')) === currentDriver.id;
   };
 
-  // تصنيف العوائد القادمة: الشحنات المرتجعة المطلوب استلامها من العميل أو المحمولة بالسيارة قيد التسليم للمستودع
+  // تصنيف المرتجعات النشطة الميدانية: فقط الشحنات المطلوب استلامها من العميل أو المحمولة بالسيارة في الطريق للمستودع
   const isIncomingReturn = (o) => {
-    if (o.status === 'return_requested') return true;
-    if (['return_requested', 'pending_pickup', 'return_picked_up', 'in_return'].includes(o.returnStatus)) return true;
-    if (o.status === 'exception' && (o.exceptionAction === 'return_to_hub' || o.returnStatus !== 'returned_to_branch')) return true;
-    if (o.status === 'returned' && o.returnStatus !== 'returned_to_branch') return true;
-    return false;
+    return o.returnStatus === 'pending_pickup' || 
+           o.returnStatus === 'return_requested' || 
+           o.returnStatus === 'return_picked_up' || 
+           o.returnStatus === 'in_return';
   };
 
-  // تصنيف العوائد المكتملة: الشحنات المرتجعة التي تم تسليمها بنجاح لمستودع الفرع واكتمل إرجاعها
+  // تصنيف العوائد المكتملة المسلمة للمستودع
   const isCompletedReturn = (o) => {
-    if (o.returnStatus === 'returned_to_branch' || o.returnSettledAt) return true;
-    if (o.status === 'returned' && o.returnStatus !== 'pending_pickup' && o.returnStatus !== 'return_picked_up' && o.returnStatus !== 'in_return') return true;
-    return false;
+    return o.returnStatus === 'returned_to_branch' || 
+           (o.status === 'returned' && !isIncomingReturn(o));
   };
 
   const myOrders = orders.filter(o => driverMatchId(o.assignedDriverId));
@@ -221,7 +219,9 @@ export default function DriverApp({
   const newOrders = myOrders.filter(o => ['assigned', 'ready_for_pickup'].includes(o.status) && !isIncomingReturn(o) && !isCompletedReturn(o));
   const inTransitOrders = myOrders.filter(o => ['in_transit', 'picked_up'].includes(o.status) && !isIncomingReturn(o) && !isCompletedReturn(o));
   const deliveredOrders = myOrders.filter(o => o.status === 'delivered' && !isIncomingReturn(o) && !isCompletedReturn(o));
-  const returnedOrders = [...incomingReturns, ...completedReturns];
+  
+  // قسم مسترجع للمندوب: تظهر فقط الشحنات المرتجعة النشطة (بانتظار استلامها من العميل أو بالسيارة)، وتختفي فوراً وبشكل تلقائي بمجرد تسليمها لمستودع الفرع
+  const returnedOrders = myOrders.filter(isIncomingReturn);
 
   // حساب المبالغ المتوقعة
   const expectedCashAmount = inTransitOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -351,7 +351,7 @@ export default function DriverApp({
         });
       }
       sound.playSuccess();
-      alert(`✅ تم تسليم الشحنة المرتجعة #${order.id} لمستودع الفرع بنجاح وتم تسجيلها في العوائد المكتملة!`);
+      alert(`✅ تم تسليم الشحنة المرتجعة #${order.id} لمستودع الفرع بنجاح، وتم إغلاقها واختفاؤها من قسم المسترجع!`);
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
