@@ -2122,50 +2122,6 @@ export default function DriverApp({
               المزيد
             </h2>
 
-            {/* بطاقة: سجل التسويات وسندات التوريد */}
-            <button
-              type="button"
-              onClick={() => { sound.pop(); setShowSettlementsModal(true); }}
-              className="w-full bg-white dark:bg-[#111726] border border-cyan-500/40 dark:border-cyan-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-cyan-400 active:scale-[0.99] transition-all shadow-xs"
-            >
-              <ChevronLeft className="w-4 h-4 text-slate-400" />
-              <div className="text-right">
-                <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
-                  <span>سجل التسويات وسندات التوريد</span>
-                  <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 px-2 py-0.2 rounded-full font-bold">
-                    {driverSettlementsData?.settledCount || 0} سند
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">سندات القبض المعتمدة مع توقيعك ومبالغ الخزينة الموردة</div>
-              </div>
-              <div className="w-8 h-8 rounded-xl border border-cyan-500/40 bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-300">
-                <Receipt className="w-4 h-4" />
-              </div>
-            </button>
-
-            {/* بطاقة: سجل العوائد والمرتجعات */}
-            <button
-              type="button"
-              onClick={() => { sound.pop(); setActiveBottomTab('home'); setOrdersSubTab('incoming_returns'); }}
-              className="w-full bg-white dark:bg-[#111726] border border-purple-500/40 dark:border-purple-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-purple-400 active:scale-[0.99] transition-all shadow-xs"
-            >
-              <ChevronLeft className="w-4 h-4 text-slate-400" />
-              <div className="text-right">
-                <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
-                  <span>العوائد والمرتجعات</span>
-                  {incomingReturns.length > 0 && (
-                    <span className="font-mono text-[10px] bg-purple-500 text-white px-2 py-0.2 rounded-full font-black animate-pulse">
-                      {incomingReturns.length} قادمة
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">العوائد القادمة ({incomingReturns.length}) • العوائد المكتملة ({completedReturns.length})</div>
-              </div>
-              <div className="w-8 h-8 rounded-xl border border-purple-500/40 bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-600 dark:text-purple-300">
-                <RotateCcw className="w-4 h-4" />
-              </div>
-            </button>
-
             {/* 1. بطاقة: تم التوصيل (قائمة بآخر عشرين طلب تم توصيلهم) */}
             <button
               type="button"
