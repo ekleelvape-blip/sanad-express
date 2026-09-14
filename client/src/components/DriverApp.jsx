@@ -1057,41 +1057,63 @@ export default function DriverApp({
               <h2 className="text-base font-black text-slate-900 dark:text-white">طلباتي</h2>
             </div>
 
-            {/* أزرار الفلترة الميدانية لتوصيل الشحنات: جديد للاستلام + في السيارة */}
-            <div className="flex items-center gap-2">
-              {/* جديد للاستلام */}
+            {/* أزرار الفلترة الميدانية الثلاثية: الطلبات الجديدة + جاري التوصيل + مسترجع */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* 1. الطلبات الجديدة (بانتظار المندوب يستلمها) */}
               <button
                 type="button"
                 onClick={() => { sound.pop(); setOrdersSubTab('new'); }}
                 className={
-                  'flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 ' +
+                  'py-2.5 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 ' +
                   (ordersSubTab === 'new'
-                    ? 'bg-amber-950 text-amber-300 border border-amber-500/60 font-black shadow-md'
+                    ? 'bg-amber-950 text-amber-300 border border-amber-500/60 font-black shadow-md ring-1 ring-amber-500/30'
                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   )
                 }
               >
-                <span>جديد للاستلام</span>
+                <span>الطلبات الجديدة</span>
                 <span className="font-mono text-[10px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
                   {newOrders.length}
                 </span>
               </button>
 
-              {/* في السيارة */}
+              {/* 2. جاري التوصيل (المندوب استلمها وجاري توصيلها) */}
               <button
                 type="button"
                 onClick={() => { sound.pop(); setOrdersSubTab('in_transit'); }}
                 className={
-                  'flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 ' +
+                  'py-2.5 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 ' +
                   (ordersSubTab === 'in_transit'
-                    ? 'bg-cyan-950 text-[#00d2d3] border border-cyan-500/60 font-black shadow-md'
+                    ? 'bg-cyan-950 text-[#00d2d3] border border-cyan-500/60 font-black shadow-md ring-1 ring-cyan-500/30'
                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   )
                 }
               >
-                <span>في السيارة</span>
+                <span>جاري التوصيل</span>
                 <span className="font-mono text-[10px] bg-[#00d2d3] text-slate-950 px-1.5 py-0.2 rounded-full font-black">
                   {inTransitOrders.length}
+                </span>
+              </button>
+
+              {/* 3. مسترجع (خاص بطلبات المسترجعة من العميل) */}
+              <button
+                type="button"
+                onClick={() => { sound.pop(); setOrdersSubTab('returned'); }}
+                className={
+                  'py-2.5 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 ' +
+                  (ordersSubTab === 'returned'
+                    ? 'bg-rose-950 text-rose-300 border border-rose-500/60 font-black shadow-md ring-1 ring-rose-500/30'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                  )
+                }
+              >
+                <span>مسترجع</span>
+                <span className={'font-mono text-[10px] px-1.5 py-0.2 rounded-full font-black ' + 
+                  (returnedOrders.length > 0 
+                    ? 'bg-rose-500 text-white animate-pulse' 
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300')
+                }>
+                  {returnedOrders.length}
                 </span>
               </button>
             </div>
@@ -1122,6 +1144,165 @@ export default function DriverApp({
                   </h3>
                 </div>
               )}
+
+              {/* تبويب: مسترجع - فارغ */}
+              {ordersSubTab === 'returned' && returnedOrders.length === 0 && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-24 h-24 bg-rose-50/50 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-900 rounded-3xl flex items-center justify-center shadow-inner">
+                    <span className="text-5xl">↩️</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    لا توجد طلبات مسترجعة حالياً
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    الطلبات المسترجعة من العميل ستظهر هنا فور تسجيلها بالمستودع أو طلب العميل.
+                  </p>
+                </div>
+              )}
+
+              {/* 3. عرض الطلبات المسترجعة من العميل */}
+              {ordersSubTab === 'returned' && returnedOrders.map(order => {
+                const isPickedUp = order.returnStatus === 'return_picked_up' || order.returnStatus === 'in_return';
+                const isSettled = order.returnStatus === 'returned_to_branch' || (order.status === 'returned' && !isPickedUp);
+                const orderBranch = branches.find(b => b.id === order.branchId) || { name: 'المستودع الرئيسي', coords: [26.4380, 50.1110] };
+
+                return (
+                  <div key={order.id} className="bg-white dark:bg-[#111726] border border-rose-500/30 dark:border-rose-900/50 rounded-2xl p-4 shadow-sm space-y-3 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800">
+                          #{order.id}
+                        </span>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                          isSettled
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : isPickedUp
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow'
+                            : 'bg-amber-500 text-slate-950 shadow'
+                        }`}>
+                          {isSettled 
+                            ? '✅ تم الإرجاع لمستودع الفرع'
+                            : isPickedUp 
+                            ? '🚚 بالسيارة في الطريق للفرع' 
+                            : '⏳ بانتظار استلام المرتجع من العميل'}
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-sm text-rose-500 dark:text-rose-400">
+                        {order.totalAmount} ﷼
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{order.customerName}</span>
+                      </div>
+                      <div className="text-slate-500 text-[11px] flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{order.customerAddress || 'الدمام'}</span>
+                      </div>
+                    </div>
+
+                    {/* سبب الإرجاع المسجل */}
+                    <div className="p-2.5 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40 text-[11px] space-y-1">
+                      <div className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-rose-500" />
+                        <span>سبب الاسترجاع من العميل:</span>
+                      </div>
+                      <div className="text-slate-700 dark:text-slate-300">
+                        {order.returnReason || order.exceptionReason || order.notes || 'طلب استرجاع من العميل'}
+                      </div>
+                    </div>
+
+                    {/* أزرار الاتصال والواتساب والملاحة للعميل (إذا لم يكن قد سلمه للمستودع) */}
+                    {!isSettled && (
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        <a
+                          href={`tel:${order.customerPhone || ''}`}
+                          className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                          title="اتصال بالعميل"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>اتصال</span>
+                        </a>
+                        <a
+                          href={getDriverWhatsAppUrl(order.customerPhone, order.customerName, order.id, order.customerAddress)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                          title="واتساب"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>واتساب</span>
+                        </a>
+                        <a
+                          href={order.customerCoords ? getGoogleNavUrl(order.customerCoords[0], order.customerCoords[1]) : `https://maps.google.com/?q=${encodeURIComponent(order.customerAddress || 'الدمام')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2 px-1 bg-slate-100 dark:bg-slate-800 hover:bg-cyan-50 text-slate-700 dark:text-slate-300 hover:text-cyan-600 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700/80 transition-all cursor-pointer"
+                          title="خرائط للعميل"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-cyan-500" />
+                          <span>خرائط</span>
+                        </a>
+                      </div>
+                    )}
+
+                    {/* زر الإجراء الأساسي للمرتجع */}
+                    {!isSettled && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        {!isPickedUp ? (
+                          <button
+                            type="button"
+                            onClick={() => handlePickupReturnFromCustomer(order)}
+                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Package className="w-4 h-4" />
+                            <span>استلام المرتجع من العميل 📦↩️</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="text-[11px] text-purple-300 bg-purple-950/60 p-2.5 rounded-xl border border-purple-800/60 flex items-center justify-between">
+                              <span className="flex items-center gap-1 font-bold">
+                                <Store className="w-3.5 h-3.5 text-purple-400" />
+                                <span>المستودع المستلم: {orderBranch.name}</span>
+                              </span>
+                              <a 
+                                href={orderBranch.coords ? getGoogleNavUrl(orderBranch.coords[0], orderBranch.coords[1]) : '#'}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] font-black text-cyan-400 hover:underline flex items-center gap-0.5"
+                              >
+                                <span>ملاحة للفرع 🧭</span>
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeliverReturnToBranch(order)}
+                              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>تسليم المرتجع لمستودع الفرع 🏪✅</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {isSettled && (
+                      <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <span className="flex items-center gap-1">
+                          <Store className="w-3 h-3 text-cyan-400" />
+                          <span>المستودع: {orderBranch.name}</span>
+                        </span>
+                        <span className="font-mono text-emerald-400 font-bold">
+                          {order.returnSettledAt ? new Date(order.returnSettledAt).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' }) : 'مسجل ومسلم'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* 1. عرض طلبات التوصيل (جديد أو في السيارة) */}
               {(ordersSubTab === 'new' || ordersSubTab === 'in_transit') && (ordersSubTab === 'new' ? newOrders : inTransitOrders).map(order => (
